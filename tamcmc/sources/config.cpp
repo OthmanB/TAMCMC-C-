@@ -53,7 +53,7 @@ void Config::setup(){
 	std::cout << "Data file: " << data.data_file << std::endl;
 	Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
 	data.data_all=data_in; // save the whole data file into the configuration class
-	
+
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
 		imax=data_in.data.rows();
@@ -83,7 +83,7 @@ void Config::setup(){
 			std::cout << "         Proceeding... " << std::endl;
 		}
 	}
-	
+
 	if(data.x_col >=0){
 		data.data.x=data_in.data.col(data.x_col).segment(imin, imax-imin);
 		data.data.xlabel=data_in.labels[data.x_col];
@@ -94,12 +94,22 @@ void Config::setup(){
 	
 	if(data.y_col >=0){
 		std::cout << "Importing data...";
-		data.data.y=data_in.data.col(data.y_col).segment(imin, imax-imin);
-		std::cout << "labels...";
-		data.data.ylabel=data_in.labels[data.y_col];
-		std::cout << "units";
-		data.data.yunit=data_in.units[data.y_col];
-		std::cout << "...Done" << std::endl;
+		if(data_in.data.cols() > data.y_col){
+			data.data.y=data_in.data.col(data.y_col).segment(imin, imax-imin);
+			std::cout << "labels...";
+			data.data.ylabel=data_in.labels[data.y_col];
+			std::cout << "units";
+			data.data.yunit=data_in.units[data.y_col];
+			std::cout << "...Done" << std::endl;
+		}else{
+			std::cout << "Fatal Error: The data file has only " << data_in.data.cols() << " columns but you specified that y-data are in column " << data.y_col+1 << " (y_col=" << data.y_col << ")" << std::endl;
+			std::cout << "             Cannot proceed. The program will exit now" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	} else{
+		std::cout << "Fatal error: You need to specify a column for y-data" << std::endl;
+		std::cout << "             Cannot proceed. The program will exit now" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	if(data.ysig_col >= 0){
 		data.data.sigma_y=data_in.data.col(data.ysig_col).segment(imin, imax-imin);
@@ -378,7 +388,7 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
 		switch_name=2;
 		passed=1;
 	}
-	if (model_name == "model_MS_Global_a1acta3_HarveyLike"){
+	if (model_name == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
 		switch_name=3;
 		passed=1;
 	}
@@ -429,15 +439,15 @@ std::string Config::get_model_fct_name_to_switch(const std::string model_name){
 	std::vector<std::string> models(Nmodels);
 	VectorXi switches(Nmodels);
 
-	models[0]="model_Test_Gaussian"; 		  switches[0]=0;
-	models[1]="model_Harvey_Gaussian"; 		  switches[1]=1;
-	models[2]="model_MS_Global_a1etaa3_HarveyLike";   switches[2]=2;
-	models[3]="model_MS_Global_a1acta3_HarveyLike";   switches[3]=3;
-	models[4]="model_MS_Global_a1etaa3_Harvey1985";   switches[4]=4;
-	models[5]="model_MS_Global_a1acta3_Harvey1985";   switches[5]=5;
-	models[6]="model_MS_Global_a1l_etaa3_HarveyLike"; switches[6]=6;
-	models[7]="model_MS_Global_a1n_etaa3_HarveyLike"; switches[7]=7;
-	models[8]="model_MS_Global_a1nl_etaa3_HarveyLike";switches[8]=8;
+	models[0]="model_Test_Gaussian"; 		  	switches[0]=0;
+	models[1]="model_Harvey_Gaussian"; 		  	switches[1]=1;
+	models[2]="model_MS_Global_a1etaa3_HarveyLike";   	switches[2]=2;
+	models[3]="model_MS_Global_a1etaa3_HarveyLike_Classic"; switches[3]=3;
+	models[4]="model_MS_Global_a1etaa3_Harvey1985";   	switches[4]=4;
+	models[5]="model_MS_Global_a1acta3_Harvey1985";   	switches[5]=5;
+	models[6]="model_MS_Global_a1l_etaa3_HarveyLike"; 	switches[6]=6;
+	models[7]="model_MS_Global_a1n_etaa3_HarveyLike"; 	switches[7]=7;
+	models[8]="model_MS_Global_a1nl_etaa3_HarveyLike";	switches[8]=8;
 
 	passed=0;
 	for(int i=0; i<Nmodels; i++){

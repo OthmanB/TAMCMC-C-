@@ -3,9 +3,9 @@
 ##SBATCH -t 0:20:00
 #SBATCH -t 1-23:59:59
 #SBATCH -p serial
-#SBATCH -n 9
+#SBATCH -n 10
 #SBATCH -C avx2
-#SBATCH -a 2-37
+#SBATCH -a 1-44
 
 module purge
 module load gcc/4.9.3
@@ -17,7 +17,7 @@ module load gnuplot/5.0.0
 
 export EIGEN3_INCLUDE_DIR=$EIGEN_INC/eigen3
 export CXX=g++
-export OMP_NUM_THREADS=9
+export OMP_NUM_THREADS=10
 
 echo "Processing star position=" $SLURM_ARRAY_TASK_ID
 

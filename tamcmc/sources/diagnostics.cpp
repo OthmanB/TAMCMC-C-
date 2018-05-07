@@ -354,7 +354,7 @@ void Diagnostics::write_data_tmp(VectorXd x, VectorXd y, VectorXd z){
 		outfile.close();
 	}  
 	else {
-        file_error(file_data_tmp, "openfile", "Diagnostics::write_data_tmp");
+        	file_error(file_data_tmp, "openfile", "Diagnostics::write_data_tmp");
     }
 }
 
@@ -850,7 +850,7 @@ Params_hdr Diagnostics::read_params_header(const std::string file){
 	if(keyword[0]== "! Nsamples"){
 		varcase=8;
 	}
-	for(int el=0; el<keyword.size();el++){std::cout << keyword[el] << std::endl;}
+	//for(int el=0; el<keyword.size();el++){std::cout << keyword[el] << std::endl;}
 	//std::cout << " -----" << std::endl;
 	switch(varcase){
 		case 0: 

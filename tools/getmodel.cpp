@@ -240,7 +240,7 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
 		if(Nplength_expected != plength.size()){
 			std::cout << "   >> Structure of the parameters incorrect. Incompatibility detected" << std::endl;
 			std::cout << "   >> Detected size for plength: "<< plength.size() << " ...Expected size:"<< Nplength_expected << " for model '" << modelname << "'" << std::endl;
-			if(plength.size() = 10){ // Case where we might know how to get back to our feet
+			if(plength.size() == 10){ // Case where we might know how to get back to our feet
 				status=1; 
 			} else{
 				status=-1; // There is problem that requires a carefull check/debuging
@@ -272,10 +272,9 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
 
 	inclination=params[posinc]; // Last elements of the vector was the inclination in version earlier than 1.3.0
 	a1=params[posa1]; ; //splitting a1
-	
 
-	newparams[posa1cosi]=a1*cos(inclination*pi/180.);
-	newparams[posa1sini]=a1*sin(inclination*pi/180.);
+	newparams[posa1cosi]=sqrt(a1)*cos(inclination*pi/180.);
+	newparams[posa1sini]=sqrt(a1)*sin(inclination*pi/180.);
 
 	newparams.conservativeResize(params.size()+1);
 	newparams[newparams.size()-1]=c0; //Put a default c0 value at the end of the new vector of parameters

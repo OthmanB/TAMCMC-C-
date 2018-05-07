@@ -8,7 +8,7 @@ void showversion();
 #define APP_ID        "TAMCMC"
 #define APP_NAME      "CPPTAMCMC"
 #define APP_DESC      "MCMC for Asteroseismology"
-#define APP_VERSION   "1.3.0"
+#define APP_VERSION   "1.3.1"
 #define APP_DOMAIN    ""
 #define APP_SITE      ""
 #define APP_COPYRIGHT "Othman Benomar"

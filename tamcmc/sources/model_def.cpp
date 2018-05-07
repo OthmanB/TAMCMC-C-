@@ -200,10 +200,6 @@ VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi plength
 	params.row(0)=params0;
 	model_fct_name_switch=model_case;
 	plength=plength0;
-	//std::cout << plength << std::endl;
-	//std::cout << plength.sum() << "\n" << std::endl; 
-	//std::cout << params.cols() << std::endl;
-	//exit(EXIT_SUCCESS);
 	return call_model(data_struc, 0);
 
 }
@@ -220,15 +216,11 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		case 1: // model_Harvey_Gaussian
 		  return model_Harvey_Gaussian(params.row(m), plength, (*data_struc).x);
 		  break;
-		case 2: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function 
+		case 2: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. 
 		  return model_MS_Global_a1etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
 		  break;
-		case 3: // model_MS_Global with a1, magb and magalfa (asphericity), a3, asymetry, Generalized Harvey function 
-		  std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1acta3_HarveyLike" << std::endl;
-		  std::cout << "The program will exit now" << std::endl;
-		  exit(EXIT_FAILURE);
-		  return fail;
-		  //return model_MS_Global_a1acta3_HarveyLike(params.row(m), plength, (*data_struc).x);
+		case 3: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. Inclination and splitting are not fitted directly. sqrt(a1).cos(i) and sqrt(a1).sin(i) instead
+		  return model_MS_Global_a1etaa3_HarveyLike_Classic(params.row(m), plength, (*data_struc).x);
 		  break;
 		case 4: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Original Harvey function 
 		  return model_MS_Global_a1etaa3_Harvey1985(params.row(m), plength, (*data_struc).x);
@@ -256,9 +248,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
+		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
-		  //std::cout << "    - 'model_MS_Global_a1acta3_HarveyLike'" << std::endl;
-		  //std::cout << "    - 'model_MS_Global_a1acta3_Harvey1985'" << std::endl;
+
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
           std::cout << "    - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;

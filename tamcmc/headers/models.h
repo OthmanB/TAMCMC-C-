@@ -15,6 +15,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(VectorXd params, VectorXi params_
 VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1acta3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1acta3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);

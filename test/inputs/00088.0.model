@@ -45,8 +45,8 @@ model_fullname     			model_MS_Global_a1etaa3_HarveyLike
 trunc_c            			Fix        20
 freq_smoothness    			bool       1                 2.0
 Asphericity_eta    			Fix_Auto   1
-sqrt(splitting_a1).cosi     Uniform    1.400000          0.000000          5.000000
-sqrt(splitting_a1).sini     Uniform    1.400000          0.000000          5.000000
+splitting_a1                            Uniform    1.400000          0.000000          5.000000
+inclination                             Uniform    0.000000         0.000000          90.000000
 Splitting_a3       			Fix        0
 Asymetry           			Fix        0
 Visibility_l1      			Fix        1.5

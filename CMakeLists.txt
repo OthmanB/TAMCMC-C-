@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.4.1)
 
-project(cpptamcmc VERSION 1.2.4)
+project(cpptamcmc VERSION 1.3.1)
 
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
@@ -21,7 +21,7 @@ else()
 	message(WARNING "   - Remember to load the modules required for DALMA before running cmake")
 	message(STATUS  "   - Adding optimisation flags for DALMA...")
 	# SSE / AVX switch
-	option(USE_AVX "Build with AVX support" OFF)
+	option(USE_AVX "Build with AVX support" ON)
 	if(USE_AVX)
 	  set(CMAKE_CXX_FLAGS "-fopenmp -O3 -mavx2 -mfma -march=haswell")
 	  #set(CMAKE_CXX_FLAGS "-O3 -mavx2 -mfma -march=haswell")

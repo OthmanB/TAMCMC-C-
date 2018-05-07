@@ -192,11 +192,11 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			std::getline(cfg_session, line0);
 	  }
     // Ensure a compatibility with the 3 Harvey profile + White noise standard
-    if(cpt < 10){
+      if(cpt < 10){
         tmpXd=iMS_global.noise_params.segment(0,cpt);
         iMS_global.noise_params.setConstant(-1);
         iMS_global.noise_params.segment(10-cpt, cpt)=tmpXd;
-    }
+      }
 	if(verbose == 1) {
 		std::cout << " - Noise inputs:" << std::endl;
 		std::cout << iMS_global.noise_params.transpose() << std::endl;
@@ -219,20 +219,16 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			i=i+1;
 			std::getline(cfg_session, line0);
 	}
-    if(i < 10){
+    if(i < 11){
         tmpXd=iMS_global.noise_s2.block(0,0,cpt,iMS_global.noise_s2.cols());
         iMS_global.noise_s2.setConstant(-1);
         iMS_global.noise_s2.block(10-cpt, 0, tmpXd.rows(), tmpXd.cols())=tmpXd;
-    } else{
-    	std::cout << "Critical error: Expected size of the noise s2 vector to be <10 but found to be >=10" << std::endl;
-    	std::cout << "Debug required" << std::endl;
-    	std::cout << "The program will exit now" << std::endl;
-    	exit(EXIT_FAILURE);
     }
-	if(verbose == 1) {
+    if(verbose == 1) {
 		std::cout << " - Noise information extracted during step s2:" << std::endl;
 		std::cout << iMS_global.noise_s2 << std::endl;
     }
+    //	exit(EXIT_SUCCESS);
 	// -------------------------------------	
 	
 	// -------- The common parameters follow ------
@@ -327,6 +323,11 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
+            if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
+            	//Previously corresponding to average_a1nl     bool    1    1 
+            	do_a11_eq_a12=1;
+            	do_avg_a1n=1;
+            }
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike"){
             	//Previously corresponding to average_a1nl     bool    1    1 
             	do_a11_eq_a12=1;
@@ -816,13 +817,71 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 }
 if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used 
 	if( (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike") || (all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985")){
-		std::cout << "Warning: We cannot use those models with variables Inclination and Splitting_a1..." << std::endl;
-		std::cout << "         Use sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini instead" << std::endl;
-		std::cout << "         The program will exit now" << std::endl;
-		exit(EXIT_FAILURE);
+		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
+		
+		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
+		
+		Snlm_in.inputs_names[3]="sqrt(splitting_a1).cosi"; 
+		Snlm_in.inputs_names[4]="sqrt(splitting_a1).sini"; 
+		if( Inc_in.priors_names[0]=="Fix" && Snlm_in.priors_names[0]=="Fix"){
+			std::cout << "         - Inclination and splitting_a1 were 'Fixed' ==> Fixing sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl; 
+			Snlm_in.priors_names[3]="Fix";
+			Snlm_in.priors_names[4]="Fix";
+			Snlm_in.relax[3]=0;
+			Snlm_in.relax[4]=0;
+		} else{
+			std::cout << "	       - Inclination and/or Splitting_a1 requested as a free parameter ==> Freeing both sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl;
+			std::cout << "         - Setting the prior to the one requested for the Splitting_a1 assuming non-informative prior on inclination: " << Snlm_in.priors_names[0] << std::endl;
+			std::cout << "           Beware that this may not be what you want!" << std::endl;
+			Snlm_in.priors_names[3]=Snlm_in.priors_names[0];
+			Snlm_in.priors_names[4]=Snlm_in.priors_names[0];
+			Snlm_in.relax[3]=1;
+			Snlm_in.relax[4]=1;
+
+			for(int k=0; k<Nmax_prior_params; k++){ // The range of the new prior is defined by the range given by splitting_a1 because cos(i) and sin(i) E [-1,1]
+				Snlm_in.priors(k,3)=Snlm_in.priors(k,0); 
+				Snlm_in.priors(k,4)=Snlm_in.priors(k,0); 
+			}
+		}
+
+
+
+		Snlm_in.inputs[3]=sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
+		Snlm_in.inputs[4]=sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
+
+		if(Snlm_in.inputs[3] < 1e-2){ // Avoid issues with the edge of uniform priors
+			Snlm_in.inputs[3]=1e-2;
+		}
+		if(Snlm_in.inputs[4] < 1e-2){ // Avoid issues with the edge of uniform priors
+			Snlm_in.inputs[4]=1e-2;
+		}
+
+        	std::cout << "            Slots for the variables Inclination and Splitting are forced to be FIXED" << std::endl;
+        	std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
+  		Inc_in.inputs_names[0]="Inclination";
+		Inc_in.priors_names[0]="Fix";
+        	Inc_in.relax[0]=0; 
+        	Inc_in.inputs[0]=0;
+   
+		Snlm_in.inputs_names[0]="Splitting_a1";
+		Snlm_in.priors_names[0]="Fix";
+		Snlm_in.relax[0]=0;
+		Snlm_in.inputs[0]=0;
+		//std::cout << "Warning: We cannot use those models with variables Inclination and Splitting_a1..." << std::endl;
+		//std::cout << "         Use sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini instead for the model " << all_in.model_fullname  << std::endl;
+		//std::cout << "	       Alternatively, you can use 'model_MS_Global_a1etaa3_HarveyLike_Classic with Inclination and Splitting_a1 keywords'" <<std::endl;
+		//std::cout << "         The program will exit now" << std::endl;
+		//exit(EXIT_FAILURE);
 	}
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
+	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
+		std::cout << "Warning: We cannot use " << all_in.model_fullname << " with variables sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini..." << std::endl;
+		std::cout << "         Use Inclination and Splitting_a1 instead for the model this model"  << std::endl;
+		std::cout << "	       Alternatively, you can use 'model_MS_Global_a1etaa3_HarveyLike with sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini keywords'" <<std::endl;
+		std::cout << "         The program will exit now" << std::endl;
+		exit(EXIT_FAILURE);
+	}
         std::cout << "    NOTICE: sqrt(splitting_a1).sini and sqrt(splitting_a1).cosi superseed inclination and splitting" << std::endl;
         std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
         std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;

@@ -147,9 +147,6 @@ Outputs::Outputs(Config *cfg, VectorXd Tchains){
 
 Outputs::~Outputs(){
 
-	//std::cout << "3" << std::endl;
-	//std::cout << "Nchains="<< Nchains << std::endl;
-	//std::cout << "buf_restore.covarmats.row[0]=" << buf_restore.covarmats[0]->row(0) << std::endl;
 
 	//destroy_3dMatrix(buf_restore.covarmats, Nchains);
 	destroy_3dMatrix(buf_proposal.mus, Nbuffer);
@@ -173,10 +170,8 @@ Outputs::~Outputs(){
 void Outputs::destroy_3dMatrix(MatrixXd** m3d, const int depth){
 
 	for(int d1=0; d1 < depth; d1++){
-		//std::cout << "d1=" << d1 << std::endl;
 		delete m3d[d1];
 	}
-	//std::cout << "last delete" << std::endl;
 	delete m3d;
 }
 
@@ -201,9 +196,6 @@ void Outputs::init_buffer_acceptance(){
 
 void Outputs::init_buffer_proposals(std::vector<std::string> vrs_nmes){
 
-	//std::cout << "init_buffer_proposals()" << std::endl;
-	//std::cout << Nvars << std::endl;
-
 	buf_proposal.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_proposal.Ncopy=0;
 	buf_proposal.target_acceptance=-1; // Undefined yet... need it as an input
@@ -224,9 +216,6 @@ void Outputs::init_buffer_proposals(std::vector<std::string> vrs_nmes){
 
 //--------------
 void Outputs::init_buffer_parallel_tempering(VectorXd Tchains){
-	
-	//std::cout << "init_buffer_parallel_tempering()" << std::endl;
-	//std::cout << Nvars << std::endl;
 
 	buf_parallel_temp.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_parallel_temp.Ncopy=0; 
@@ -242,9 +231,6 @@ void Outputs::init_buffer_parallel_tempering(VectorXd Tchains){
 void Outputs::init_buffer_params(VectorXd cons_in, std::vector<std::string> vrs_nmes,
 					std::vector<std::string> cns_nmes, std::vector<std::string> prms_nmes, VectorXi relax, VectorXi plength){
 
-	//std::cout << "init_buffer_params(()" << std::endl;
-	//std::cout << Nvars << std::endl;
-
 	buf_params.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_params.Ncopy=0;
 
@@ -257,18 +243,13 @@ void Outputs::init_buffer_params(VectorXd cons_in, std::vector<std::string> vrs_
 	buf_params.relax=relax;
 	buf_params.plength=plength;
 	
-	//exit(EXIT_SUCCESS);
 }
 
 //--------------
 void Outputs::init_buffer_models(){
 
-	//std::cout << "init_buffer_models()" << std::endl;
-	//std::cout << Nvars << std::endl;
-
 	buf_models.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_models.Ncopy=0;
-	//std::cout << "Nbuffer = " << Nbuffer << "   Nchains = " << Nchains << "   Ndata = " << Ndata << std::endl;
 	if(get_models == 1){
 		MatrixXd **mat=initialize_3dMatrix(Nbuffer, Nchains, Ndata_obs);
 		buf_models.models=mat; // (i, Nchains, Ndata)
@@ -282,9 +263,6 @@ void Outputs::init_buffer_models(){
 
 //--------------
 void Outputs::init_buffer_stat_criteria(){
-
-	//std::cout << "init_buffer_stat_criteria()" << std::endl;
-	//std::cout << Nvars << std::endl;
 
 	buf_stat_crit.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_stat_crit.Ncopy=0;
@@ -316,14 +294,10 @@ void Outputs::init_buffer_restore(long init_i){
 	for (int chain=0; chain<Nchains; chain++){
 		buf_restore.covarmats_mean[chain]->setZero();
 	}
-
-	//std::cout << "covarmats initialized" << std::endl;
-	//std::cout << "covarmats[0]" << buf_restore.covarmats[0] << std::endl;
 	
 	buf_restore.vars.resize(Nchains, Nvars);
 	buf_restore.vars_mean.resize(Nchains, Nvars);
 	buf_restore.vars_mean.setZero();
-	//exit(EXIT_SUCCESS);
 
 }
 
@@ -367,11 +341,9 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 	}
 
 	/////// Write the sigmas ////////
-	//std::cout << "Write the sigmas" << std::endl;
 	 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
 		outfile_sigmas.open(filename_sigmas.c_str()); // Overwrite any existing file in PLAIN ASCII
 	 } else {
-		//outfile_sigmas.open(filename_sigmas.c_str(), std::ios::app); // std::app is for append
 		outfile_sigmas.open(filename_sigmas.c_str(), std::ofstream::app); // std::app is for append
 	 }
 	 if (outfile_sigmas.is_open()){
@@ -398,13 +370,11 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 	}
 
 	/////// Write the mus ////////
-	//std::cout << "Write the mus" << std::endl;
 	for (chain=0; chain<Nchains; chain++){
 
 		 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
 			outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str()); // Write in plain ascii
 		} else {
-			//outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ios::app);
 			outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ofstream::app);
 		 }
 		 if (outfile_mus[chain]->is_open()){
@@ -447,7 +417,6 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 	 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
 		outfile_moves.open(filename_moves.c_str()); // Overwrite any existing file in PLAIN ASCII
 	 } else {
-		//outfile_moves.open(filename_moves.c_str(), std::ios::app); // std::app is for append
 		outfile_moves.open(filename_moves.c_str(), std::ofstream::app); // std::app is for append
 	 }
 	 if (outfile_moves.is_open()){
@@ -459,7 +428,6 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 		for (int i=0; i<Ntot; i++){ // we write the buffer
 			strg.str(std::string());
 			strg << buf_proposal.Pmoves.row(i) << "     "; // << "   |";
-			//std::cout << "\n buf_proposal.moveds[" << i << "] = " <<	std::endl;
 			for (int j=0; j<Nchains; j++){ 
 				strg << "   " << buf_proposal.moveds[i][j];
 			}
@@ -486,7 +454,6 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 		 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
 			outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str()); // Overwrite any existing file
 		 } else {
-			//outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ios::app); // std::app is for append
 			outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ofstream::app); // std::app is for append
 		 }
 		 if (outfile_covarmats[chain]->is_open()){
@@ -786,15 +753,12 @@ void Outputs::write_txt_acceptance(){
 
 	filename_acceptance=acceptance_txtbin_fileout + ".txt" ;
 
-	//std::cout << "In write acceptance" << std::endl;
-
 	if(file_exists(filename_acceptance.c_str()) && (erase_old_files == 0)){need_header=0;} // In case of an append, we do not need of a header only if the file actually exists
 
 	/////// Write the acceptance_rate ////////
 	 if (erase_old_files == 1 && buf_acceptance.Ncopy == 0) {
 		outfile_acceptance.open(filename_acceptance.c_str()); // Overwrite any existing file in PLAIN ASCII
 	 } else {
-		//outfile_acceptance.open(filename_acceptance.c_str(), std::ios::app); // std::app is for append
 		outfile_acceptance.open(filename_acceptance.c_str(), std::ofstream::app); // std::app is for append
 	 }
 	 if (outfile_acceptance.is_open()){
@@ -805,7 +769,6 @@ void Outputs::write_txt_acceptance(){
 			outfile_acceptance << "! Nchains= " << Nchains << "\n";
 		}
 		strg.str(std::string());
-		//std::cout << "Writting..." << std::endl;
 		strg << buf_acceptance.xaxis;
 		strg << " ";
 		strg << buf_acceptance.acceptance_rate.transpose() << "\n";
@@ -881,7 +844,6 @@ void Outputs::write_txt_stat_criteria(long Nrest, bool dbg){
 			strg.str(std::string());
 			strg << buf_stat_crit.logLikelihoods.row(i)  << "     " << buf_stat_crit.logPriors.row(i) << "     " << buf_stat_crit.logPosteriors.row(i) << "\n";
     			outfile_statcrit << strg.str().c_str();
-			//std::cout << buf_stat_crit.logLikelihoods.row(i)  << "     " << buf_stat_crit.logPriors.row(i) << "     " << buf_stat_crit.logPosteriors.row(i) << std::endl;
 			
 		}
 		outfile_statcrit.flush(); // Explicitly specify to flush the data into the disk
@@ -1103,8 +1065,6 @@ void Outputs::write_bin_prop_params(long Nrest){
 	}
 
 	/////// Write the sigmas ////////
-	//std::cout << "Write the sigmas" << std::endl;
-	//if (buf_proposal.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){ // Write the header if requested (should always be on actually)
 		outfile_sigmas_hder.open(filename_sigmas_hder.c_str());  // Write the header ASCII file
     		outfile_sigmas_hder << "# This is the header of the BINARY output file for the parameters of the proposal law. These may vary if the MALA algorithm is learning.\n";
@@ -1136,8 +1096,6 @@ void Outputs::write_bin_prop_params(long Nrest){
 	}
 
 	/////// Write the mus ////////
-	//std::cout << "Write the mus" << std::endl;
-	//if (buf_proposal.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){ 
 		outfile_mus_hder.open((filename_mus_hder).c_str(), std::ofstream::app);    		
 		outfile_mus_hder << "# This is the header of the BINARY output file for the parameters of the proposal law. These may vary if the MALA algorithm is learning.\n";
@@ -1158,10 +1116,8 @@ void Outputs::write_bin_prop_params(long Nrest){
 	}
 	for (chain=0; chain<Nchains; chain++){
 		 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
-			//outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ios::binary); // Write in Binary
 			outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ofstream::binary); // Write in Binary
 		} else {
-			//outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ios::app | std::ios::binary);
 			outfile_mus[chain]=new std::ofstream((filename_mus[chain]).c_str(), std::ofstream::app | std::ofstream::binary);
 		 }
 		 if (outfile_mus[chain]->is_open()){
@@ -1183,7 +1139,6 @@ void Outputs::write_bin_prop_params(long Nrest){
 	} // End of the loop on chain
 
 	/////// Write the Pmoves and moveds ////////
-	//if (buf_proposal.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){
 		outfile_moves_hder.open((filename_moves_hder).c_str(), std::ofstream::app);    	
     		outfile_moves_hder << "# This is the header of the BINARY output file for the parameters of the proposal law. These may vary if the MALA algorithm is learning.\n";
@@ -1194,10 +1149,8 @@ void Outputs::write_bin_prop_params(long Nrest){
 	}
 	 strg.str(std::string());
 	 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
-		//outfile_moves.open(filename_moves.c_str(), std::ios::binary); // Overwrite any existing file in BINARY
 		outfile_moves.open(filename_moves.c_str(), std::ofstream::binary); // Overwrite any existing file in BINARY
 	 } else {
-		//outfile_moves.open(filename_moves.c_str(), std::ios::app | std::ios::binary); // std::app is for append
 		outfile_moves.open(filename_moves.c_str(), std::ofstream::app | std::ofstream::binary); // std::app is for append
 	 }
 	 if (outfile_moves.is_open()){
@@ -1221,17 +1174,13 @@ void Outputs::write_bin_prop_params(long Nrest){
 	}
 
 	/////// Write the covarmats ////////
-	//std::cout << "Write the covarmats" << std::endl;
-	//if (buf_proposal.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){
 		outfile_covarmats_hder.open(filename_covarmats_hder.c_str());  // Write the header ASCII file
 		outfile_covarmats_hder << "# This is the header of the BINARY output file for the parameters of the proposal law. These may vary if the MALA algorithm is learning.\n";
 		outfile_covarmats_hder << "# This file contains only values for covarmat[0:Nchains-1][ 0:Nvars-1][ 0:Nvars-1]. Each matrix is in a different file, indexed by the chain number\n" ;
-		//outfile_covarmats_hder << "# In each file, a new iteration is indicated by !n, with n the iteration number\n";
 		outfile_covarmats_hder << "! Nchains= " << Nchains << "\n";
 		outfile_covarmats_hder << "! Nvars= " << Nvars << "\n";
 		outfile_covarmats_hder << "! Nsamples_done=" << Nbuffer * (buf_proposal.Ncopy) + buf_proposal.counts + buf_restore.Nsamples_sofar << "\n";
-		//*outfile_covarmats[chain] << "! chain= " << chain << "\n";
 		// ---- The variable names
 		strg.str(std::string());
 		strg << "! variable_names=";
@@ -1243,13 +1192,10 @@ void Outputs::write_bin_prop_params(long Nrest){
 		outfile_covarmats_hder.close();
 	}
 	for (chain=0; chain<Nchains; chain++){
-		//std::cout << "  chain = " << chain << std::endl; 
 
 		 if (erase_old_files == 1 && buf_proposal.Ncopy == 0) {
-			//outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ios::binary);
 			outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ofstream::binary);  
 		 } else {
-			//outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ios::app | std::ios::binary); // std::app is for append
 			outfile_covarmats[chain]= new std::ofstream(filename_covarmats[chain].c_str(), std::ofstream::app | std::ofstream::binary); // std::app is for append
 		 }
 		 if (outfile_covarmats[chain]->is_open()){
@@ -1311,7 +1257,6 @@ void Outputs::write_bin_params(long Nrest){
 	}
 
 	/////// Write the header ////////
-	//if (buf_params.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){
 		outfile_vars_hder.open(filename_vars_hder.c_str());  // Write the header ASCII file
 	 	outfile_vars_hder << "# This is the header file of the BINARY output file for the model parameters \n";
@@ -1322,7 +1267,6 @@ void Outputs::write_bin_params(long Nrest){
 		outfile_vars_hder << "! Nsamples_done=" << Nbuffer * (buf_params.Ncopy) + buf_params.counts + buf_restore.Nsamples_sofar << "\n";
 		outfile_vars_hder << "! Nvars= " << Nvars << "\n";
 		outfile_vars_hder << "! Ncons= " << Ncons << "\n";
-		//outfile_vars_hder << "! chain= " << chain << "\n";
 		outfile_vars_hder << "! relax= " << buf_params.relax.transpose() << "\n";
 		// ---- The constant names
 		strg.str(std::string());
@@ -1415,7 +1359,6 @@ void Outputs::write_bin_parallel_temp_params(long Nrest){
 	}
 
 	/////// Write the Header in a separate file /////////
-	//if (buf_parallel_temp.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 		outfile_parallel_temp_hder.open(filename_parallel_temp_hder.c_str());  // Write the header ASCII file
    		outfile_parallel_temp_hder << "# This is the header of the BINARY output file for the parameters of the parallel tempering.\n";
@@ -1445,8 +1388,6 @@ void Outputs::write_bin_parallel_temp_params(long Nrest){
 			outfile_parallel_temp.write(reinterpret_cast<char*>(&dblval), size_dbl); // them the Pswitchs (doubles)
 			boolval=buf_parallel_temp.switcheds[i];
 			outfile_parallel_temp.write(reinterpret_cast<char*>(&boolval), size_bool); // finaly write the switcheds (booleans)
-
-			//std::cout << buf_parallel_temp.attempt_mixing[i] << "  " << buf_parallel_temp.chain0s[i] << "  " << buf_parallel_temp.Pswitchs[i] << "  " << buf_parallel_temp.switcheds[i] << std::endl;
 		}
 		outfile_parallel_temp.flush(); // Explicitly specify to flush the data into the disk
 		//strg.str(std::string()); // clear the strg buffer
@@ -1500,7 +1441,6 @@ void Outputs::write_bin_models(long Nrest){
 
 	/////// Write the models ////////
 	for (chain=0; chain<Nchains; chain++){
-		 //if(buf_models.Ncopy == 0){ // We open the file only at the first execution of the function
 		 	if (erase_old_files == 1 && buf_models.Ncopy == 0) {
 				outfile_models[chain]= new std::ofstream(filename_models[chain].c_str(), std::ofstream::binary); // Overwrite any existing file
 			 } else {
@@ -1555,7 +1495,6 @@ void Outputs::write_bin_stat_criteria(long Nrest){
 		Ntot=Nbuffer;
 	}
 	/////// Write the Header in a separate file ////////
-	//if (buf_stat_crit.Ncopy == 0 && need_header == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
 	if (need_header == 1){
 		outfile_statcrit_hder.open(filename_statcrit_hder.c_str());  // Write the header ASCII file
     		outfile_statcrit_hder << "# This is the header of the BINARY output file for the statistical information.\n";
@@ -1592,11 +1531,9 @@ void Outputs::write_bin_stat_criteria(long Nrest){
 				dblval=buf_stat_crit.logPosteriors(i,chain);
 				outfile_statcrit.write(reinterpret_cast<char*>(&dblval), size_dbl);
 			}
-			//std::cout << buf_stat_crit.logLikelihoods.row(i)  << "     " << buf_stat_crit.logPriors.row(i) << "     " << buf_stat_crit.logPosteriors.row(i) << std::endl;
 			
 		}
 		outfile_statcrit.flush(); // Explicitly specify to flush the data into the disk
-		//strg.str(std::string()); // clear the strg buffer
 		
 		outfile_statcrit.close();
   	}
@@ -1645,8 +1582,7 @@ void Outputs::update_buffer_stat_criteria(VectorXd logLikelihood, VectorXd logPr
 		buf_stat_crit.logPosteriors.row(buf_stat_crit.counts)=logPosterior;
 
 		buf_stat_crit.counts=buf_stat_crit.counts +1;
-		
-		//std::cout << "logL, logP, logPost" << std::endl;
+
 	}
   }
 }
@@ -1686,11 +1622,7 @@ void Outputs::update_buffer_models(MatrixXd models_in){
 void Outputs::update_buffer_params(MatrixXd params_in){
 
  if(get_params == 1) {
-	//std::cout << "buf_params.Ncopy=" << buf_params.Ncopy << "   buf_params.counts=" << buf_params.counts << std::endl;
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_params.Ncopy;
-	//std::cout << Nsamples << Nbuffer << "  " << buf_params.counts << "  " << rest - 1 << std::endl;
-	//std::cout << "(buf_params.counts < Nbuffer) && (buf_params.counts != (rest - 1) = " << (buf_params.counts < Nbuffer) && (buf_params.counts != (rest - 1)) << std::endl;
-	//std::cout << "---" << std::endl;
 	if ((buf_params.counts < Nbuffer) && (buf_params.counts != (rest - 1))){ // We do not write on file only if the counts < Nbuffer and if the remaining number of samples is not reached 
 		set_3dMatrix(buf_params.vars, params_in, buf_params.counts); // (Nbuffer, Nchains, Nvars);
 		buf_params.counts=buf_params.counts +1; 
@@ -1723,7 +1655,6 @@ void Outputs::update_buffer_params(MatrixXd params_in){
 void Outputs::update_buffer_ptempering(bool tempted_mixing, int chain_A, long double Probaswitch, bool bool_switched){
 
  if(get_parallel_tempering_params == 1) {
-	//std::cout << "buf_parallel_temp.Ncopy=" << buf_parallel_temp.Ncopy << "   buf_parallel_temp.counts=" << buf_parallel_temp.counts << std::endl;
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_parallel_temp.Ncopy;
 	if ((buf_parallel_temp.counts < Nbuffer) && (buf_parallel_temp.counts != (rest - 1))){ // We do not write on file only if the counts < Nbuffer and if the remaining number of samples is not reached 
 		buf_parallel_temp.attempt_mixing[buf_parallel_temp.counts]=tempted_mixing; // Tells us if we actually tried to mix the chains (should be the term i%dN_mixing == 0 in MALA::execute())
@@ -1768,8 +1699,6 @@ void Outputs::update_buffer_proposals(VectorXd sigma_chains, MatrixXd mu_chains,
   MatrixXd acceptance;
   long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_proposal.Ncopy;
 
-  //if(get_proposal_params == 1) {
-	//std::cout << "buf_proposal.Ncopy=" << buf_proposal.Ncopy << "   buf_proposal.counts=" << buf_proposal.counts << std::endl;
 	if ((buf_proposal.counts < Nbuffer) && (buf_proposal.counts != (rest - 1))){ // We do not write on file only if the counts < Nbuffer and if the remaining number of samples is not reached 
 		buf_proposal.sigmas.row(buf_proposal.counts)=sigma_chains;
 		set_3dMatrix(buf_proposal.mus, mu_chains, buf_proposal.counts);
@@ -1832,23 +1761,8 @@ void Outputs::update_buffer_restore(VectorXd sigma_chains, MatrixXd mu_chains, M
 */
   long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_restore.Ncopy;
 
-  /*
-  std::cout << "buf_restore.Ncopy = " << buf_restore.Ncopy << std::endl;
-  std::cout << "buf_restore.counts = " << buf_restore.counts << std::endl;
-  std::cout << "Nsamples = " << Nsamples << std::endl;
-  std::cout << "Nsamples_sofar = " << buf_restore.Nsamples_sofar << std::endl;
-  std::cout << "rest = " << rest << std::endl;
-  */
-
-  //std::cout << "buf_restore.Ncopy=" << buf_restore.Ncopy << "   buf_restore.counts=" << buf_restore.counts << std::endl;
   if ((buf_restore.counts == Nbuffer) || (buf_restore.counts == (rest - 1))){ // We write on file only if the i is modulo Nbuffer OR if the remaining number of samples is reached 
-		/*std::cout << "rest=" << rest << std::endl;
-		std::cout << "Nsamples= " << Nsamples << std::endl;		
-		std::cout << "Nbuffer :" << Nbuffer << std::endl;
-		std::cout << "buf_restore.counts = " << buf_restore.counts << std::endl;
-		std::cout << "buf_restore.Ncopy = " << buf_restore.Ncopy << std::endl;
-		std::cout << "i :" << i << std::endl;
-		*/
+
 
 		// We write the data and reinitialize the counts to 0
 		buf_restore.sigmas=sigma_chains;
@@ -1867,13 +1781,6 @@ void Outputs::update_buffer_restore(VectorXd sigma_chains, MatrixXd mu_chains, M
 		}
 		buf_restore.vars_mean=(buf_restore.vars_mean + params_in)/buf_restore.counts;
 		
-		/*std::cout << "--------- NORMALIZED SUM OF SIGMAS ----------" << std::endl;
-		std::cout << "buf_restore.sigmas_mean=" << buf_restore.sigmas_mean << std::endl;
-		std::cout << " ---------------" << std::endl;		
-		std::cout << "buf_restore.sigmas=" << buf_restore.sigmas << std::endl;
-		std::cout << " ---------------" << std::endl;
-		exit(EXIT_SUCCESS);
-		*/
 
 		// Write the buffer using the dedicated function
 		write_buffer_restore();
@@ -1892,42 +1799,21 @@ void Outputs::update_buffer_restore(VectorXd sigma_chains, MatrixXd mu_chains, M
 		std::cout << "     The restoration file (ASCII) has been updated" << std::endl;
 	
 		buf_restore.counts=buf_restore.counts +1; 
-		//std::cout << "buf_restore.covarmats[0]= " << buf_restore.covarmats[0]->row(0) << std::endl;
-		//exit(EXIT_SUCCESS);
    } else {
    		// Do the Sum that enables the computation of the averaged values
-		//std::cout << " ---------------" << std::endl;
-		//std::cout << "Sum of sigmas..." << std::endl;
    		buf_restore.sigmas_mean=buf_restore.sigmas_mean + sigma_chains;
-		//std::cout << "buf_restore.sigmas_mean=" << buf_restore.sigmas_mean << std::endl;
-		//std::cout << " ---------------" << std::endl;
-
-		//std::cout << "Sum of mus..." << std::endl;
 		buf_restore.mus_mean=buf_restore.mus_mean + mu_chains;
-		//std::cout << "buf_restore.mus_mean=" << buf_restore.mus_mean << std::endl;
-		//std::cout << " ---------------" << std::endl;
 
-		//buf_restore.covarmats_mean=buf_restore.covarmats_mean + covarmat_chains;
-		//std::cout << "Sum of covarmats..." << std::endl;
 		for (int chain=0; chain<Nchains; chain++){
-			//buf_restore.covarmats_mean[chain]=(buf_restore.covarmats_mean[chain] + covarmat_chains[chain]);
 			for (int i=0; i<Nvars; i++){ // we write the covariance matrix	
 				buf_restore.covarmats_mean[chain]->row(i) = (buf_restore.covarmats_mean[chain]->row(i) + covarmat_chains[chain]->row(i));
 			}
 		}
-		//std::cout << "buf_restore.covarmats_mean=" << buf_restore.covarmats_mean << std::endl;
-
-		//std::cout << " ---------------" << std::endl;
-		//std::cout << "Sum of vars..." << std::endl;
 		buf_restore.vars_mean=buf_restore.vars_mean + params_in;
-		//std::cout << "buf_restore.vars_mean=" << buf_restore.vars_mean << std::endl;
-		//std::cout << "                        ---------------" << std::endl;
 
-		//std::cout << "  All Sums done" << std::endl;
 		buf_restore.counts=buf_restore.counts +1; 
 	}
  
-   //exit(EXIT_SUCCESS);  
 }
 
 ///////////////// Extra functions /////////////////
