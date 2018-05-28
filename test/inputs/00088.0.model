@@ -11,6 +11,14 @@ p  1  1951.9800  1      1     1
 p  1  2055.5200  1      1     1
 p  1  2159.1399  1      1     1
 p  1  2262.5701  1      1     1
+p  2  1951.9800  1      1     1
+p  2  2055.5200  1      1     1
+p  2  2159.1399  1      1     1
+p  2  2262.5701  1      1     1
+p  3  1951.9800  1      1     1
+p  3  2055.5200  1      1     1
+p  3  2159.1399  1      1     1
+p  3  2262.5701  1      1     1
 # hyper priors
 # d nu(p) / d^2 nu(p) / d nu(g) / d^2 nu(g) / d delta / d^2 delta
 0.0000000
@@ -28,6 +36,14 @@ p  1  2262.5701  1      1     1
     1  2055.52002  2053.94832  2057.09172     0.90450     1.19640
     1  2159.13989  2157.54909  2160.73069     0.92360     2.11610
     1  2262.57007  2260.79367  2264.34647     1.10920     1.90620
+    2  1951.97998  1950.39648  1953.56348     0.91630     0.81370
+    2  2055.52002  2053.94832  2057.09172     0.90450     1.19640
+    2  2159.13989  2157.54909  2160.73069     0.92360     2.11610
+    2  2262.57007  2260.79367  2264.34647     1.10920     1.90620
+    3  1951.97998  1950.39648  1953.56348     0.91630     0.81370
+    3  2055.52002  2053.94832  2057.09172     0.90450     1.19640
+    3  2159.13989  2157.54909  2160.73069     0.92360     2.11610
+    3  2262.57007  2260.79367  2264.34647     1.10920     1.90620    
 # Noise parameters: A0/B0/p0, A1/B1/p1, A2/B2/p2, N0
    -1.0000   -1.0000   -1.0000
    -1.0000   -1.0000   -1.0000
@@ -42,13 +58,14 @@ p  1  2262.5701  1      1     1
       0.32677600      0.29409840      0.35945360
 # Configuration for all common parameters. Check the program for a list of known keywords
 model_fullname     			model_MS_Global_a1etaa3_HarveyLike
-trunc_c            			Fix        20
-freq_smoothness    			bool       1                 2.0
-Asphericity_eta    			Fix_Auto   1
-splitting_a1                            Uniform    1.400000          0.000000          5.000000
-inclination                             Uniform    0.000000         0.000000          90.000000
-Splitting_a3       			Fix        0
-Asymetry           			Fix        0
+fit_squareAmplitude_instead_Height  bool  1
+trunc_c            			Fix       	 20
+freq_smoothness    			bool      	 1                 2.0
+Asphericity_eta    			Fix_Auto  	 1
+splitting_a1                Uniform   	 1.400000         0.000000          5.000000
+inclination                 Uniform   	 0.000000         0.000000          90.000000
+Splitting_a3       			Jeffrey_abs  0.1       		    1                 10
+Asymetry           			Gaussian     1        			1		          1.5
 Visibility_l1      			Fix        1.5
-Visibility_l2      			Fix        0.53
-Visibility_l3      			Fix        0.08
+Visibility_l2      			Gaussian   0.53					0.53 			  0.05
+Visibility_l3      			Gaussian    0.08                0.08              0.02

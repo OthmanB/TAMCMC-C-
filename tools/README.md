@@ -7,3 +7,8 @@
 
 ### Purpose of bin2txt ###
 	Convert binary outputs of the program into ASCII outputs (one file per parameter/variables), including constants
+
+### Purpose of read_stats ###
+    Convert binary files with the Likelihood/Prior/Posterior into ASCII outputs.
+    
+

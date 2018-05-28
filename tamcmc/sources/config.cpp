@@ -1817,7 +1817,7 @@ void Config::read_inputs_prior_Simple_Matrix(){
  * code correspond to a warning.
  * Exit from the program is controlled by the boolean fatal
 */
-int Config::msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const bool fatal){
+int Config::msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal){
 
 	bool err_msg=0;
 

@@ -1,5 +1,15 @@
 # Version history #
 
+### v1.3.2-dev Improvements ###
+      * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
+      * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DEV] 
+      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DEV]
+        This reduced the size of this program significantly by removing redoundant commands
+        This allows much easier generation of a model. Note that the function could be used to create any kind of vector of parameters
+        Current stage of the implementation: 80%.
+      * Few minor typos and fixes into the .md files [DONE] [TESTED]
+      * Starting a basic documentation in tex [DEV]
+        
 ### v1.3.1 Minor improvements/Bug fix ###
 	* Correcting a typo in getmodel.cpp that prevented the compilation of getmodel tool
 	* Further cleaning of useless lines, in particular in outputs.cpp
@@ -9,11 +19,11 @@
 	  the program convert and adjust the inputs so that they are compatible with the model
 	* Removal of some lines that were added in v1.3 and that stop the program if using 4-lines format for the s2 inputs (instead of 3 in simulations)
 	* Adding a failsafe if the user request to read a y-data column that does not exists
-  * FUTURE:
-  		* Write comprehensive md files with compilation configuration and execution instructions 
+      * FUTURE:
+  		* Write comprehensive md files /doc file with compilation configuration and execution instructions 
   		* Verifying the Gaussian fit case
   		* Handling of complex space fitting
-  		* Continue clean handling of errors using 'Either'? see https://hackernoon.com/error-handling-in-c-or-why-you-should-use-eithers-in-favor-of-exceptions-and-error-codes-f0640912eb45
+  		* Continue clean handling of errors perhaps using 'Either'? see https://hackernoon.com/error-handling-in-c-or-why-you-should-use-eithers-in-favor-of-exceptions-and-error-codes-f0640912eb45
   				* Create a dedicated message.cpp / message.h that handles messages and errors (move Diagnostics::file_error in there)		 	
   				* Better structure for output.cpp ... use header to save constants
 
@@ -71,7 +81,7 @@
         * Solution: The program was modified such that I initialise the labels and units vector with 5 columns instead of 2.
 
 ### v1.2.1: Major Changes ### 
-   * Added functionalities:
+    * New functionalities:
    		* The program now uses openmp to parallelise the parallel chains computation. The number of used thread is therefore 
    		   controlled by the OMP_NUM_THREADS=X with X the number of used cpus. Gain are typically optimal when OMP_NUM_THREADS=Nchains/2
    		   Gains are null if OMP_NUM_THREADS>Nchains.

@@ -1,0 +1,6 @@
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/getstats.dir
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/edit_cache.dir
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/getmodel.dir
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/rebuild_cache.dir
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/bin2txt.dir
+/Volumes/MCMC_RES/Repository/GITHUB/TAMCMC-C/build/CMakeFiles/cpptamcmc.dir

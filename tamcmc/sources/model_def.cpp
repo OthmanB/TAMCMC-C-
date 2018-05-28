@@ -240,6 +240,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  break;
         	case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+          break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;

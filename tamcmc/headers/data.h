@@ -46,6 +46,7 @@ struct Input_Data{
 	VectorXd extra_priors; // Contains extra parameters that could be used for priors
 };
 
+
 // A Generic structure that helps to encapsulate a Matrix of information along with some metadata
 struct Data_Nd{
 	MatrixXd data; // 2D array in which each columns are expected to contain the values of a given parameter
