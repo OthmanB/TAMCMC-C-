@@ -7,11 +7,8 @@
  *  Created on: 16 May 2018
  */
 
-//#include <string>
-//#include <vector>
 #include <Eigen/Dense>
 #include "data.h" // contains the structure Data
-//#include "matrices.h"
 //#include "string_handler.h"
 #include "io_models.h"
  
@@ -135,6 +132,52 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 	return 0;
 }
 
+short int IO_models::show_param(Input_Data data, const bool show_metadata){
+/* 
+ *
+ * Function that shows the content of a Input_Data structure in a structured maner
+ * The function requires the data block
+ *
+*/
+
+//	std::cout << "-------------------------------------" << std::endl;	
+	std::cout << std::left << "       Index    " <<  std::setw(45) << "Parameter name" << std::setw(15) << "Input value" << std::setw(8) << "Relax" << std::setw(20) << "Prior name";
+	std::cout << std::setw(15) << "Prior parameters" << std::endl;   	
+	for(int row=0; row<data.inputs.size(); row++){
+			if(row < 10){std::cout << std::left << "       [00" << row << "]    ";}
+			if((row >=10) & (row < 100)){std::cout << std::left << "       [0" << row << "]    ";}
+			if(row >= 100){std::cout << std::left << "       [" << row << "]    ";}
+			
+			std::cout << std::setw(45) << data.inputs_names[row] << std::setw(15) <<  data.inputs[row] << std::setw(8)  << data.relax[row] << std::setw(20) << data.priors_names[row];
+			for(int col=0; col<data.priors.rows(); col++){
+				std::cout << std::setw(15) << data.priors(col, row);
+			}
+			std::cout << std::endl;
+		}
+
+	if(show_metadata){
+		std::cout << "-------------------------------------" << std::endl;	
+		std::cout << "          Extra parameters           " << std::endl;
+		for (int i=0; i<data.extra_priors.size(); i++){
+			if(i < 10){std::cout << std::left << "       [00" << i << "]    ";}
+			if((i >=10) & (i < 100)){std::cout << std::left << "       [0" << i << "]    ";}
+			if(i >= 100){std::cout << std::left << "       [" << i << "]    ";}
+			std::cout << std::setw(15) << data.extra_priors(i) << std::endl;
+		}
+		std::cout << "-------------------------------------" << std::endl;	
+		std::cout << "    Parameters structure pointer     " << std::endl;
+		std::cout << "       " << data.plength.transpose() << std::endl;
+	}
+	return 0;
+}
+
+short int IO_models::show_param(Input_Data data){
+/*
+ * An alias of show_param that do not show the metadata
+ *
+*/
+	return show_param(data, 0);
+}
 
 short int IO_models::initialise_param(Input_Data * data, const int size_vec, const int Nrows, const int Nplength, const int Nextra_priors){
 /* 

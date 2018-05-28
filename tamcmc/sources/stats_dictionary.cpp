@@ -66,6 +66,7 @@ long double logP_uniform_cos(long double b_min, long double b_max, long double x
 /* 
  * Calculates the log probability for a uniform prior, given the value of cos(x)
  * x is assumed to be given in degree ==> conversion made in this prior
+ * CAREFUL: THIS IS NOT GIVING A UNIFORM PRIOR IN COS(I) DUE TO THE MISSING JACOBIAN 
  * CORRESPONDS TO CASE 9 IN THE MAIN PROGRAM
  *
 */

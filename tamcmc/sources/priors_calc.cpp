@@ -48,8 +48,6 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	
 	double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
 	Deriv_out frstder, scdder;
-
-	//std::cout << "Initial f=" << f << std::endl;	
 	
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
@@ -62,8 +60,8 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 		}
 	}
 	// ----- Add a positivity condition on inclination -------
-	// The prior on cos(i) is returning values -90<i<90. We want it to give only 0<i<90
-	f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
+	// The prior could return values -90<i<90. We want it to give only 0<i<90
+	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
 	
 	// Determine the large separation
 	frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
@@ -74,20 +72,12 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if(Nfl0 == Nfl2){
 		for(int i=0; i<Nfl0; i++){
 			d02=params[Nmax+lmax+i] - params[Nmax+lmax+Nfl0+Nfl1+i];
-			//if (abs(d02) <= Dnu/3.){
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
-			//}
-			//std::cout << "  " << d02;
 		}
 	}
-	//std::cout << std::endl;
-	//std::cout << "After prior on d02 ==> f=" << f << std::endl;	
 		
 	
 	// Set the smootheness condition handled by derivatives_handler.cpp
-	//scoef=2.;
-	//std::cout << extra_priors << std::endl;
-	//exit(EXIT_SUCCESS);
 	switch(smooth_switch){
 			case 1: // Case with smoothness
 				scoef=extra_priors[1];
@@ -98,10 +88,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				//std::cout << "--- Fl0 --" << std::endl;
 				for(int i=0; i<Nfl0; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-					//std::cout << "  " << scdder.deriv[i];
 				}
-				//std::cout << std::endl;
-				//std::cout << "After scd der on fl0 ==> f=" << f << std::endl;	
 			
 				if(Nfl1 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0, Nfl1)); // The l=1 frequencies
@@ -109,10 +96,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				//std::cout << "--- Fl1 --" << std::endl;
 				for(int i=0; i<Nfl1; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-					//std::cout << "  " << scdder.deriv[i];	
 				}
-				//std::cout << std::endl;
-				//std::cout << "After scd der on fl1 ==> f=" << f << std::endl;	
 	
 				if(Nfl2 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nfl1, Nfl2)); // The l=2 frequencies
@@ -120,11 +104,8 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				//std::cout << "--- Fl2 --" << std::endl;
 				for(int i=0; i<Nfl2; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-					//std::cout << "  " << scdder.deriv[i];
 	
 				}
-				//std::cout << std::endl;
-				//std::cout << "After scd der on fl2 ==> f=" << f << std::endl;	
 	
 				if(Nfl3 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nfl1+Nfl2, Nfl3)); // The l=3 frequencies
@@ -132,15 +113,13 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				//std::cout << "--- Fl3 --" << std::endl;
 				for(int i=0; i<Nfl3; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-					//std::cout << "  " << scdder.deriv[i];
 				}
-				//std::cout << std::endl;
-				//std::cout << "After scd der on fl3 ==> f=" << f << std::endl;	
 			  	break;
 	}
 
 		
 	// If requested, we impose a user-defined prior on the intensity coeficient for the magnetic effect on rotational splitting
+	// OBSELETE
 	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3] == 10){
 		a1=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3];
 		alfa=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4];
@@ -151,18 +130,10 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 		max_b=1.1*std::abs( a1/(Q11 * pow(fmax*1e-3,alfa)) ); //Beware, it is an hyperparameter
 		f=f+logP_jeffrey(0.05, max_b, std::abs(b));
 		
-		std::cout << "This part of the code has to be checked" << std::endl;
-		std::cout << "a1="<<a1 << std::endl;
-		std::cout << "alfa="<<alfa << std::endl;
-		std::cout << "b="<<b << std::endl;
-		std::cout << "Q11="<<Q11 << std::endl;
-		std::cout << "fmax="<<fmax << std::endl;
-		std::cout << "max_b="<<max_b << std::endl;
-		std::cout << "Review these values and validate that everything is alright" << std::endl;
-		std::cout << "The program will stop now"<< std::endl;
+		std::cout << "This part of the code IS OBSELETE" << std::endl;
+		std::cout << "The program will exit now"<< std::endl;
 		exit(EXIT_SUCCESS);	
 	}
-	//std::cout << "After user defined prior ==> f=" << f << std::endl;
 		
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
@@ -185,15 +156,9 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-	//std::cout << "After securities ==> f=" << f << std::endl;	  
+		
+	//exit(EXIT_SUCCESS);
 	
-	/*std::cout << " ---- Noise slot ----" << std::endl;
-	std::cout << "H_harvey=" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+3] << std::endl;
-	std::cout << "White noise=" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] << std::endl;
-	std::cout << "Inc=" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+10] << std::endl;
-	
-	exit(EXIT_SUCCESS);
-	*/
 return f;
 } 
 
@@ -255,7 +220,7 @@ long double apply_generic_priors(const VectorXd params, const MatrixXd priors_pa
 			  break;
 			case 3: // Multivariate Gaussian Prior
 			  std::cout << "The Multivariate Gaussian Prior IS NOT HANDLED" << std::endl;
-		          std::cout << "The program will exit now" << std::endl;
+		      std::cout << "The program will exit now" << std::endl;
 			  exit(EXIT_FAILURE);
 			  //pena=pena + logP_multivariate_gaussian( priors_params(0, i), Matrix, params[i]);
 			  break;

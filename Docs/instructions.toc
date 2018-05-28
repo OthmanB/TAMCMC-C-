@@ -1,7 +1,0 @@
-\select@language {english}
-\select@language {english}
-\contentsline {section}{\numberline {1}Purpose of TAMCMC-C++}{1}
-\contentsline {section}{\numberline {2}Basic structure of the code and efficiency}{1}
-\contentsline {section}{\numberline {3}General setup}{2}
-\contentsline {section}{\numberline {4}Model setup}{2}
-\contentsline {section}{\numberline {5}External tools}{2}

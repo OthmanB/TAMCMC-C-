@@ -296,7 +296,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
 
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
-	double Dnl=0.7, trunc_c=-1;
+	double Dnl=0.75, trunc_c=-1;
 
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
@@ -305,12 +305,14 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	int lmax, en, Ntot, p0;
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd extra_priors;
+	VectorXd extra_priors, tmpXd;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
-		
+	
+	std::string tmpstr;
+	
 	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; // This is by block, each category of parameters		
 	Input_Data all_in; // The final structure of parameters, using the standards of my code
 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
@@ -382,7 +384,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
  	
  	io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1);
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);
-
+	
 	// -----------------------------------------------------------------
 	// ------------ Handling Frequencies/Widths/Heights ----------------
 	// -----------------------------------------------------------------
@@ -442,17 +444,54 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		rw_el.resize(0);
 		rh_el.resize(0);
 	}
+	
 
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
-	if( do_amp == 1){
+	if( do_amp){
 		std::cout << "   ===> Requested to fit squared amplitudes instead of Height... Converting height inputs into A_squared = pi*Height*Width..." << std::endl;
+		tmpstr="Amplitude_l";
 		for(int i=0; i<h_inputs.size(); i++){
 			h_inputs[i]=pi*w_inputs[i]*h_inputs[i]; 
 		}
+	} else{
+		tmpstr="Height_l";
+	}
+    // Set default value of priors for Height Width and frequency
+	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
+	io_calls.initialise_param(&width_in, w_relax.size(), Nmax_prior_params, -1, -1); 
+	io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
+
+	tmpXd.resize(4);
+	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
+	for(int i=0; i<h_inputs.size(); i++){
+		if(h_relax[i]){
+			io_calls.fill_param(&height_in, tmpstr, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&height_in, tmpstr, "Fix", h_inputs[i], tmpXd, i, 0);			
+		}
+	}
+	tmpXd << 0.1, 25., -9999., -9999.; // default hmin and hmax for the Jeffreys prior	
+	for(int i=0; i<w_inputs.size(); i++){
+		if(w_relax[i]){ 
+			io_calls.fill_param(&width_in, "Width_l", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&width_in, "Width_l", "Fix", w_inputs[i], tmpXd, i, 0);			
+		}
 	}
 
+	// --- Default setup for frequencies ---
+	for(int i=0; i<f_inputs.size(); i++){
+		if(f_relax[i]){
+			tmpXd << f_priors_min[i], f_priors_max[i], 0.01*inputs_MS_global.Dnu, 0.01*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
+			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
+		}
+	}
+
+	// ----- Switch between the models that handle averaging over n,l or both -----
    if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
         io_calls.initialise_param(&Snlm_in, 6, Nmax_prior_params, -1, -1);
     }  
@@ -499,14 +538,54 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			}
 		}	
 
-		// Height or Amplitude
+		// --- Frequencies ---
+		if(inputs_MS_global.common_names[i] == "Frequency" || inputs_MS_global.common_names[i] == "frequency"){ 
+			if(inputs_MS_global.common_names_priors[i] == "GUG" || inputs_MS_global.common_names_priors[i] == "Uniform"){
+				for(int p0=0; p0<f_inputs.size(); p0++){
+					if(f_relax[p0]){
+						if(inputs_MS_global.common_names_priors[i] == "GUG"){
+							tmpXd << f_priors_min[p0], f_priors_max[p0], inputs_MS_global.modes_common(i,2), inputs_MS_global.modes_common(i,3); 
+						} else{
+							tmpXd << f_priors_min[p0], f_priors_max[p0], -9999, -9999; 						
+						}
+						io_calls.fill_param(&freq_in, "Frequency_l", inputs_MS_global.common_names_priors[i], f_inputs[p0], tmpXd, p0, 0);	
+					} else{
+						io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[p0], tmpXd, p0, 0);			
+					}
+				}
+			} else{
+				fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "GUG or Uniform", "", "" );
+			}
+		}
+
+		// --- Height or Amplitude ---
 		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 
 		   inputs_MS_global.common_names[i] == "amplitude" || inputs_MS_global.common_names[i] == "Amplitude"){
-			
-			
-			
+
+			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
+				}
+			for(p0=0; p0<h_inputs.size(); p0++){
+				if(h_relax[p0]){
+					io_calls.fill_param(&height_in, tmpstr,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+				} else{
+					io_calls.fill_param(&height_in, tmpstr,  "Fix", h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+				}
+			}
 		}
-			
+		// -- Mode Width ---
+		if(inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width"){
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
+				}
+			for(p0=0; p0<w_inputs.size(); p0++){
+				if(w_relax[p0]){
+					io_calls.fill_param(&width_in, "Width_l",  inputs_MS_global.common_names_priors[i], w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+				} else{
+					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+				}
+			}
+		}			
 		// --- Splittings and asymetry ---
 		if(inputs_MS_global.common_names[i] == "splitting_a1" || inputs_MS_global.common_names[i] == "Splitting_a1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -681,45 +760,20 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
 		
 		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
-		
-		//Snlm_in.inputs_names[3]="sqrt(splitting_a1).cosi"; 
-		//Snlm_in.inputs_names[4]="sqrt(splitting_a1).sini"; 
+
 		if( Inc_in.priors_names[0]=="Fix" && Snlm_in.priors_names[0]=="Fix"){
 			std::cout << "         - Inclination and splitting_a1 were 'Fixed' ==> Fixing sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl; 
 			
 			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", "Fix", sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0).transpose(), 3, 0);
 			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", "Fix", sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0).transpose(), 4, 0);
-			//Snlm_in.priors_names[3]="Fix";
-			//Snlm_in.priors_names[4]="Fix";
-			//Snlm_in.relax[3]=0;
-			//Snlm_in.relax[4]=0;
 		} else{
 			std::cout << "	       - Inclination and/or Splitting_a1 requested as a free parameter ==> Freeing both sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl;
 			std::cout << "         - Setting the prior to the one requested for the Splitting_a1 assuming non-informative prior on inclination: " << Snlm_in.priors_names[0] << std::endl;
 			std::cout << "           Beware that this may not be what you want!" << std::endl;
-			
-			std::cout << "Snlm_in.priors.col(0)=" << Snlm_in.priors.col(0) << std::endl;
-			std::cout << "Snlm_in.priors.row(0)=" << Snlm_in.priors.row(0) << std::endl;
 
 			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0).transpose(), 3, 0);
-			//exit(EXIT_SUCCESS);
 			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 4, 0);
-
-			//exit(EXIT_SUCCESS);
-	
-			//Snlm_in.priors_names[3]=Snlm_in.priors_names[0];
-			//Snlm_in.priors_names[4]=Snlm_in.priors_names[0];
-			//Snlm_in.relax[3]=1;
-			//Snlm_in.relax[4]=1;
-
-			//for(int k=0; k<Nmax_prior_params; k++){ // The range of the new prior is defined by the range given by splitting_a1 because cos(i) and sin(i) E [-1,1]
-			//	Snlm_in.priors(k,3)=Snlm_in.priors(k,0); 
-			//	Snlm_in.priors(k,4)=Snlm_in.priors(k,0); 
-			//}
 		}
-
-		//Snlm_in.inputs[3]=sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
-		//Snlm_in.inputs[4]=sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
 
 		if(Snlm_in.inputs[3] < 1e-2){ // Avoid issues with the edge of uniform priors
 			Snlm_in.inputs[3]=1e-2;
@@ -731,15 +785,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
         std::cout << "            Slots for the variables Inclination and Splitting are forced to be FIXED" << std::endl;
         std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
         io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
-  		//Inc_in.inputs_names[0]="Inclination";
-		//Inc_in.priors_names[0]="Fix";
-        //Inc_in.relax[0]=0; 
-        //Inc_in.inputs[0]=0;
         io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
-		//Snlm_in.inputs_names[0]="Splitting_a1";
-		//Snlm_in.priors_names[0]="Fix";
-		//Snlm_in.relax[0]=0;
-		//Snlm_in.inputs[0]=0;
 	}
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
@@ -754,18 +800,8 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
     std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
     std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
    	
-   	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
-   	//Inc_in.inputs_names[0]="Inclination";
-	//Inc_in.priors_names[0]="Fix";
-    //Inc_in.relax[0]=0; 
-    //Inc_in.inputs[0]=0;
-   	//std::cout << "Here" << std::endl;
-   	
+   	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy   	
    	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
-	//Snlm_in.inputs_names[0]="Splitting_a1";
-	//Snlm_in.priors_names[0]="Fix";
-	//Snlm_in.relax[0]=0;
-	//Snlm_in.inputs[0]=0;
 }
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
@@ -788,62 +824,22 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	
 	// --- Put the Height or Amplitudes---
 	p0=0;
-	for(int i=0; i<all_in.plength[0]; i++){
-		if(do_amp == 0){
-			all_in.inputs_names[p0 + i]="Height_l";
-		} else{
-			all_in.inputs_names[p0 + i]="Amplitude^2_l";
-		}
-		if(h_relax[p0 + i] == 1){
-			all_in.priors_names[p0 + i]="Jeffreys";
-			all_in.priors(0, p0 + i)=1;  // Jeffreys prior, with hmin=1
-			all_in.priors(1, p0 + i)=100000;  // Jeffreys prior, with hmax=100000... Valid for Main-Sequence Star. Might be ok for Giants as well
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=h_inputs[i];
-		all_in.relax[p0 + i]=h_relax[i];
-
-	}
+	io_calls.add_param(&all_in, &height_in, p0); // height_in may contain either height or amplitudes depending on specified keywords
 	// --- Put the Visibilities ---
 	p0=all_in.plength[0];
 	io_calls.add_param(&all_in, &Vis_in, p0);
 	
 	// --- Put the Frequencies ---
 	p0=all_in.plength[0] + all_in.plength[1];	
-	for(int i=0; i<Nf_el.sum(); i++){
-		all_in.inputs_names[p0 + i]="Frequency_l";
-		if(f_relax[i] == 1){
-			all_in.priors_names[p0 + i]="GUG";
-			all_in.priors(0, p0 + i)=f_priors_min[i];  // fmin for the GUG prior
-			all_in.priors(1, p0 + i)=f_priors_max[i];  // fmax for the GUG prior
-			all_in.priors(2, p0 + i)=0.01*inputs_MS_global.Dnu;  // sigma1 for the GUG prior
-			all_in.priors(3, p0 + i)=0.01*inputs_MS_global.Dnu;  // sigma2 for the GUG prior
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=f_inputs[i];
-		all_in.relax[p0 + i]=f_relax[i];
-	}
-	
+	io_calls.add_param(&all_in, &freq_in, p0);
+
 	// --- Put the Snlm (splittings and asymetry) ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5];
 	io_calls.add_param(&all_in, &Snlm_in, p0);
 	
 	// --- Put the Width ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
-	for(int i=0; i<all_in.plength[7]; i++){
-		all_in.inputs_names[p0 + i]="Width_l";
-		if(w_relax[i] == 1){
-			all_in.priors_names[p0 + i]="Jeffreys";
-			all_in.priors(0, p0 + i)=0.4;  // Jeffreys prior, with hmin=0.4
-			all_in.priors(1, p0 + i)=25;  // Jeffreys prior, with hmax=25... Valid for Main-Sequence Star. DOES NOT WORK FOR RED GIANTS (Should be smaller than Dnu)
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=w_inputs[i];
-		all_in.relax[p0 + i]=w_relax[i];
-	}
+	io_calls.add_param(&all_in, &width_in, p0);
 		
 	// --- Put the Noise ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
@@ -854,29 +850,15 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	io_calls.add_param(&all_in, &Inc_in, p0);
 	
 	// --- Add trunc_c that controls the truncation of the Lorentzian ---
-	std::cout << "Here" << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_MS_global.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
 		std::cout << "Warning: trunc_c <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
-	//all_in.inputs_names[p0]="Truncation parameter";
-	//all_in.priors_names[p0]="Fix";
-    //if(trunc_c > 0){
-	//	all_in.inputs[p0]=trunc_c;
-	//} else{
-	//	std::cout << "Warning: trunc_c <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
-	//	all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
-	//}
-	//all_in.relax[p0]=0;
 	// -- Add the Amplitude switch --
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
-	//all_in.inputs_names[p0]="Switch for fit of Amplitudes or Heights";
-	//all_in.priors_names[p0]="Fix";
- 	//all_in.inputs[p0]=do_amp;
-	//all_in.relax[p0]=0;
 		
 			
 	if(verbose == 1){
@@ -891,13 +873,9 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 		std::cout << " ---------- Configuration of the input vectors -------------" << std::endl;
 		std::cout << "    Table of inputs " << std::endl;
-		for(int row=0; row<all_in.inputs.size(); row++){
-			std::cout << "[" << row << "] " << all_in.inputs_names[row] << "  " << all_in.inputs[row] << "  " << all_in.relax[row] << "  " << all_in.priors_names[row] << "  ";
-			for(int col=0; col<all_in.priors.rows(); col++){
-				std::cout << all_in.priors(col, row) << "  ";
-			}
-			std::cout << std::endl;
-		}
+		io_calls.show_param(all_in, 1);
+		std::cout << " -----------------------------------------------------------" << std::endl;
+
 		std::cout << "    The fit includes:" << std::endl;
 		std::cout << "          - " << all_in.plength[0] << "  Heights parameters "<< std::endl; 
 		std::cout << "          - " << all_in.plength[1] << "  Visibility parameters" << std::endl; 
@@ -913,8 +891,8 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	std::cout << "Exiting test " << std::endl;
-	exit(EXIT_SUCCESS);
+	//std::cout << "Exiting test " << std::endl;
+	//exit(EXIT_SUCCESS);
 
 return all_in;
 }

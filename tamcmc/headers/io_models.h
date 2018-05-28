@@ -35,6 +35,9 @@ class IO_models{
         short int append_param(Input_Data *all_in, const Input_Data *data_param, const int Nparams);
 		short int add_extra_priors(Input_Data *all_in, const VectorXd extra, const int pos0); //
     
+    	short int show_param(Input_Data data, const bool show_metadata);
+    	short int show_param(Input_Data data);
+    	
 		void msg_handler(const std::string msg, const short int severity);
 		
 };

@@ -2,11 +2,17 @@
 
 ### v1.3.2-dev Improvements ###
       * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
-      * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DEV] 
-      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DEV]
+      * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
+        Note that we are permissive regarding the denomination Height or Amplitude. However, an explicit fit of squaredAmplitude could be requested. See example of .model file
+      * Add the possibility to change frequency prior between GUG or Uniform. [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
+        For GUG the syntax is
+      			Frequency     GUG     -1    -1    -1     [sigma1]    [sigma2]       (-1 are replaced by values of the table of frequencies)
+      	For Uniform the syntax is
+      			Frequency     Uniform  -1  -1   -1      (-1 are replaced by values of the table of frequencies)
+      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DONE] 
         This reduced the size of this program significantly by removing redoundant commands
         This allows much easier generation of a model. Note that the function could be used to create any kind of vector of parameters
-        Current stage of the implementation: 80%.
+      * Minor esthetic improvements in the text outputs
       * Few minor typos and fixes into the .md files [DONE] [TESTED]
       * Starting a basic documentation in tex [DEV]
         
