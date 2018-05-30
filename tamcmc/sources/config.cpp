@@ -283,7 +283,7 @@ void Config::read_inputs_priors_MS_Global(){
 	iMS_global=read_MCMC_file_MS_Global(modeling.cfg_model_file, verbose); // Read the MCMC file
 	data.data.xrange=iMS_global.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
-	in_vals=build_init_MS_Global(iMS_global, verbose); // Interpret the MCMC file and format it as an input structure
+	in_vals=build_init_MS_Global(iMS_global, verbose, data.data.x[2]-data.data.x[1]); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -1619,7 +1619,7 @@ void Config::read_inputs_files(){
 	if((modeling.prior_fct_name == "io_ms_Global")){// || (modeling.prior_fct_name == "prior_MS_Global_a1etaa3_HarveyLike") ||
 		 //(modeling.prior_fct_name == "prior_MS_Global_a1etaa3_Harvey1985") || (modeling.prior_fct_name == "prior_MS_Global_a1acta3_HarveyLike") ||
 		 //(modeling.prior_fct_name == "prior_MS_Global_a1acta3_Harvey1985") ) { // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
-		read_inputs_priors_MS_Global();
+		read_inputs_priors_MS_Global(); //data.data.x[2]-data.data.x[1]
 		passed=1;
 	}
 	//if(modeling.prior_fct_name == "prior_MS_Global"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs

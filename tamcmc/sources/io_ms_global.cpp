@@ -283,7 +283,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    return iMS_global;
 }
 
-Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool verbose){
+Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
 
 	const long double pi = 3.141592653589793238L;
 	const double G=6.667e-8;
@@ -472,7 +472,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&height_in, tmpstr, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
-	tmpXd << 0.1, 25., -9999., -9999.; // default hmin and hmax for the Jeffreys prior	
+	tmpXd << 0.1, 50., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
 	for(int i=0; i<w_inputs.size(); i++){
 		if(w_relax[i]){ 
 			io_calls.fill_param(&width_in, "Width_l", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
@@ -576,11 +576,18 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		// -- Mode Width ---
 		if(inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width"){
 				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-					fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
-				}
+					//fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
+                    tmpstr="Jeffreys";
+                    tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
+                    std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
+                    std::cout << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                } else{
+                    tmpstr=inputs_MS_global.common_names_priors[i];
+                    tmpXd=inputs_MS_global.modes_common.row(i);
+                }
 			for(p0=0; p0<w_inputs.size(); p0++){
 				if(w_relax[p0]){
-					io_calls.fill_param(&width_in, "Width_l",  inputs_MS_global.common_names_priors[i], w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+					io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 1);
 				} else{
 					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
 				}
