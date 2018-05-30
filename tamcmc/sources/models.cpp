@@ -117,7 +117,7 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_l
  			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
 			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1));
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
 				//std::cout << "[1] do conversion" << std::endl;
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
@@ -128,7 +128,7 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
 			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2));
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
 				//std::cout << "[2] do conversion" << std::endl;
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
@@ -139,7 +139,7 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
 			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3));
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
@@ -271,7 +271,7 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
 			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1));
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
 				//std::cout << "[1] do conversion" << std::endl;
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
@@ -282,7 +282,7 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
 			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2));
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
 				//std::cout << "[2] do conversion" << std::endl;
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
@@ -294,7 +294,7 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
 			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3));
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
@@ -428,7 +428,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(VectorXd params, VectorXi params_
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
 			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1));
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
 				//std::cout << "[1] do conversion" << std::endl;
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
@@ -439,7 +439,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(VectorXd params, VectorXi params_
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
 			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2));
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
 				//std::cout << "[2] do conversion" << std::endl;
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
@@ -450,7 +450,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(VectorXd params, VectorXi params_
  			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
 			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3));
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
@@ -747,7 +747,7 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_len
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
 			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1));
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
 				//std::cout << "[1] do conversion" << std::endl;
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
@@ -758,7 +758,7 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_len
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
 			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2));
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
 				//std::cout << "[2] do conversion" << std::endl;
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
@@ -769,7 +769,7 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_len
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
 			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3));
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
@@ -894,7 +894,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi pa
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
 			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1));
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
 				//std::cout << "[1] do conversion" << std::endl;
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
@@ -906,7 +906,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi pa
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
 			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2));
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
 				//std::cout << "[2] do conversion" << std::endl;
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
@@ -917,7 +917,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi pa
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
 			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3));
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
