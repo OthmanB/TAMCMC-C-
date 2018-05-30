@@ -311,7 +311,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
 	
-	std::string tmpstr;
+	std::string tmpstr_h, tmpstr;
 	
 	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; // This is by block, each category of parameters		
 	Input_Data all_in; // The final structure of parameters, using the standards of my code
@@ -451,12 +451,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	// ------------------------------------------------------------------------------------------
 	if( do_amp){
 		std::cout << "   ===> Requested to fit squared amplitudes instead of Height... Converting height inputs into A_squared = pi*Height*Width..." << std::endl;
-		tmpstr="Amplitude_l";
+		tmpstr_h="Amplitude_l";
 		for(int i=0; i<h_inputs.size(); i++){
 			h_inputs[i]=pi*w_inputs[i]*h_inputs[i]; 
 		}
 	} else{
-		tmpstr="Height_l";
+		tmpstr_h="Height_l";
 	}
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
@@ -467,9 +467,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
 	for(int i=0; i<h_inputs.size(); i++){
 		if(h_relax[i]){
-			io_calls.fill_param(&height_in, tmpstr, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+			io_calls.fill_param(&height_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
 		} else{
-			io_calls.fill_param(&height_in, tmpstr, "Fix", h_inputs[i], tmpXd, i, 0);			
+			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
 	tmpXd << 0.1, 50., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
@@ -567,9 +567,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				}
 			for(p0=0; p0<h_inputs.size(); p0++){
 				if(h_relax[p0]){
-					io_calls.fill_param(&height_in, tmpstr,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+					io_calls.fill_param(&height_in, tmpstr_h,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
 				} else{
-					io_calls.fill_param(&height_in, tmpstr,  "Fix", h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+					io_calls.fill_param(&height_in, tmpstr_h,  "Fix", h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
 				}
 			}
 		}
