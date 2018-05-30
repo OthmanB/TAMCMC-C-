@@ -42,18 +42,13 @@ void Config::setup(){
 	
 	long imin, imax;
 
-	read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
-	modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
-	modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
-	modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
-	modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
 
-	// ----- Define which columns are containing the x values, the y values and ysig_ind ----
-	std::string delimiter=" ";
-	std::cout << "Data file: " << data.data_file << std::endl;
-	Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
-	data.data_all=data_in; // save the whole data file into the configuration class
-
+    // ---- Read the data ----
+    std::string delimiter=" ";
+    std::cout << "Data file: " << data.data_file << std::endl;
+    Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
+    data.data_all=data_in; // save the whole data file into the configuration class
+    // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
 		imax=data_in.data.rows();
@@ -124,6 +119,15 @@ void Config::setup(){
 	data.data.header=data_in.header;
 	data.data.Nx=data.data.x.size();
 
+    // ---- Reading the model-specific configuration files ----
+    std::cout << " ---------- " << std::endl;
+    read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
+    modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
+    modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
+    modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
+    modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
+
+    // --- Finishing the Setup ---
 	if(outputs.do_restore_last_index == 1 && outputs.do_restore_proposal == 0){
 		std::cout << "Warning: Problem in the configuration file" << std::endl;
 		std::cout << "         If do_restore_last_index is 1, do_restore_proposal must also be 1" << std::endl;
@@ -1619,7 +1623,7 @@ void Config::read_inputs_files(){
 	if((modeling.prior_fct_name == "io_ms_Global")){// || (modeling.prior_fct_name == "prior_MS_Global_a1etaa3_HarveyLike") ||
 		 //(modeling.prior_fct_name == "prior_MS_Global_a1etaa3_Harvey1985") || (modeling.prior_fct_name == "prior_MS_Global_a1acta3_HarveyLike") ||
 		 //(modeling.prior_fct_name == "prior_MS_Global_a1acta3_Harvey1985") ) { // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
-		read_inputs_priors_MS_Global(); //data.data.x[2]-data.data.x[1]
+		read_inputs_priors_MS_Global();
 		passed=1;
 	}
 	//if(modeling.prior_fct_name == "prior_MS_Global"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs

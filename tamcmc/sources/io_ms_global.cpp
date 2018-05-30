@@ -544,7 +544,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				for(int p0=0; p0<f_inputs.size(); p0++){
 					if(f_relax[p0]){
 						if(inputs_MS_global.common_names_priors[i] == "GUG"){
-							tmpXd << f_priors_min[p0], f_priors_max[p0], inputs_MS_global.modes_common(i,2), inputs_MS_global.modes_common(i,3); 
+							tmpXd << f_priors_min[p0], f_priors_max[p0], inputs_MS_global.modes_common(i,3), inputs_MS_global.modes_common(i,4);
 						} else{
 							tmpXd << f_priors_min[p0], f_priors_max[p0], -9999, -9999; 						
 						}
@@ -580,14 +580,15 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
                     tmpstr="Jeffreys";
                     tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
                     std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
-                    std::cout << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                    std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                    std::cout << "          " << "Resolution: " << resol << std::endl;
                 } else{
                     tmpstr=inputs_MS_global.common_names_priors[i];
                     tmpXd=inputs_MS_global.modes_common.row(i);
                 }
 			for(p0=0; p0<w_inputs.size(); p0++){
 				if(w_relax[p0]){
-					io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 1);
+					io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 0);
 				} else{
 					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
 				}
