@@ -241,21 +241,17 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
 			std::cout << "   >> Structure of the parameters incorrect. Incompatibility detected" << std::endl;
 			std::cout << "   >> Detected size for plength: "<< plength.size() << " ...Expected size:"<< Nplength_expected << " for model '" << modelname << "'" << std::endl;
 			if(plength.size() == 10){ // Case where we might know how to get back to our feet
-				status=1;
-                //std::cout << "Status set to 1" << std::endl;
+				status=1; 
 			} else{
-                //std::cout << "Status set to -1" << std::endl;
 				status=-1; // There is problem that requires a carefull check/debuging
 			}
-        } else{
-            //std::cout << "Status set to 2" << std::endl;
-            status=2;
-        }
+		} else{
+			status=2;
+		}
 	}
-    if (modelname == "model_MS_Global_a1etaa3_HarveyLike_Classic" ){ // This new function appears in version 1.3.2 so it is ok
-        //std::cout << "Status set to 2 (Classic model)" << std::endl;
-        status=2;
-    }
+	if (modelname == "model_Evolved_Global_a1etaa3_l1mixed"){
+		status=2;
+	}
 	if(status >1){
 		std::cout << "   >> Compatibility/Consistency test with earlier version passed..." << std::endl;
 	}

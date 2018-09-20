@@ -54,6 +54,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 
+
 	std::cout << " --------- TAMCMC-CPP ----------" << std::endl;
 
 	// Set the current path variables
@@ -94,9 +95,13 @@ int main(int argc, char* argv[]){
 		if (config_master.last_id_ind > config_master.table_ids.size()){
 			config_master.last_id_ind=config_master.table_ids.size()-1;
 		}
+//	if(config_master.first_id_ind <= 0){
+//		std::cout << "Count the index from 1. Values <=0 are not allowed" << std::endl;
+//		std::cout << "The program will exit now" << std::endl;
+//		exit(EXIT_SUCCESS);
+//	}
         // ---- Initialize the logfile ----
        // //status_logfile(config_master.table_ids, config_master.first_id_ind, config_master.first_id_ind, config_master.last_id_ind, logfile);
-
         // ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
             // Updating the logfile after finishing the given object i
@@ -106,7 +111,6 @@ int main(int argc, char* argv[]){
 					begin_time = ben_clock();
 					config_master.current_id_ind=i; // index pointing to the current object id that we have to process
 					config_master.current_process_ind=jj;
-
 					std::cout << "                       --------------------------------" << std::endl;
 					std::cout << "                       Processing Object " << i+1 << "/" << config_master.table_ids.size() << ": ";
 					std::cout << config_master.table_ids[i].at(0) << std::endl;

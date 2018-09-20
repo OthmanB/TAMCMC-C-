@@ -16,6 +16,7 @@
 #include "matrices.h"
 //#include "string_handler.h"
 #include "io_ms_global.h"
+#include "io_evolved_global.h"
 
 //using namespace std;
 
@@ -197,7 +198,8 @@ class Config{
 		void read_inputs_files(); // Function that is in charge of handling the input files. These contain the initial values for the parameters as well as the priors
 		void read_inputs_prior_Simple_Matrix(); // Procedure that reads simple configuration file, organized as a Matrix of information. See Config.cpp for further details
 		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure
+		void read_inputs_priors_evolved_Global();
 
-		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal);
+		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const bool fatal);
 };
 

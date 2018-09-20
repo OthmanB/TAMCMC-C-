@@ -1,21 +1,28 @@
 # Version history #
 
-### v1.3.2-dev Improvements ###
-      * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
-      * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
-        Note that we are permissive regarding the denomination Height or Amplitude. However, an explicit fit of squaredAmplitude could be requested. See example of .model file
-      * Add the possibility to change frequency prior between GUG or Uniform. [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
-        For GUG the syntax is
-      			Frequency     GUG     -1    -1    -1     [sigma1]    [sigma2]       (-1 are replaced by values of the table of frequencies)
-      	For Uniform the syntax is
-      			Frequency     Uniform  -1  -1   -1      (-1 are replaced by values of the table of frequencies)
-      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DONE] 
-        This reduced the size of this program significantly by removing redoundant commands
-        This allows much easier generation of a model. Note that the function could be used to create any kind of vector of parameters
-      * Minor esthetic improvements in the text outputs
-      * Few minor typos and fixes into the .md files [DONE] [TESTED]
-      * Starting a basic documentation in tex [DEV]
-        
+### v1.3.1.6beta Bug fix ###
+	* Fixing an issue on definition of the priors for sqrt(a1).cosi and sqrt(a1).sini when the setup file only provides splitting_a1 and inclination
+        * Fixing an issue in getmodel.cpp that was preventing to compute the model in models with sqrt(a1).cosi and sqrt(a1).sini
+
+### v1.3.1.5beta New model/Bug fix ###
+	* Adding io_evolved_global.cpp and io_evolved_global.h in order to handle global fit models for evolved stars (mixed modes). This is a basic beta implementation
+	* Adding 'model_Evolved_Global_a1etaa3_l1mixed' into the list of available models in models.cpp and models.h. Allows to handle the fitting of l=1 mixed modes. Here is a short description:
+	a. l=0 and l>=2 are assumed to be pure p modes. As such, I use the same assumptions as for MS models. Namely: 
+		. H(l>=2) are proportional to H(l=0) using visibilities V(l)
+		. W(l>=2) are interpolated using W(l=0)
+		. Splittings of l>=2 are assumed to be invariant with frequency: 1 single splitting for all modes of degree l>=2.
+		. The number of l=0 must match the number of l>=2. Otherwise the code stops. This is to avoid extrapolation of widths during the interpolation phase
+		. The smoothness condition is applied to all those modes, if requested by the user
+	b. l=1 are assumed to be mixed. As such, several assumptions are relaxed compared to MS models. Namely:
+		. H(l=1) are all independent variables
+		. W(l=1) are all independent variables
+		. Splittings a11 are all independent variables. Prior is set to be the same as for l>=2.
+		. There is no restriction on the number of l=1 modes
+	c. Noise background parameters are those of a Harvey-like profile
+	d. Inclination is assumed invariant with frequency
+	        
+	* Remark: This is a beta release. As such, the new features described above have limited optional argument. This to avoid user mishandling of incomplete implementation of some option in the case of mixed modes. e.g. a2 and a3 are not handled.
+
 ### v1.3.1 Minor improvements/Bug fix ###
 	* Correcting a typo in getmodel.cpp that prevented the compilation of getmodel tool
 	* Further cleaning of useless lines, in particular in outputs.cpp
@@ -25,11 +32,11 @@
 	  the program convert and adjust the inputs so that they are compatible with the model
 	* Removal of some lines that were added in v1.3 and that stop the program if using 4-lines format for the s2 inputs (instead of 3 in simulations)
 	* Adding a failsafe if the user request to read a y-data column that does not exists
-      * FUTURE:
-  		* Write comprehensive md files /doc file with compilation configuration and execution instructions 
+  * FUTURE:
+  		* Write comprehensive md files with compilation configuration and execution instructions 
   		* Verifying the Gaussian fit case
   		* Handling of complex space fitting
-  		* Continue clean handling of errors perhaps using 'Either'? see https://hackernoon.com/error-handling-in-c-or-why-you-should-use-eithers-in-favor-of-exceptions-and-error-codes-f0640912eb45
+  		* Continue clean handling of errors using 'Either'? see https://hackernoon.com/error-handling-in-c-or-why-you-should-use-eithers-in-favor-of-exceptions-and-error-codes-f0640912eb45
   				* Create a dedicated message.cpp / message.h that handles messages and errors (move Diagnostics::file_error in there)		 	
   				* Better structure for output.cpp ... use header to save constants
 
@@ -87,7 +94,7 @@
         * Solution: The program was modified such that I initialise the labels and units vector with 5 columns instead of 2.
 
 ### v1.2.1: Major Changes ### 
-    * New functionalities:
+   * Added functionalities:
    		* The program now uses openmp to parallelise the parallel chains computation. The number of used thread is therefore 
    		   controlled by the OMP_NUM_THREADS=X with X the number of used cpus. Gain are typically optimal when OMP_NUM_THREADS=Nchains/2
    		   Gains are null if OMP_NUM_THREADS>Nchains.

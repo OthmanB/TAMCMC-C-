@@ -200,6 +200,13 @@ VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi plength
 	params.row(0)=params0;
 	model_fct_name_switch=model_case;
 	plength=plength0;
+	//std::cout << "Params: " <<std::endl;
+	//std::cout << params0 << std::endl;
+	//std::cout << "Plength: " << std::endl;
+	//std::cout << plength << std::endl;
+	//std::cout << "model_fct_name_switch : " << model_fct_name_switch << std::endl;
+
+	//exit(EXIT_SUCCESS);
 	return call_model(data_struc, 0);
 
 }
@@ -240,7 +247,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  break;
         	case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
-          break;
+		  break;
+        	case 9:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_Evolved_Global_a1etaa3_l1mixed(params.row(m), plength, (*data_struc).x);
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -251,6 +260,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
+		  std::cout << "    - 'model_Evolved_Global_a1etaa3_l1mixed'" << std::endl;
 
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
@@ -311,6 +321,9 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		case 2: // model_MS_Global
 		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
+		case 3: // model_evolved_Global
+		  return priors_evolved_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
@@ -319,6 +332,7 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'MS_Global'" << std::endl;
+		  std::cout << "    - 'evolved_Global'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}

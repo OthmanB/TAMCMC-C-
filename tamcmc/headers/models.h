@@ -19,5 +19,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi pa
 VectorXd model_MS_Global_a1acta3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1acta3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);
+VectorXd model_Evolved_Global_a1etaa3_l1mixed(VectorXd params, VectorXi params_length, VectorXd x); // l=1 mixed modes
 VectorXd model_Test_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_Harvey_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);
+
