@@ -3,7 +3,7 @@
 ---
 **NOTE FOR PLATO WP 128**
 
-The master version does not support mixed modes fitting. Please use the dev-mixed-modes version instead. 
+The master version does not support mixed modes fitting. Please use the dev-mixedmodes version instead. 
 ---
 
 ### TAMCMC C++ repository ###
