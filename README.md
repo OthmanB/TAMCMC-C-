@@ -29,10 +29,12 @@ In addition, an analysis setup file is required (.model) and a data file (.data)
 
 * Deployment instructions: 
 Use cmake to install the program. For the main directory of the program:
+
 	mkdir build
 	cd build
 	cmake ..
 	make
+	
 Some options exists to deactivate functions (eg. GSL and/or OpenMP)
 
 ### Contribution guidelines ###
