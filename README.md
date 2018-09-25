@@ -20,12 +20,13 @@ This implementation is itself based on the Metropolis-Hasting-Langevin scheme de
 
 ### How do I get set up? ###
 
+An exhaustive help is available on the wiki of this project (https://github.com/OthmanB/TAMCMC-C/wiki). This readme provides basic explanations only
+
 * All setup is made through configuration files of extension .cfg. So far, three files are required to configure the program: config_presets.cfg, config_default.cfg, errors_default.cfg. Those can be found in the subdirectory Config/.
 In addition, an analysis setup file is required (.model) and a data file (.data). All those files are ASCII files.
 
 * Dependencies: Eigen, Boost, cmake,  GSL (optional), OpenMP (optional)
 
-* No exhaustive documentation is yet available, but these examples might be self explanatory. A complete documentation is scheduled to be released soon,
 
 * Deployment instructions: 
 Use cmake to install the program. For the main directory of the program:
