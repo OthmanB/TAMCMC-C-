@@ -154,6 +154,7 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "    Your initial vector of parameter must have a FINITE initial likelihood   " << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
+			exit(EXIT_SUCCESS);
 		}
 		if(std::abs(logPrior[0]) > warning_thld){
 			std::cout << " --------------------------------- WARNING ----------------------------------" << std::endl;
@@ -162,6 +163,7 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "   Check that your initial vector of parameter is compatible with the priors" << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
+			exit(EXIT_SUCCESS);
 		}
 	
 		std::cout << "   - Variables " << std::endl;
