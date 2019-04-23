@@ -1055,7 +1055,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		if(w_relax[i] == 1){
 			all_in.priors_names[p0 + i]="Jeffreys";
 			all_in.priors(0, p0 + i)=0.4;  // Jeffreys prior, with hmin=0.4
-			all_in.priors(1, p0 + i)=25;  // Jeffreys prior, with hmax=25... Valid for Main-Sequence Star. DOES NOT WORK FOR RED GIANTS (Should be smaller than Dnu)
+			all_in.priors(1, p0 + i)=40;  // Jeffreys prior, with hmax=40... Valid for Main-Sequence Star. DOES NOT WORK FOR RED GIANTS (Should be smaller than Dnu)
 		} else{
 			all_in.priors_names[p0 + i]="Fix";
 		}
