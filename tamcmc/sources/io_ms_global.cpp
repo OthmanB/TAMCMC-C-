@@ -839,8 +839,8 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 			Snlm_in.relax[4]=1;
 
 			for(int k=0; k<Nmax_prior_params; k++){ // The range of the new prior is defined by the range given by splitting_a1 because cos(i) and sin(i) E [-1,1]
-				Snlm_in.priors(k,3)=Snlm_in.priors(k,0); 
-				Snlm_in.priors(k,4)=Snlm_in.priors(k,0); 
+				Snlm_in.priors(k,3)=sqrt(Snlm_in.priors(k,0)); 
+				Snlm_in.priors(k,4)=sqrt(Snlm_in.priors(k,0)); 
 			}
 		}
 
