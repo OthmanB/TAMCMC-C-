@@ -52,6 +52,7 @@ set(HEADERS  #_COMMON
 	tamcmc/headers/likelihoods.h
     tamcmc/headers/noise_models.h
     tamcmc/headers/string_handler.h
+    tamcmc/headers/io_models.h
    )
 
 #Bring the core program sources into the project
@@ -78,6 +79,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/ben_timer.cpp
     tamcmc/sources/multivariate_cholesky.cpp
     tamcmc/sources/random_JB.cpp
+    tamcmc/sources/io_models.cpp
     )
  
 #Define the sources for the bin2txt program
@@ -110,6 +112,7 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/priors_calc.cpp
 	tamcmc/sources/stats_dictionary.cpp
 	tamcmc/sources/derivatives_handler.cpp
+	tamcmc/sources/io_models.cpp
 	)
 	
 # Check and Load dependencies
