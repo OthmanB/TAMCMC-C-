@@ -42,18 +42,22 @@ void Config::setup(){
 	
 	long imin, imax;
 
-	read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
-	modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
-	modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
-	modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
-	modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
 
-	// ----- Define which columns are containing the x values, the y values and ysig_ind ----
-	std::string delimiter=" ";
-	std::cout << "Data file: " << data.data_file << std::endl;
-	Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
-	data.data_all=data_in; // save the whole data file into the configuration class
+    // ---- Read the data ----
+    std::string delimiter=" ";
+    std::cout << "Data file: " << data.data_file << std::endl;
+    Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
+    data.data_all=data_in; // save the whole data file into the configuration class
+    
+    // ---- Reading the model-specific configuration files ----
+    std::cout << " ---------- " << std::endl;
+    read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
+    modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
+    modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
+    modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
+    modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
 
+    // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
 		imax=data_in.data.rows();
@@ -62,7 +66,7 @@ void Config::setup(){
 		while(imin<data_in.data.rows() && data_in.data(imin, data.x_col) <data.data.xrange[0]){
 			imin=imin+1.;
 			//std::cout << "imin=" << imin << "   data_in.data(imin, data.x_col)= " << data_in.data(imin, data.x_col) << std::endl;
-		}
+        }
 		if(imin >= data_in.data.rows()){
 			std::cout << "Warning: Found that xmin > max(data.x)" << std::endl;
 			std::cout << "         The requested xrange[0] is inconsistent with the given data" << std::endl;
@@ -124,6 +128,8 @@ void Config::setup(){
 	data.data.header=data_in.header;
 	data.data.Nx=data.data.x.size();
 
+
+    // --- Finishing the Setup ---
 	if(outputs.do_restore_last_index == 1 && outputs.do_restore_proposal == 0){
 		std::cout << "Warning: Problem in the configuration file" << std::endl;
 		std::cout << "         If do_restore_last_index is 1, do_restore_proposal must also be 1" << std::endl;
@@ -280,10 +286,10 @@ void Config::read_inputs_priors_MS_Global(){
 	Input_Data in_vals;
 	//std::cout << "Before read_MCMC" << std::endl;
 	std::cout << "  - Reading the MCMC file: " << modeling.cfg_model_file << "..." << std::endl;
-	iMS_global=read_MCMC_file_MS_Global(modeling.cfg_model_file, verbose); // Read the MCMC file
+	iMS_global=read_MCMC_file_MS_Global(modeling.cfg_model_file, 0); // Read the MCMC file, with verbose=0 here
 	data.data.xrange=iMS_global.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
-	in_vals=build_init_MS_Global(iMS_global, verbose); // Interpret the MCMC file and format it as an input structure
+    in_vals=build_init_MS_Global(iMS_global, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -1817,7 +1823,7 @@ void Config::read_inputs_prior_Simple_Matrix(){
  * code correspond to a warning.
  * Exit from the program is controlled by the boolean fatal
 */
-int Config::msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const bool fatal){
+int Config::msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal){
 
 	bool err_msg=0;
 

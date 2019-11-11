@@ -14,7 +14,7 @@
 #include "data.h" // contains the structure Data
 //#include "string_handler.h"
 #include "io_ms_global.h"
-
+#include "io_models.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -283,7 +283,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    return iMS_global;
 }
 
-Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool verbose){
+Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
 
 	const long double pi = 3.141592653589793238L;
 	const double G=6.667e-8;
@@ -296,28 +296,32 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
 
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
-	double Dnl=0.7, trunc_c=-1;
+	double Dnl=0.75, trunc_c=-1;
 
-	//bool bool_mag_b=0, bool_mag_alfa=0, 
-	bool do_a11_eq_a12=1, do_avg_a1n=1;
+	// All Default booleans
+	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
 
 	int lmax, en, Ntot, p0;
-	double tol=1e-2;
-	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4);
+	double tol=1e-2, tmp;
+	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
+	VectorXd extra_priors, tmpXd;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
-		
+	
+	std::string tmpstr_h, tmpstr;
+	
 	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; // This is by block, each category of parameters		
 	Input_Data all_in; // The final structure of parameters, using the standards of my code
+	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
 
 	// Flatening and ordering of all the inputs/relax variables
 	lmax=inputs_MS_global.els.maxCoeff();
 
 	// -- Initialisation of structures --
-    // --- Look for common instruction ---------
+    // --- Look for common instruction That must be run before the setup ---------
 	all_in.model_fullname=" "; // Default is an empty string
 	//all_in.prior_fullname="prior_MS_Global"; // Default set of prior
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
@@ -361,51 +365,26 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         		do_avg_a1n=0;
             }
         }
+        if(inputs_MS_global.common_names[i] == "fit_squareAmplitude_instead_Height" ){ 
+        		do_amp=1;
+        	if(inputs_MS_global.common_names_priors[i] != "bool"){
+				fatalerror_msg_io_MS_Global("fit_squareAmplitude_instead_Height", "bool", "[0/1]  ", "1 " );
+			} else{
+				do_amp=inputs_MS_global.modes_common(i,0);
+				std::cout << "Using do_amp = " << do_amp << std::endl;
+			}
+
+        }
+ 
     }
     if(all_in.model_fullname == " "){
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
     	exit(EXIT_FAILURE);
     }
- 
-	Vis_in.inputs_names.resize(lmax);
-	Vis_in.priors_names.resize(lmax);
-	Vis_in.priors.resize(Nmax_prior_params,lmax);
-	Vis_in.inputs.resize(lmax); 
-	Vis_in.relax.resize(lmax); 
-	for(int i=0; i<Vis_in.priors_names.size(); i++){ // Default is Fix parameter with -9999 value 
-		Vis_in.inputs_names[i]="";
-		Vis_in.priors_names[i]="Fix";
-	} 
-	Vis_in.relax.setZero();
-	Vis_in.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-	Vis_in.inputs.setConstant(0); // At the end, the default is to have no modes
-
-	Inc_in.inputs_names.resize(1);
-	Inc_in.priors_names.resize(1);
-	Inc_in.priors.resize(Nmax_prior_params,1);
-	Inc_in.inputs.resize(1); 
-	Inc_in.relax.resize(1); 
-	for(int i=0; i<Inc_in.priors_names.size(); i++){ // Default is Fix parameter with -9999 value 
-		Inc_in.inputs_names[i]="";
-		Inc_in.priors_names[i]="Fix";
-	} 
-	Inc_in.relax.setZero();
-	Inc_in.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-	Inc_in.inputs.setConstant(0); // At the end, the default is i=0 (single Lorentzian/mode)
+ 	
+ 	io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1);
+	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);
 	
-	Noise_in.inputs_names.resize(10); // Maximum 3 Harvey profiles + White noise = 10 parameters
-	Noise_in.priors_names.resize(10);
-	Noise_in.priors.resize(Nmax_prior_params,10);
-	Noise_in.inputs.resize(10); 
-	Noise_in.relax.resize(10); 
-	for(int i=0; i<Noise_in.priors_names.size(); i++){ // Default is Fix parameter with -9999 value 
-		Noise_in.inputs_names[i]="";
-		Noise_in.priors_names[i]="Fix";
-	} 
-	Noise_in.relax.setZero();
-	Noise_in.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-	Noise_in.inputs.setConstant(-9999); // At the end, the default is to have No noise
-
 	// -----------------------------------------------------------------
 	// ------------ Handling Frequencies/Widths/Heights ----------------
 	// -----------------------------------------------------------------
@@ -465,68 +444,90 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		rw_el.resize(0);
 		rh_el.resize(0);
 	}
+	
 
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
+	if( do_amp){
+		std::cout << "   ===> Requested to fit squared amplitudes instead of Height... Converting height inputs into A_squared = pi*Height*Width..." << std::endl;
+		tmpstr_h="Amplitude_l";
+		for(int i=0; i<h_inputs.size(); i++){
+			h_inputs[i]=pi*w_inputs[i]*h_inputs[i]; 
+		}
+	} else{
+		tmpstr_h="Height_l";
+	}
+    // Set default value of priors for Height Width and frequency
+	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
+	io_calls.initialise_param(&width_in, w_relax.size(), Nmax_prior_params, -1, -1); 
+	io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
+
+	tmpXd.resize(4);
+	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
+	for(int i=0; i<h_inputs.size(); i++){
+		if(h_relax[i]){
+			io_calls.fill_param(&height_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
+		}
+	}
+	tmpXd << 0.1, 50., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
+	for(int i=0; i<w_inputs.size(); i++){
+		if(w_relax[i]){ 
+			io_calls.fill_param(&width_in, "Width_l", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&width_in, "Width_l", "Fix", w_inputs[i], tmpXd, i, 0);			
+		}
+	}
+
+	// --- Default setup for frequencies ---
+	for(int i=0; i<f_inputs.size(); i++){
+		if(f_relax[i]){
+			tmpXd << f_priors_min[i], f_priors_max[i], 0.01*inputs_MS_global.Dnu, 0.01*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
+			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
+		}
+	}
+
+	// ----- Switch between the models that handle averaging over n,l or both -----
    if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
-        Snlm_in.inputs_names.resize(6);
-        Snlm_in.priors_names.resize(6);
-        Snlm_in.priors.resize(Nmax_prior_params,6);
-        Snlm_in.inputs.resize(6); // contains a1, eta, a3, alfa (if any), beta (if any) and asym
-        Snlm_in.relax.resize(6); // contains a1, eta, a3, alfa (if any), beta (if any) and asym
+        io_calls.initialise_param(&Snlm_in, 6, Nmax_prior_params, -1, -1);
     }  
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 1){
-        Snlm_in.inputs_names.resize(7);
-        Snlm_in.priors_names.resize(7);
-        Snlm_in.priors.resize(Nmax_prior_params,7);
-        Snlm_in.inputs.resize(7); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
-        Snlm_in.relax.resize(7); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
+        io_calls.initialise_param(&Snlm_in, 7, Nmax_prior_params, -1, -1);
     }
     if(do_a11_eq_a12 == 1 && do_avg_a1n == 0){
-	if (Nf_el[1] == Nf_el[2]){
-        	Snlm_in.inputs_names.resize(6 + Nf_el[1]);
-        	Snlm_in.priors_names.resize(6 + Nf_el[1]);
-        	Snlm_in.priors.resize(Nmax_prior_params, 6 + Nf_el[1]);
-        	Snlm_in.inputs.resize(6 + Nf_el[1]); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
-        	Snlm_in.relax.resize(6 + Nf_el[1]); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
-	} else {
-		std::cout << "When considering a11=a22"<< std::endl;
-		std::cout <<" You must have as many l=1 than l=2" << std::endl;
-		std::cout <<" Here we have: Nf(l=1) = " << Nf_el[1] << " and Nf(l=2) = " << Nf_el[2] << std::endl;
-		std::cout <<" Check the .model file" << std::endl;
-		std::cout <<" The program will exit now" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+		if (Nf_el[1] == Nf_el[2]){
+			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1], Nmax_prior_params, -1, -1);
+		} else {
+			std::cout << "When considering a11=a22"<< std::endl;
+			std::cout <<" You must have as many l=1 than l=2" << std::endl;
+			std::cout <<" Here we have: Nf(l=1) = " << Nf_el[1] << " and Nf(l=2) = " << Nf_el[2] << std::endl;
+			std::cout <<" Check the .model file" << std::endl;
+			std::cout <<" The program will exit now" << std::endl;
+			exit(EXIT_FAILURE);
+		}
     }
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){
-       	Snlm_in.inputs_names.resize(6 + Nf_el[1]+Nf_el[2]);
-       	Snlm_in.priors_names.resize(6 + Nf_el[1]+Nf_el[2]);
-       	Snlm_in.priors.resize(Nmax_prior_params, 6 + Nf_el[1]+Nf_el[2]);
-       	Snlm_in.inputs.resize(6 + Nf_el[1]+Nf_el[2]); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
-       	Snlm_in.relax.resize(6 + Nf_el[1]+Nf_el[2]); // contains a1(1), eta, a3, alfa (if any), beta (if any), asym and a1(2)
+    	io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
     }
     
-    for(int i=0; i<Snlm_in.priors_names.size(); i++){ // Default is Fix parameter with -9999 value
-		Snlm_in.inputs_names[i]="";
-		Snlm_in.priors_names[i]="Fix";
-    } 
-	Snlm_in.relax.setZero();
-	Snlm_in.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-	Snlm_in.inputs.setConstant(0); // At the end, nothing should have this dummy value
-	Snlm_in.inputs[4]=1; // Default beta is 1
-
-	all_in.extra_priors.resize(2);
-	all_in.extra_priors[0]=1; // By default, we apply a smoothness condition
-	all_in.extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
+	// -------------- Set Extra_priors ----------------	
+	extra_priors.resize(2);
+	extra_priors[0]=1; // By default, we apply a smoothness condition
+	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
+	// ------------------------------------------------
+	
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
-		// --- Common parameters ---
+		// --- Common parameters than can be run during setup ---
 		if(inputs_MS_global.common_names[i] == "freq_smoothness" || inputs_MS_global.common_names[i] == "Freq_smoothness"){
 			if(inputs_MS_global.common_names_priors[i] != "bool"){
 				fatalerror_msg_io_MS_Global("freq_smoothness", "bool", "[0/1]     [Smoothness coeficient in microHz]", "1     2.0" );
 			} else{
-				all_in.extra_priors[0]=inputs_MS_global.modes_common(i,0);
-				all_in.extra_priors[1]=inputs_MS_global.modes_common(i,1);
+				extra_priors[0]=inputs_MS_global.modes_common(i,0);
+				extra_priors[1]=inputs_MS_global.modes_common(i,1);
 			}
 		}
 		if(inputs_MS_global.common_names[i] == "trunc_c"){
@@ -535,60 +536,93 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			} else{
 				trunc_c=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
 			}
-		}		
+		}	
+
+		// --- Frequencies ---
+		if(inputs_MS_global.common_names[i] == "Frequency" || inputs_MS_global.common_names[i] == "frequency"){ 
+			if(inputs_MS_global.common_names_priors[i] == "GUG" || inputs_MS_global.common_names_priors[i] == "Uniform"){
+				for(int p0=0; p0<f_inputs.size(); p0++){
+					if(f_relax[p0]){
+						if(inputs_MS_global.common_names_priors[i] == "GUG"){
+							tmpXd << f_priors_min[p0], f_priors_max[p0], inputs_MS_global.modes_common(i,3), inputs_MS_global.modes_common(i,4);
+						} else{
+							tmpXd << f_priors_min[p0], f_priors_max[p0], -9999, -9999; 						
+						}
+						io_calls.fill_param(&freq_in, "Frequency_l", inputs_MS_global.common_names_priors[i], f_inputs[p0], tmpXd, p0, 0);	
+					} else{
+						io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[p0], tmpXd, p0, 0);			
+					}
+				}
+			} else{
+				fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "GUG or Uniform", "", "" );
+			}
+		}
+
+		// --- Height or Amplitude ---
+		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 
+		   inputs_MS_global.common_names[i] == "amplitude" || inputs_MS_global.common_names[i] == "Amplitude"){
+
+			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
+				}
+			for(p0=0; p0<h_inputs.size(); p0++){
+				if(h_relax[p0]){
+					io_calls.fill_param(&height_in, tmpstr_h,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+				} else{
+					io_calls.fill_param(&height_in, tmpstr_h,  "Fix", h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+				}
+			}
+		}
+		// -- Mode Width ---
+		if(inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width"){
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					//fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
+                    tmpstr="Jeffreys";
+                    tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
+                    std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
+                    std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                    std::cout << "          " << "Resolution: " << resol << std::endl;
+                } else{
+                    tmpstr=inputs_MS_global.common_names_priors[i];
+                    tmpXd=inputs_MS_global.modes_common.row(i);
+                }
+			for(p0=0; p0<w_inputs.size(); p0++){
+				if(w_relax[p0]){
+					io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 0);
+				} else{
+					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+				}
+			}
+		}			
 		// --- Splittings and asymetry ---
 		if(inputs_MS_global.common_names[i] == "splitting_a1" || inputs_MS_global.common_names[i] == "Splitting_a1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("splitting_a1", "Fix_Auto", "", "" );
-			}			
-			Snlm_in.inputs_names[0]="Splitting_a1"; 
-			Snlm_in.priors_names[0]=inputs_MS_global.common_names_priors[i];
-			Snlm_in.inputs[0]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Snlm_in.relax[0]=0;
-			} else{
-				Snlm_in.relax[0]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Snlm_in.priors(k,0)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
 			}
+			p0=0;
+			io_calls.fill_param(&Snlm_in, "Splitting_a1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
         	if(do_a11_eq_a12 == 0 && do_avg_a1n == 1){ // Case a1(l), we put the same prior for a1(2) than a1(1)
-		    std::cout << "do_a11_eq_a12 == 0 && do_avg_a1n == 1" << std::endl;
-        	    Snlm_in.inputs_names[6]=Snlm_in.inputs_names[0];
-        	    Snlm_in.priors_names[6]=Snlm_in.priors_names[0];
-        	    Snlm_in.inputs[6]=Snlm_in.inputs[0];
-        	    Snlm_in.relax[6]=Snlm_in.relax[0];
-        	    for(int k=0; k<Nmax_prior_params; k++){
-        	        Snlm_in.priors(k,6)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-        	    }
+		    	std::cout << "do_a11_eq_a12 == 0 && do_avg_a1n == 1" << std::endl;
+		    	p0=6;
+        	    io_calls.fill_param(&Snlm_in, Snlm_in.inputs_names[0], Snlm_in.priors_names[0], Snlm_in.inputs[0], inputs_MS_global.modes_common.row(i), p0, 1);
         	}
         	if(do_a11_eq_a12 == 1 && do_avg_a1n == 0){ // Case a1(n), we put the same prior for a1(n)
-			std::cout << "do_a11_eq_a12 == 1 && do_avg_a1n == 0" << std::endl;
-			for(int kk=0; kk<Nf_el[1]; kk++){
-	        		Snlm_in.inputs_names[6+kk]=Snlm_in.inputs_names[0];
-	        		Snlm_in.priors_names[6+kk]=Snlm_in.priors_names[0];
-	        		Snlm_in.inputs[6+kk]=Snlm_in.inputs[0];
-	        		Snlm_in.relax[6+kk]=Snlm_in.relax[0];
-            			for(int k=0; k<Nmax_prior_params; k++){
-            			    Snlm_in.priors(k,6+kk)=Snlm_in.priors(k,0); // Copy the prior of average a1 on the individual a1(n)
-            			}
-			}
-				Snlm_in.inputs[0]=0; // Force the average <a1(n,l)>_nl to be fix at 0 ==> variations of a1 are in k>=6
-				Snlm_in.relax[0]=0; // Force the average <a1(n,l)>_nl to be fix at 0
+				std::cout << "do_a11_eq_a12 == 1 && do_avg_a1n == 0" << std::endl;
+				for(int kk=0; kk<Nf_el[1]; kk++){
+					p0=6+kk;
+					io_calls.fill_param(&Snlm_in, Snlm_in.inputs_names[0], Snlm_in.priors_names[0], Snlm_in.inputs[0], inputs_MS_global.modes_common.row(i), p0, 1); 
+				}
+				p0=0;
+				io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, inputs_MS_global.modes_common.row(i), p0, 1);
         	}
         	if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){ // Case a1(n,l), we put the same prior for a1(n,l)
-			std::cout << "do_a11_eq_a12 == 0 && do_avg_a1n == 0" << std::endl;
-			for(int kk=0; kk<Nf_el[1]+Nf_el[2]; kk++){
-	    	    		Snlm_in.inputs_names[6+kk]=Snlm_in.inputs_names[0];
-	    	    		Snlm_in.priors_names[6+kk]=Snlm_in.priors_names[0];
-	   	     		Snlm_in.inputs[6+kk]=Snlm_in.inputs[0];
-	   	     		Snlm_in.relax[6+kk]=Snlm_in.relax[0];
-            			for(int k=0; k<Nmax_prior_params; k++){
-            			    Snlm_in.priors(k,6+kk)=Snlm_in.priors(k,0); // Copy the prior of average a1 on the individual a1(n)
-            			}
-			}
-				Snlm_in.inputs[0]=0; // Force the average <a1(n,l)>_nl to be fix at 0 ==> variations of a1 are in k>=6
-				Snlm_in.relax[0]=0; // Force the average <a1(n,l)>_nl to be fix at 0
+				std::cout << "do_a11_eq_a12 == 0 && do_avg_a1n == 0" << std::endl;
+				for(int kk=0; kk<Nf_el[1]+Nf_el[2]; kk++){
+					p0=6+kk;
+					io_calls.fill_param(&Snlm_in, Snlm_in.inputs_names[0], Snlm_in.priors_names[0], Snlm_in.inputs[0], inputs_MS_global.modes_common.row(i), p0, 1); 
+				}
+				p0=0;
+				io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, inputs_MS_global.modes_common.row(i), p0, 1); // Erase values of the default Splitting_a1 block
         	}
 		}
 		if(inputs_MS_global.common_names[i] == "asphericity_eta"|| inputs_MS_global.common_names[i] == "Asphericity_eta"){  
@@ -615,17 +649,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 					Snlm_in.inputs[1]=0;
 				}
 			} else{ // Case where the centrifugal force is user-defined: Could be free or fixed
-				Snlm_in.inputs_names[1]="Asphericity_eta"; 
-				Snlm_in.priors_names[1]=inputs_MS_global.common_names_priors[i];
-				Snlm_in.inputs[1]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-				if(inputs_MS_global.common_names_priors[i] == "Fix"){
-					Snlm_in.relax[1]=0;
-				} else{
-					Snlm_in.relax[1]=1;
-					for(int k=0; k<Nmax_prior_params; k++){
-						Snlm_in.priors(k,1)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-					}
-				}
+				p0=1;
+				io_calls.fill_param(&Snlm_in, "Asphericity_eta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
 		}
 
@@ -633,56 +658,25 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("splitting_a3", "Fix_Auto", "", "" );
 			}
-			Snlm_in.inputs_names[2]="Splitting_a3"; 
-			Snlm_in.priors_names[2]=inputs_MS_global.common_names_priors[i];
-			Snlm_in.inputs[2]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Snlm_in.relax[2]=0;
-			} else{
-				Snlm_in.relax[2]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Snlm_in.priors(k,2)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
-			}
+			p0=2;
+			io_calls.fill_param(&Snlm_in, "Splitting_a3", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 		}
 
 		if(inputs_MS_global.common_names[i] == "asymetry" || inputs_MS_global.common_names[i] == "Asymetry"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("asymetry", "Fix_Auto", "", "" );
 			}
-
-			Snlm_in.inputs_names[5]="Lorentzian_asymetry"; 
-			Snlm_in.priors_names[5]=inputs_MS_global.common_names_priors[i];
-			Snlm_in.inputs[5]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Snlm_in.relax[5]=0;
-			} else{
-				Snlm_in.relax[5]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Snlm_in.priors(k,5)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
-			}
+			p0=5;
+			io_calls.fill_param(&Snlm_in, "Lorentzian_asymetry", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 		}
 		// --- Dealing with visibilities ---
 		if(inputs_MS_global.common_names[i] == "visibility_l1" || inputs_MS_global.common_names[i] == "Visibility_l1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("visibility_l1", "Fix_Auto", "", "" );
 			}
-
 			if(lmax >= 1){
-				Vis_in.inputs_names[0]="Visibility_l1"; 
-				Vis_in.priors_names[0]=inputs_MS_global.common_names_priors[i];
-				std::cout << "inputs_MS_global.modes_common(i,0)=" << inputs_MS_global.modes_common(i,0) << std::endl;
-				Vis_in.inputs[0]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-	
-				if(inputs_MS_global.common_names_priors[i] == "Fix"){
-					Vis_in.relax[0]=0;
-				} else{
-					Vis_in.relax[0]=1;
-					for(int k=0; k<Nmax_prior_params; k++){
-						Vis_in.priors(k,0)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-					}
-				}
+				p0=0;
+				io_calls.fill_param(&Vis_in, "Visibility_l1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
 				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l1' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
@@ -693,19 +687,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("visibility_l2", "Fix_Auto", "", "" );
 			}
-
 			if(lmax >= 2){
-				Vis_in.inputs_names[1]="Visibility_l2"; 
-				Vis_in.priors_names[1]=inputs_MS_global.common_names_priors[i];
-				Vis_in.inputs[1]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-				if(inputs_MS_global.common_names_priors[i] == "Fix"){
-					Vis_in.relax[1]=0;
-				} else{
-					Vis_in.relax[1]=1;
-					for(int k=0; k<Nmax_prior_params; k++){
-						Vis_in.priors(k,1)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-					}
-				}
+				p0=1;
+				io_calls.fill_param(&Vis_in, "Visibility_l2", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
 				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l2' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
@@ -716,19 +700,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("visibility_l3", "Fix_Auto", "", "" );
 			}
-
 			if(lmax >= 3){
-				Vis_in.inputs_names[2]="Visibility_l3"; 
-				Vis_in.priors_names[2]=inputs_MS_global.common_names_priors[i];
-				Vis_in.inputs[2]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-				if(inputs_MS_global.common_names_priors[i] == "Fix"){
-					Vis_in.relax[2]=0;
-				} else{
-					Vis_in.relax[2]=1;
-					for(int k=0; k<Nmax_prior_params; k++){
-						Vis_in.priors(k,2)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-					}
-				}
+				p0=2;
+				io_calls.fill_param(&Vis_in, "Visibility_l3", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
 				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l3' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
@@ -740,40 +714,22 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("inclination", "Fix_Auto", "", "" );
 			}
-
-			Inc_in.inputs_names[0]="Inclination"; 
-			Inc_in.priors_names[0]=inputs_MS_global.common_names_priors[i];
-			if( inputs_MS_global.modes_common(i,0) < 90){
-					Inc_in.inputs[0]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
+			if( inputs_MS_global.modes_common(i,0) >= 90){ // Avoid some nan when computing the prior
+				    tmp=89.99999; 
 			} else{
-					Inc_in.inputs[0]=89.99999;
+				tmp=inputs_MS_global.modes_common(i,0);
 			}
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Inc_in.relax[0]=0;
-			} else{
-				Inc_in.relax[0]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Inc_in.priors(k,0)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
-			}
+			p0=0;
+			io_calls.fill_param(&Inc_in, "Inclination", inputs_MS_global.common_names_priors[i], tmp, inputs_MS_global.modes_common.row(i), p0, 1);
 		}
 		
 		if(inputs_MS_global.common_names[i] == "sqrt(splitting_a1).cosi"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sqrt(splitting_a1).cosi", "Fix_Auto", "", "" );
-
-			}			
-			Snlm_in.inputs_names[3]="sqrt(splitting_a1).cosi"; 
-			Snlm_in.priors_names[3]=inputs_MS_global.common_names_priors[i];
-			Snlm_in.inputs[3]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Snlm_in.relax[3]=0;
-			} else{
-				Snlm_in.relax[3]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Snlm_in.priors(k,3)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
 			}
+			p0=3;
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
+
             if(do_a11_eq_a12 == 0 || do_avg_a1n == 0){ // In that case, we put the same prior for a1(2) than a1(1)
 				std::cout << "Warning: do_a11_eq_a12=0  and/or do_avg_a1n=0 (models *_a1n* or *_a1l*) was requested but is not available when fitting sqrt(a1).cosi and sqrt(a1).sini" << std::endl;
 				std::cout << "         You must modify the code accordingly if you want to implement a11 and a12 in that scenario" << std::endl;
@@ -786,18 +742,10 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		if(inputs_MS_global.common_names[i] == "sqrt(splitting_a1).sini"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sqrt(splitting_a1).sini", "Fix_Auto", "", "" );
-			}			
-			Snlm_in.inputs_names[4]="sqrt(splitting_a1).sini"; 
-			Snlm_in.priors_names[4]=inputs_MS_global.common_names_priors[i];
-			Snlm_in.inputs[4]=inputs_MS_global.modes_common(i,0); // The input value is always in the first element.
-			if(inputs_MS_global.common_names_priors[i] == "Fix"){
-				Snlm_in.relax[4]=0;
-			} else{
-				Snlm_in.relax[4]=1;
-				for(int k=0; k<Nmax_prior_params; k++){
-					Snlm_in.priors(k,4)=inputs_MS_global.modes_common(i,k+1);  // The row becomes a col and this is normal
-				}
 			}
+			p0=4;
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
+			
             if(do_a11_eq_a12 == 0 || do_avg_a1n == 0){ // In that case, we put the same prior for a1(2) than a1(1)
 				std::cout << "Warning: do_a11_eq_a12=0 and/or do_avg_a1n=0 (models *_a1n* or *_a1l*) was requested but is not available when fitting sqrt(a1).cosi and sqrt(a1).sini" << std::endl;
 				std::cout << "         You must modify the code accordingly if you want to implement a11 and a12 in that scenario" << std::endl;
@@ -820,34 +768,23 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
 		
 		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
-		
-		Snlm_in.inputs_names[3]="sqrt(splitting_a1).cosi"; 
-		Snlm_in.inputs_names[4]="sqrt(splitting_a1).sini"; 
+
 		if( Inc_in.priors_names[0]=="Fix" && Snlm_in.priors_names[0]=="Fix"){
 			std::cout << "         - Inclination and splitting_a1 were 'Fixed' ==> Fixing sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl; 
-			Snlm_in.priors_names[3]="Fix";
-			Snlm_in.priors_names[4]="Fix";
-			Snlm_in.relax[3]=0;
-			Snlm_in.relax[4]=0;
+			
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", "Fix", sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 3, 0);
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", "Fix", sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 4, 0);
 		} else{
 			std::cout << "	       - Inclination and/or Splitting_a1 requested as a free parameter ==> Freeing both sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl;
 			std::cout << "         - Setting the prior to the one requested for the Splitting_a1 assuming non-informative prior on inclination: " << Snlm_in.priors_names[0] << std::endl;
+			std::cout << "         - Value of the prior are set for cosi=sini=1, ie the max is set by sqrt(splitting_a1)" << std::endl;
 			std::cout << "           Beware that this may not be what you want!" << std::endl;
-			Snlm_in.priors_names[3]=Snlm_in.priors_names[0];
-			Snlm_in.priors_names[4]=Snlm_in.priors_names[0];
-			Snlm_in.relax[3]=1;
-			Snlm_in.relax[4]=1;
 
-			for(int k=0; k<Nmax_prior_params; k++){ // The range of the new prior is defined by the range given by splitting_a1 because cos(i) and sin(i) E [-1,1]
-				Snlm_in.priors(k,3)=sqrt(Snlm_in.priors(k,0)); 
-				Snlm_in.priors(k,4)=sqrt(Snlm_in.priors(k,0)); 
-			}
+			Snlm_in.priors(1,0)=std::sqrt(Snlm_in.priors(1,0)); // Convert the max boundary of splitting_a1 into the max boundary of sqrt(splitting_a1)
+			
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 3, 0);
+			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 4, 0);
 		}
-
-
-
-		Snlm_in.inputs[3]=sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
-		Snlm_in.inputs[4]=sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.); // The input value is always in the first element.
 
 		if(Snlm_in.inputs[3] < 1e-2){ // Avoid issues with the edge of uniform priors
 			Snlm_in.inputs[3]=1e-2;
@@ -856,22 +793,10 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 			Snlm_in.inputs[4]=1e-2;
 		}
 
-        	std::cout << "            Slots for the variables Inclination and Splitting are forced to be FIXED" << std::endl;
-        	std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
-  		Inc_in.inputs_names[0]="Inclination";
-		Inc_in.priors_names[0]="Fix";
-        	Inc_in.relax[0]=0; 
-        	Inc_in.inputs[0]=0;
-   
-		Snlm_in.inputs_names[0]="Splitting_a1";
-		Snlm_in.priors_names[0]="Fix";
-		Snlm_in.relax[0]=0;
-		Snlm_in.inputs[0]=0;
-		//std::cout << "Warning: We cannot use those models with variables Inclination and Splitting_a1..." << std::endl;
-		//std::cout << "         Use sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini instead for the model " << all_in.model_fullname  << std::endl;
-		//std::cout << "	       Alternatively, you can use 'model_MS_Global_a1etaa3_HarveyLike_Classic with Inclination and Splitting_a1 keywords'" <<std::endl;
-		//std::cout << "         The program will exit now" << std::endl;
-		//exit(EXIT_FAILURE);
+        std::cout << "            Slots for the variables Inclination and Splitting are forced to be FIXED" << std::endl;
+        std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
+        io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
+        io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
 	}
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
@@ -882,228 +807,86 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << "         The program will exit now" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-        std::cout << "    NOTICE: sqrt(splitting_a1).sini and sqrt(splitting_a1).cosi superseed inclination and splitting" << std::endl;
-        std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
-        std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
-   	Inc_in.inputs_names[0]="Inclination";
-	Inc_in.priors_names[0]="Fix";
-        Inc_in.relax[0]=0; 
-        Inc_in.inputs[0]=0;
-   
-	Snlm_in.inputs_names[0]="Splitting_a1";
-	Snlm_in.priors_names[0]="Fix";
-	Snlm_in.relax[0]=0;
-	Snlm_in.inputs[0]=0;
+    std::cout << "    NOTICE: sqrt(splitting_a1).sini and sqrt(splitting_a1).cosi superseed inclination and splitting" << std::endl;
+    std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
+    std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
+   	
+   	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy   	
+   	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
 }
-
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
-	// Set defaults
-	Noise_in.inputs_names[0]="Harvey-Noise_H"; Noise_in.inputs_names[3]="Harvey-Noise_H"; Noise_in.inputs_names[6]="Harvey-Noise_H";
-	Noise_in.inputs_names[1]="Harvey-Noise_tc"; Noise_in.inputs_names[4]="Harvey-Noise_tc"; Noise_in.inputs_names[7]="Harvey-Noise_tc";
-	Noise_in.inputs_names[2]="Harvey-Noise_p"; Noise_in.inputs_names[5]="Harvey-Noise_p"; Noise_in.inputs_names[8]="Harvey-Noise_p";
-	Noise_in.inputs_names[9]="White_Noise_N0";
-
-	Noise_in.priors_names[0]="Fix"; Noise_in.priors_names[3]="Fix"; Noise_in.priors_names[6]="Gaussian";
-	Noise_in.priors_names[1]="Fix"; Noise_in.priors_names[4]="Fix"; Noise_in.priors_names[7]="Gaussian";
-	Noise_in.priors_names[2]="Fix"; Noise_in.priors_names[5]="Fix"; Noise_in.priors_names[8]="Gaussian";
-	Noise_in.priors_names[9]="Gaussian";
-
-	Noise_in.relax[0]=0; Noise_in.relax[3]=0; Noise_in.relax[6]=1;
-	Noise_in.relax[1]=0; Noise_in.relax[4]=0; Noise_in.relax[7]=1;
-	Noise_in.relax[2]=0; Noise_in.relax[5]=0; Noise_in.relax[8]=1;
-	Noise_in.relax[9]=1;
-	Noise_in.inputs=inputs_MS_global.noise_params;
-
-	// Handle cases with negative H or tc ==> Harvey is Fix to 0 (no Harvey) <==> case of simulations with white noise
-	if((Noise_in.inputs[0] <= 0) || (Noise_in.inputs[1] <= 0) || (Noise_in.inputs[2] <= 0)){
-		Noise_in.priors_names[0]="Fix"; Noise_in.priors_names[1]="Fix"; Noise_in.priors_names[2]="Fix";
-		Noise_in.relax[0]=0;            Noise_in.relax[1]=0;            Noise_in.relax[2]=0;
-		Noise_in.inputs[0]=0;		    Noise_in.inputs[1]=0;		    Noise_in.inputs[2]=1;
-	}
-	if((Noise_in.inputs[3] <= 0) || (Noise_in.inputs[4] <= 0) || (Noise_in.inputs[5] <= 0)){
-		Noise_in.priors_names[3]="Fix"; Noise_in.priors_names[4]="Fix"; Noise_in.priors_names[5]="Fix";
-		Noise_in.relax[3]=0;            Noise_in.relax[4]=0;            Noise_in.relax[5]=0;
-		Noise_in.inputs[3]=0;		    Noise_in.inputs[4]=0;		    Noise_in.inputs[5]=1;
-	}
-	if((Noise_in.inputs[6] <= 0) || (Noise_in.inputs[7] <= 0) || (Noise_in.inputs[8] <= 0)){
-		Noise_in.priors_names[6]="Fix"; Noise_in.priors_names[7]="Fix"; Noise_in.priors_names[8]="Fix";
-		Noise_in.relax[6]=0;            Noise_in.relax[7]=0;            Noise_in.relax[8]=0;
-		Noise_in.inputs[6]=0;		    Noise_in.inputs[7]=0;		    Noise_in.inputs[8]=1;
-	}
-	// --- Center of the Gaussian -----
-	Noise_in.priors(0,6)=inputs_MS_global.noise_s2(6,0); 
-	Noise_in.priors(0,7)=inputs_MS_global.noise_s2(7,0);
-	Noise_in.priors(0,8)=inputs_MS_global.noise_s2(8,0);
-	Noise_in.priors(0,9)=inputs_MS_global.noise_s2(9,0);
-	// --- sigma of the Gaussian
-	Noise_in.priors(1,6)=(inputs_MS_global.noise_s2(6,1) + inputs_MS_global.noise_s2(6,2))*3./2;
-	Noise_in.priors(1,7)=(inputs_MS_global.noise_s2(7,1) + inputs_MS_global.noise_s2(7,2))*3./2;
-	if(inputs_MS_global.noise_s2(8,1) !=0){ // If p has given errors then set uncertainty to 3*error
-		Noise_in.priors(1,8)=(inputs_MS_global.noise_s2(8,1) + inputs_MS_global.noise_s2(8,2))*3./2;
-	} else{ // If p is given with null-errors then set uncertainty to 0.1*p
-		Noise_in.priors(1,8)=Noise_in.priors(0,8)*0.1;
-	}
-	//Noise_in.priors(1,9)=(inputs_MS_global.noise_s2(9,1) + inputs_MS_global.noise_s2(9,2))*10./2;
-	Noise_in.priors(1,9)=(inputs_MS_global.noise_s2(9,1) + inputs_MS_global.noise_s2(9,2));
-	if(((Noise_in.priors(1,6)/Noise_in.priors(0,6)) <= 0.05) && Noise_in.priors_names[6] != "Fix"){ // If the given relative uncertainty on H3 is smaller than 5%
-		std::cout << "Warning: The relative uncertainty on the Height of the high-frequency Harvey profile" << std::endl;
-		std::cout << "         is smaller than 5% in the .MCMC file. This is too small" << std::endl;
-		std::cout << "         ==> Relative uncertainty forced to be of 5%" << std::endl;
-		Noise_in.priors(1,6)=Noise_in.priors(0,6)*0.05;
-		std::cout << "	       Resuming..." << std::endl;
-	}
-	if(((Noise_in.priors(1,7)/Noise_in.priors(0,7)) <= 0.005) && Noise_in.priors_names[7] != "Fix"){ // If the given relative uncertainty on tc3 is smaller than 5%
-		std::cout << "Warning: The relative uncertainty on the timescale of the high-frequency Harvey profile" << std::endl;
-		std::cout << "         is smaller than 0.5% in the .MCMC file. This is too small" << std::endl;
-		std::cout << "         ==> Relative uncertainty forced to be of 0.5%" << std::endl;
-		Noise_in.priors(1,7)=Noise_in.priors(0,7)*0.005;
-		std::cout << "	       Resuming..." << std::endl;
-	}
-	if(((Noise_in.priors(1,8)/Noise_in.priors(0,8)) <= 0.05) && Noise_in.priors_names[8] != "Fix"){ // If the given relative uncertainty on p is smaller than 5%
-		std::cout << "Warning: The relative uncertainty on the power of the high-frequency Harvey profile" << std::endl;
-		std::cout << "         is smaller than 5% in the .MCMC file. This is too small" << std::endl;
-		std::cout << "         ==> Relative uncertainty forced to be of 5%" << std::endl;
-		Noise_in.priors(1,8)=Noise_in.priors(0,8)*0.05;
-		std::cout << "	       Resuming..." << std::endl;
-	}
-	if(((Noise_in.priors(1,9)/Noise_in.priors(0,9)) <= 0.0005) && Noise_in.priors_names[9] != "Fix"){ // If the given relative uncertainty on N0 is smaller than 5%
-		std::cout << "Warning: The relative uncertainty on the Height of the high-frequency Harvey profile" << std::endl;
-		std::cout << "         is smaller than 0.05% in the .MCMC file. This is too small" << std::endl;
-		std::cout << "         ==> Relative uncertainty forced to be of 0.05%" << std::endl;
-		Noise_in.priors(1,9)=Noise_in.priors(0,9)*0.0005;
-		std::cout << "	       Resuming..." << std::endl;
-	}
+	io_calls.initialise_param(&Noise_in, 10, Nmax_prior_params, -1, -1);
+	set_noise_params(&Noise_in, inputs_MS_global.noise_s2, inputs_MS_global.noise_params); 	// Set defaults
 
 	// -------------------------------------------------------------------------------------
 	// ------------- Sticking everything together in a Input_Data structure --------------
 	// -------------------------------------------------------------------------------------
 	
-	all_in.plength.resize(11);
-	all_in.plength[0]=h_inputs.size(); all_in.plength[1]=lmax                  ; all_in.plength[2]=Nf_el[0];
-	all_in.plength[3]=Nf_el[1]       ; all_in.plength[4]=Nf_el[2]		   ; all_in.plength[5]=Nf_el[3];
-	all_in.plength[6]=Snlm_in.inputs.size(); all_in.plength[7]=w_inputs.size() ; all_in.plength[8]=Noise_in.inputs.size(); 
-	all_in.plength[9]=Inc_in.inputs.size();
-	all_in.plength[10]=1; // This is trunc_c;
+	plength.resize(11);
+	plength[0]=h_inputs.size(); plength[1]=lmax                  ; plength[2]=Nf_el[0];
+	plength[3]=Nf_el[1]       ; plength[4]=Nf_el[2]		   ; plength[5]=Nf_el[3];
+	plength[6]=Snlm_in.inputs.size(); plength[7]=w_inputs.size() ; plength[8]=Noise_in.inputs.size(); 
+	plength[9]=Inc_in.inputs.size();
+	plength[10]=2; // This is trunc_c and do_amp;
 	
-	Ntot=all_in.plength.sum();
-
-	all_in.inputs_names.resize(Ntot);
-	all_in.priors_names.resize(Ntot);
-	all_in.inputs.resize(Ntot);
-	all_in.relax.resize(Ntot);
-	all_in.priors.resize(Nmax_prior_params, Ntot);
-	all_in.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-	all_in.inputs.setConstant(-9999); // At the end, nothing should have this dummy value
-
-	// --- Put the Height ---
+	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors);
+	
+	// --- Put the Height or Amplitudes---
 	p0=0;
-	for(int i=0; i<all_in.plength[0]; i++){
-		all_in.inputs_names[p0 + i]="Height_l";
-		if(h_relax[p0 + i] == 1){
-			all_in.priors_names[p0 + i]="Jeffreys";
-			all_in.priors(0, p0 + i)=1;  // Jeffreys prior, with hmin=1
-			all_in.priors(1, p0 + i)=100000;  // Jeffreys prior, with hmax=100000... Valid for Main-Sequence Star. Might be ok for Giants as well
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=h_inputs[i];
-		all_in.relax[p0 + i]=h_relax[i];
-
-	}
+	io_calls.add_param(&all_in, &height_in, p0); // height_in may contain either height or amplitudes depending on specified keywords
 	// --- Put the Visibilities ---
 	p0=all_in.plength[0];
-	for(int i=0; i<all_in.plength[1]; i++){
-		all_in.inputs_names[p0 + i]=Vis_in.inputs_names[i];
-		all_in.priors_names[p0 +  i]=Vis_in.priors_names[i];
-	}
-	all_in.inputs.segment(p0 , all_in.plength[1])=Vis_in.inputs;
-	all_in.relax.segment(p0 , all_in.plength[1])=Vis_in.relax;
-	all_in.priors.block(0, p0, Nmax_prior_params, all_in.plength[1])=Vis_in.priors;
-	// --- Put the Frequencies ---
-	p0=all_in.plength[0] + all_in.plength[1];
-	for(int i=0; i<Nf_el.sum(); i++){
-		all_in.inputs_names[p0 + i]="Frequency_l";
-		if(f_relax[i] == 1){
-			all_in.priors_names[p0 + i]="GUG";
-			all_in.priors(0, p0 + i)=f_priors_min[i];  // fmin for the GUG prior
-			all_in.priors(1, p0 + i)=f_priors_max[i];  // fmax for the GUG prior
-			all_in.priors(2, p0 + i)=0.01*inputs_MS_global.Dnu;  // sigma1 for the GUG prior
-			all_in.priors(3, p0 + i)=0.01*inputs_MS_global.Dnu;  // sigma2 for the GUG prior
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=f_inputs[i];
-		all_in.relax[p0 + i]=f_relax[i];
-	}
+	io_calls.add_param(&all_in, &Vis_in, p0);
 	
+	// --- Put the Frequencies ---
+	p0=all_in.plength[0] + all_in.plength[1];	
+	io_calls.add_param(&all_in, &freq_in, p0);
+
 	// --- Put the Snlm (splittings and asymetry) ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5];
-	for(int i=0; i<all_in.plength[6]; i++){
-		all_in.inputs_names[p0 + i]=Snlm_in.inputs_names[i];
-		all_in.priors_names[p0 +  i]=Snlm_in.priors_names[i];
-	}
+	io_calls.add_param(&all_in, &Snlm_in, p0);
 	
-	all_in.inputs.segment(p0 , all_in.plength[6])=Snlm_in.inputs;
-	all_in.relax.segment(p0 , all_in.plength[6])=Snlm_in.relax;
-	all_in.priors.block(0, p0, Nmax_prior_params, all_in.plength[6])=Snlm_in.priors;
 	// --- Put the Width ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
-	for(int i=0; i<all_in.plength[7]; i++){
-		all_in.inputs_names[p0 + i]="Width_l";
-		if(w_relax[i] == 1){
-			all_in.priors_names[p0 + i]="Jeffreys";
-			all_in.priors(0, p0 + i)=0.4;  // Jeffreys prior, with hmin=0.4
-			all_in.priors(1, p0 + i)=40;  // Jeffreys prior, with hmax=40... Valid for Main-Sequence Star. DOES NOT WORK FOR RED GIANTS (Should be smaller than Dnu)
-		} else{
-			all_in.priors_names[p0 + i]="Fix";
-		}
-		all_in.inputs[p0 + i]=w_inputs[i];
-		all_in.relax[p0 + i]=w_relax[i];
-	}
+	io_calls.add_param(&all_in, &width_in, p0);
 		
 	// --- Put the Noise ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
-	for(int i=0; i<all_in.plength[8]; i++){
-		all_in.inputs_names[p0 + i]=Noise_in.inputs_names[i];
-		all_in.priors_names[p0 +  i]=Noise_in.priors_names[i];
-	}
-	all_in.inputs.segment(p0 , all_in.plength[8])=Noise_in.inputs;
-	all_in.relax.segment(p0 , all_in.plength[8])=Noise_in.relax;
-	all_in.priors.block(0, p0, Nmax_prior_params, all_in.plength[8])=Noise_in.priors;
+	io_calls.add_param(&all_in, &Noise_in, p0);
+	
 	// --- Put the Inclination ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8];
-	for(int i=0; i<all_in.plength[9]; i++){
-		all_in.inputs_names[p0 + i]=Inc_in.inputs_names[i];
-		all_in.priors_names[p0 +  i]=Inc_in.priors_names[i];
-	}
-	all_in.inputs.segment(p0 , all_in.plength[9])=Inc_in.inputs;
-	all_in.relax.segment(p0 , all_in.plength[9])=Inc_in.relax;
-	all_in.priors.block(0, p0, Nmax_prior_params, all_in.plength[9])=Inc_in.priors;
+	io_calls.add_param(&all_in, &Inc_in, p0);
 	
 	// --- Add trunc_c that controls the truncation of the Lorentzian ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
-	all_in.inputs_names[p0]="Truncation parameter";
-	all_in.priors_names[p0]="Fix";
-    if(trunc_c > 0){
-		all_in.inputs[p0]=trunc_c;
-	} else{
+	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_MS_global.modes_common.row(0), p0, 1);
+	if (all_in.inputs[p0] <= 0){
 		std::cout << "Warning: trunc_c <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
-	all_in.relax[p0]=0;
-	
+	// -- Add the Amplitude switch --
+	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
+	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
+		
+			
 	if(verbose == 1){
+		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
+		std::cout << "Model Name = " << all_in.model_fullname << std::endl;
+		if(all_in.extra_priors[0] == 0){ 
+			std::cout << "   freq_smoothness is set to 0 ==> NO smoothness condition on frequencies" << std::endl;
+		} else{
+			std::cout << "   freq_smoothness is set to 1 ==> APPLIES a smoothness condition on frequencies" << std::endl;
+			std::cout << "   smoothness coeficient as specified by the user (of defined by default): " << all_in.extra_priors[1] << " microHz" << std::endl;
+		}
+		std::cout << " -----------------------------------------------------------" << std::endl;
 		std::cout << " ---------- Configuration of the input vectors -------------" << std::endl;
 		std::cout << "    Table of inputs " << std::endl;
-		for(int row=0; row<all_in.inputs.size(); row++){
-			std::cout << "[" << row << "] " << all_in.inputs_names[row] << "  " << all_in.inputs[row] << "  " << all_in.relax[row] << "  " << all_in.priors_names[row] << "  ";
-			for(int col=0; col<all_in.priors.rows(); col++){
-				std::cout << all_in.priors(col, row) << "  ";
-			}
-			std::cout << std::endl;
-		}
+		io_calls.show_param(all_in, 1);
+		std::cout << " -----------------------------------------------------------" << std::endl;
+
 		std::cout << "    The fit includes:" << std::endl;
 		std::cout << "          - " << all_in.plength[0] << "  Heights parameters "<< std::endl; 
 		std::cout << "          - " << all_in.plength[1] << "  Visibility parameters" << std::endl; 
@@ -1116,18 +899,103 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << "          - " << all_in.plength[8] << "  Noise parameters" << std::endl; 
 		std::cout << "          - " << all_in.plength[9] << "  Inclination parameters" << std::endl; 
 		std::cout << std::endl << "          - " << "Total Number of Parameters: " << all_in.plength.sum() << std::endl; 
-		if(all_in.extra_priors[0] == 0){ 
-			std::cout << "   freq_smoothness is set to 0 ==> NO smoothness condition on frequencies" << std::endl;
-		} else{
-			std::cout << "   freq_smoothness is set to 1 ==> APPLIES a smoothness condition on frequencies" << std::endl;
-			std::cout << "   smoothness coeficient as specified by the user (of defined by default): " << all_in.extra_priors[1] << " microHz" << std::endl;
-		}
+		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
+	
+	//std::cout << "Exiting test " << std::endl;
+	//exit(EXIT_SUCCESS);
 
 return all_in;
 }
 
-int fatalerror_msg_io_MS_Global(const std::string varname, const std::string param_type, const std::string syntax_vals, const std::string example_vals){
+
+short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const VectorXd noise_params){
+/*
+ *
+ * A function that prepares the Noise_in Data structure using 
+ * inputs of the .model file regrouped inside the noise_s2 matrixXd
+ *
+*/
+
+	(*Noise_in).inputs_names[0]="Harvey-Noise_H"; (*Noise_in).inputs_names[3]="Harvey-Noise_H"; (*Noise_in).inputs_names[6]="Harvey-Noise_H";
+	(*Noise_in).inputs_names[1]="Harvey-Noise_tc"; (*Noise_in).inputs_names[4]="Harvey-Noise_tc"; (*Noise_in).inputs_names[7]="Harvey-Noise_tc";
+	(*Noise_in).inputs_names[2]="Harvey-Noise_p"; (*Noise_in).inputs_names[5]="Harvey-Noise_p"; (*Noise_in).inputs_names[8]="Harvey-Noise_p";
+	(*Noise_in).inputs_names[9]="White_Noise_N0";
+
+	(*Noise_in).priors_names[0]="Fix"; (*Noise_in).priors_names[3]="Fix"; (*Noise_in).priors_names[6]="Gaussian";
+	(*Noise_in).priors_names[1]="Fix"; (*Noise_in).priors_names[4]="Fix"; (*Noise_in).priors_names[7]="Gaussian";
+	(*Noise_in).priors_names[2]="Fix"; (*Noise_in).priors_names[5]="Fix"; (*Noise_in).priors_names[8]="Gaussian";
+	(*Noise_in).priors_names[9]="Gaussian";
+
+	(*Noise_in).relax[0]=0; (*Noise_in).relax[3]=0; (*Noise_in).relax[6]=1;
+	(*Noise_in).relax[1]=0; (*Noise_in).relax[4]=0; (*Noise_in).relax[7]=1;
+	(*Noise_in).relax[2]=0; (*Noise_in).relax[5]=0; (*Noise_in).relax[8]=1;
+	(*Noise_in).relax[9]=1;
+	(*Noise_in).inputs=noise_params;
+
+	// Handle cases with negative H or tc ==> Harvey is Fix to 0 (no Harvey) <==> case of simulations with white noise
+	if(((*Noise_in).inputs[0] <= 0) || ((*Noise_in).inputs[1] <= 0) || ((*Noise_in).inputs[2] <= 0)){
+		(*Noise_in).priors_names[0]="Fix"; (*Noise_in).priors_names[1]="Fix"; (*Noise_in).priors_names[2]="Fix";
+		(*Noise_in).relax[0]=0;            (*Noise_in).relax[1]=0;            (*Noise_in).relax[2]=0;
+		(*Noise_in).inputs[0]=0;		    (*Noise_in).inputs[1]=0;		    (*Noise_in).inputs[2]=1;
+	}
+	if(((*Noise_in).inputs[3] <= 0) || ((*Noise_in).inputs[4] <= 0) || ((*Noise_in).inputs[5] <= 0)){
+		(*Noise_in).priors_names[3]="Fix"; (*Noise_in).priors_names[4]="Fix"; (*Noise_in).priors_names[5]="Fix";
+		(*Noise_in).relax[3]=0;            (*Noise_in).relax[4]=0;            (*Noise_in).relax[5]=0;
+		(*Noise_in).inputs[3]=0;		    (*Noise_in).inputs[4]=0;		    (*Noise_in).inputs[5]=1;
+	}
+	if(((*Noise_in).inputs[6] <= 0) || ((*Noise_in).inputs[7] <= 0) || ((*Noise_in).inputs[8] <= 0)){
+		(*Noise_in).priors_names[6]="Fix"; (*Noise_in).priors_names[7]="Fix"; (*Noise_in).priors_names[8]="Fix";
+		(*Noise_in).relax[6]=0;            (*Noise_in).relax[7]=0;            (*Noise_in).relax[8]=0;
+		(*Noise_in).inputs[6]=0;		    (*Noise_in).inputs[7]=0;		    (*Noise_in).inputs[8]=1;
+	}
+	// --- Center of the Gaussian -----
+	(*Noise_in).priors(0,6)=noise_s2(6,0); 
+	(*Noise_in).priors(0,7)=noise_s2(7,0);
+	(*Noise_in).priors(0,8)=noise_s2(8,0);
+	(*Noise_in).priors(0,9)=noise_s2(9,0);
+	// --- sigma of the Gaussian
+	(*Noise_in).priors(1,6)=(noise_s2(6,1) + noise_s2(6,2))*3./2;
+	(*Noise_in).priors(1,7)=(noise_s2(7,1) + noise_s2(7,2))*3./2;
+	if(noise_s2(8,1) !=0){ // If p has given errors then set uncertainty to 3*error
+		(*Noise_in).priors(1,8)=(noise_s2(8,1) + noise_s2(8,2))*3./2;
+	} else{ // If p is given with null-errors then set uncertainty to 0.1*p
+		(*Noise_in).priors(1,8)=(*Noise_in).priors(0,8)*0.1;
+	}
+	//(*Noise_in).priors(1,9)=(noise_s2(9,1) + noise_s2(9,2))*10./2;
+	(*Noise_in).priors(1,9)=(noise_s2(9,1) + noise_s2(9,2));
+	if((((*Noise_in).priors(1,6)/(*Noise_in).priors(0,6)) <= 0.05) && (*Noise_in).priors_names[6] != "Fix"){ // If the given relative uncertainty on H3 is smaller than 5%
+		std::cout << "Warning: The relative uncertainty on the Height of the high-frequency Harvey profile" << std::endl;
+		std::cout << "         is smaller than 5% in the .MCMC file. This is too small" << std::endl;
+		std::cout << "         ==> Relative uncertainty forced to be of 5%" << std::endl;
+		(*Noise_in).priors(1,6)=(*Noise_in).priors(0,6)*0.05;
+		std::cout << "	       Resuming..." << std::endl;
+	}
+	if((((*Noise_in).priors(1,7)/(*Noise_in).priors(0,7)) <= 0.005) && (*Noise_in).priors_names[7] != "Fix"){ // If the given relative uncertainty on tc3 is smaller than 5%
+		std::cout << "Warning: The relative uncertainty on the timescale of the high-frequency Harvey profile" << std::endl;
+		std::cout << "         is smaller than 0.5% in the .MCMC file. This is too small" << std::endl;
+		std::cout << "         ==> Relative uncertainty forced to be of 0.5%" << std::endl;
+		(*Noise_in).priors(1,7)=(*Noise_in).priors(0,7)*0.005;
+		std::cout << "	       Resuming..." << std::endl;
+	}
+	if((((*Noise_in).priors(1,8)/(*Noise_in).priors(0,8)) <= 0.05) && (*Noise_in).priors_names[8] != "Fix"){ // If the given relative uncertainty on p is smaller than 5%
+		std::cout << "Warning: The relative uncertainty on the power of the high-frequency Harvey profile" << std::endl;
+		std::cout << "         is smaller than 5% in the .MCMC file. This is too small" << std::endl;
+		std::cout << "         ==> Relative uncertainty forced to be of 5%" << std::endl;
+		(*Noise_in).priors(1,8)=(*Noise_in).priors(0,8)*0.05;
+		std::cout << "	       Resuming..." << std::endl;
+	}
+	if((((*Noise_in).priors(1,9)/(*Noise_in).priors(0,9)) <= 0.0005) && (*Noise_in).priors_names[9] != "Fix"){ // If the given relative uncertainty on N0 is smaller than 5%
+		std::cout << "Warning: The relative uncertainty on the Height of the high-frequency Harvey profile" << std::endl;
+		std::cout << "         is smaller than 0.05% in the .MCMC file. This is too small" << std::endl;
+		std::cout << "         ==> Relative uncertainty forced to be of 0.05%" << std::endl;
+		(*Noise_in).priors(1,9)=(*Noise_in).priors(0,9)*0.0005;
+		std::cout << "	       Resuming..." << std::endl;
+	}
+	return 0;
+}
+
+short int fatalerror_msg_io_MS_Global(const std::string varname, const std::string param_type, const std::string syntax_vals, const std::string example_vals){
 /*
 * Function that handle error messages and warnings for io_MS_Global
 */

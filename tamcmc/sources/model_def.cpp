@@ -154,7 +154,6 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "    Your initial vector of parameter must have a FINITE initial likelihood   " << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
-			exit(EXIT_SUCCESS);
 		}
 		if(std::abs(logPrior[0]) > warning_thld){
 			std::cout << " --------------------------------- WARNING ----------------------------------" << std::endl;
@@ -163,7 +162,6 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "   Check that your initial vector of parameter is compatible with the priors" << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
-			exit(EXIT_SUCCESS);
 		}
 	
 		std::cout << "   - Variables " << std::endl;
@@ -242,6 +240,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  break;
         	case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+          break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
