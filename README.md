@@ -1,7 +1,7 @@
 # README #
 
 ---
-**NOTE FOR PLATO WP 128** : The master version does not support mixed modes fitting. Please use the dev-mixedmodes version instead. 
+**NOTE ** : This branch contains the code identical to the one used in Benomar+2018, Science. It is not the latest version to date 
 ---
 
 ### TAMCMC C++ repository ###
