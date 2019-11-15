@@ -1,7 +1,8 @@
 #KIC =008379927
-! 120.18600
-!! 42.563200
-* 1442.2320 4206.5100
+!n -9999.   # numax (optional and used only in some models. See docs). Set to -9999 if not used or remove the whole line
+! 120.18600   # Dnu
+!! 42.563200   # C0 = epsilon.Dnu
+* 1442.2320 4206.5100    # Frequency range
 # type / l / value / relax_f / relax_H / relax_W 
 p  0  1728.0601  1      1       1
 p  0  1847.4700  1      1       1
@@ -130,7 +131,7 @@ p  2  3646.2800  1      1       1
        2.0000000       0.0000000       0.0000000
       0.13392108   0.00033912777   0.00033998873
 # Controls and priors for common parameters
-           model_fullname             model_MS_Global_a1etaa3_HarveyLike
+           model_fullname             model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2
           freq_smoothness                bool          1.000000          2.000000
              Splitting_a1             Uniform          1.400000          0.000000          5.000000
           Asphericity_eta            Fix_Auto          1.000000

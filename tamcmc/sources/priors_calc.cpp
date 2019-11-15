@@ -35,6 +35,9 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	//const long double rho_sun=M_sun*1e3/(4L*pi*std::pow(R_sun*1e5,3L)/3L); //in g.cm-3
 
 	const int smooth_switch=extra_priors[0];
+	const int a3ova1_limit=extra_priors[2];
+	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
+	
 	const int Nmax=params_length[0]; // Number of Heights
 	const int lmax=params_length[1]; // number of degree - 1
 	const int Nfl0=params_length[2]; // number of l=0 frequencies
@@ -117,8 +120,12 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 			  	break;
 	}
 
-		
-	// If requested, we impose a user-defined prior on the intensity coeficient for the magnetic effect on rotational splitting
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
+		f=-INFINITY;
+	}
+	
+/*	// If requested, we impose a user-defined prior on the intensity coeficient for the magnetic effect on rotational splitting
 	// OBSELETE
 	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3] == 10){
 		a1=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3];
@@ -134,7 +141,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 		std::cout << "The program will exit now"<< std::endl;
 		exit(EXIT_SUCCESS);	
 	}
-		
+*/		
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
 		f=-INFINITY;

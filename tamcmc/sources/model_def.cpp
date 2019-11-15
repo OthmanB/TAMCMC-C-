@@ -154,7 +154,6 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "    Your initial vector of parameter must have a FINITE initial likelihood   " << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
-			exit(EXIT_SUCCESS);
 		}
 		if(std::abs(logPrior[0]) > warning_thld){
 			std::cout << " --------------------------------- WARNING ----------------------------------" << std::endl;
@@ -163,7 +162,6 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "   Check that your initial vector of parameter is compatible with the priors" << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
-			exit(EXIT_SUCCESS);
 		}
 	
 		std::cout << "   - Variables " << std::endl;
@@ -243,6 +241,13 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
         	case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
           break;
+        	case 9:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is selfconsistently calculated), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x);
+          break;
+	       	case 10:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
+          break;
+          
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -251,6 +256,8 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
+		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
+		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
 

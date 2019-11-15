@@ -1,5 +1,5 @@
 /*
- * io_model.cpp
+ * io_models.cpp
  *
  *  This file contains the core instructions that allows you
  *  to generate the correct input vectors for the models

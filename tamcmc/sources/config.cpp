@@ -418,6 +418,14 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
         switch_name=8;
         passed=1;
     }
+    if (model_name == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1"){
+        switch_name=9;
+        passed=1;
+    }
+    if (model_name == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){
+        switch_name=10;
+        passed=1;
+    }
     if (model_name == "list_all_models"){
         switch_name=100;
         passed=2;
@@ -439,7 +447,7 @@ std::string Config::get_model_fct_name_to_switch(const std::string model_name){
 */
 
 	bool passed;
-	const int Nmodels=8;
+	const int Nmodels=10;
 	int switch_name; // The output case index
 	std::string str_out="";
 	std::vector<std::string> models(Nmodels);
@@ -454,6 +462,9 @@ std::string Config::get_model_fct_name_to_switch(const std::string model_name){
 	models[6]="model_MS_Global_a1l_etaa3_HarveyLike"; 	switches[6]=6;
 	models[7]="model_MS_Global_a1n_etaa3_HarveyLike"; 	switches[7]=7;
 	models[8]="model_MS_Global_a1nl_etaa3_HarveyLike";	switches[8]=8;
+	models[9]="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1";	switches[9]=9;
+	models[10]="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1";	switches[10]=10;
+	
 
 	passed=0;
 	for(int i=0; i<Nmodels; i++){
@@ -738,6 +749,7 @@ void Config::write_cfg_file(std::string cfg_file_out){
 /*
  * This function writes the configuration file by reading the configuration
  * within the class Config
+ * NOT TESTED AND NOT IN USE CURRENTLY!
 */	
 
     std::ofstream cfg_file_session;
@@ -1881,6 +1893,8 @@ int Config::msg_handler(const std::string file, const std::string error_type, co
         	std::cout << "              - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		std::cout << "              - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
 		std::cout << "              - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;
+		std::cout << "              - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
+		std::cout << "              - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
 	}
 	if(error_type == "prior_fctname"){

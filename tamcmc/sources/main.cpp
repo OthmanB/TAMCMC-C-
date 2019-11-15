@@ -22,6 +22,7 @@ bool isdir(const std::string pathname);
 bool generate_dir_tree(const std::string rootdir, const std::vector<std::string> subdirs);
 void status_logfile( const std::vector< std::vector<std::string> > ids, const int current_proc_ind, const int first_proc_ind, const int last_proc_ind, const std::string logfile);
 void showversion();
+void writeversion(const std::string rootdir, const std::string file, const std::string id);
 int  options(int argc, char* argv[]);
 void usage(int argc, char* argv[]);
 
@@ -139,6 +140,9 @@ int main(int argc, char* argv[]){
 					}
 					std::cout << std::endl;
 
+					std::cout << "Writting version file..." << std::endl;
+					writeversion(config_master.cfg_out_dir, "version.txt", config_master.table_ids[i].at(0));
+					
 					// process the model of the star[i] and for phase[j]... to do so, we need to reinitialize the configuration according to the new presets
 					MALA *TAMCMC= new MALA(&config); // Nsamples, Nchains, Nvars
 					//std::cout << "Before model_current initialisation" << std::endl;
@@ -347,9 +351,9 @@ bool generate_dir_tree(const std::string rootdir, const std::vector<std::string>
 			cmd="mkdir " + path;
 			rcmd=shell_exec(cmd);
 			std::cout << rcmd << std::endl;
-		} else{
-			std::cout << path << " already exists " << std::endl;
-		}
+		} //else{
+			//std::cout << path << " already exists " << std::endl;
+		//}
 		vout=v*vout; // If all dirs exist, vout should be 1. Otherwise 0.
 	}
 
@@ -382,6 +386,47 @@ void showversion()
     std::cout << " Author: " << APP_COPYRIGHT << std::endl;
 
 }
+
+void writeversion(const std::string rootdir, const std::string file, const std::string id){
+
+	 std::string filename;
+	 std::ofstream outfile;
+
+	filename= rootdir + "/" + id + "/" + file;
+
+	outfile.open(filename.c_str()); // Overwrite any existing file in PLAIN ASCII
+	 if (outfile.is_open()){
+		outfile << APP_NAME " " APP_VERSION "\n built on " __DATE__ "\n";
+		#   if defined(__clang__)
+    		outfile << " with clang " __clang_version__;
+		#   elif defined(__GNUC__)
+    		outfile << " with GCC";
+    		outfile << " %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__;
+		#   elif defined(_MSC_VER)
+    		outfile << " with MSVC";
+    		outfile << " %d", MSVC_VERSION;
+		#   else
+		    outfile << " unknown compiler";
+		#   endif
+
+    	outfile << "\n features:";
+		#   if defined(__i386__) || defined(_M_IX86)
+   			outfile << " i386" << std::endl;
+		#   elif defined(__x86_64__) || defined(_M_AMD64)
+    		outfile << " x86_64" << std::endl;
+		#   endif
+    	outfile << " Author: " << APP_COPYRIGHT << std::endl;
+		
+		outfile.flush(); // Explicitly specify to flush the data into the disk
+		outfile.close();
+  	}
+  	else {
+		std::cout << " Unable to write on file " << filename << std::endl;	
+		std::cout << " Check that the full path exists" << std::endl;
+		std::cout << " The program will exit now" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+} 
 
 
 int options(int argc, char* argv[]){

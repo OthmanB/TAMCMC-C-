@@ -20,6 +20,7 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
+
 MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool verbose){
 
 	int i, out, nl, el, cpt;
@@ -27,11 +28,12 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	std::string line0, char0, char1, char2;
 	std::vector<std::string> word, tmp;
 	std::ifstream cfg_session;
-        MatrixXd tmpXd;
+    MatrixXd tmpXd;
 
 	MCMC_files iMS_global;
 
-
+	iMS_global.numax=-9999; // Initialize the optional variable numax
+	
     cpt=0;
     i=0;
     out=0;
@@ -57,7 +59,12 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			iMS_global.ID=strtrim(strtrim(word[1]));
 			if(verbose == 1) {std::cout << "           ID=" << iMS_global.ID << std::endl;}
 		}
-		if (char0 == "!" && char1 != "!"){
+		if (char0 == "!" && char1 == "n"){
+			word=strsplit(line0, " ");
+			iMS_global.numax=str_to_dbl(word[1]);
+			if(verbose == 1) {std::cout << "           numax =" << iMS_global.numax << std::endl;}		
+		}
+		if (char0 == "!" && (char1 != "!" || char1 != "n")){
 			word=strsplit(line0, " ");
 			iMS_global.Dnu=str_to_dbl(word[1]);
 			if(verbose == 1) {std::cout << "           Dnu =" << iMS_global.Dnu << std::endl;}
@@ -280,6 +287,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    		std::cout << "The program will exit now" << std::endl;
    		exit(EXIT_FAILURE);
    }
+      
    return iMS_global;
 }
 
@@ -297,12 +305,13 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
-
+	double numax=inputs_MS_global.numax;
+	
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-
-	int lmax, en, Ntot, p0;
+	int lmax, en, Ntot, p0, cpt;
+	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
 	VectorXd extra_priors, tmpXd;
@@ -313,7 +322,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	
 	std::string tmpstr_h, tmpstr;
 	
-	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; // This is by block, each category of parameters		
+	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; //, width_App2016_params; // This is by block, each category of parameters		
 	Input_Data all_in; // The final structure of parameters, using the standards of my code
 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
 
@@ -363,6 +372,22 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=0;            		
         		do_avg_a1n=0;
+            }
+            if(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1" || all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){
+            	do_a11_eq_a12=1;
+            	do_avg_a1n=1;
+            	if(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1"){ do_width_Appourchaux=1;}
+            	if(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){ do_width_Appourchaux=2;}
+            	if(numax != -9999){ 
+            		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
+            			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
+            			std::cout << "    However, you provided a negative input. Please either:" << std::endl;
+            			std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
+            			std::cout << "           [2] Specify a valid (positive) numax." << std::endl;
+            			std::cout << "    The program will exit now. " << std::endl;
+            			exit(EXIT_SUCCESS);
+            		}
+            	}	
             }
         }
         if(inputs_MS_global.common_names[i] == "fit_squareAmplitude_instead_Height" ){ 
@@ -445,6 +470,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		rh_el.resize(0);
 	}
 	
+		
 
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
@@ -460,8 +486,23 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	}
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
-	io_calls.initialise_param(&width_in, w_relax.size(), Nmax_prior_params, -1, -1); 
+	if (do_width_Appourchaux == 0){
+		io_calls.initialise_param(&width_in, w_relax.size(), Nmax_prior_params, -1, -1); 
+	} 
+	if (do_width_Appourchaux == 1){
+		io_calls.initialise_param(&width_in, 5, Nmax_prior_params, -1, -1);
+	}
+	if (do_width_Appourchaux == 2){
+		io_calls.initialise_param(&width_in, 6, Nmax_prior_params, -1, -1);
+	}
+	if (do_width_Appourchaux != 0 && do_width_Appourchaux !=1 && do_width_Appourchaux !=2){
+		std::cout << "Fatal error on io_ms_global.cpp: Allowed Appourchaux Widths models are only model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1 or" << std::endl;
+		std::cout << "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2. However the logical switches do_width_Appourchaux did not match any of those and are not consistent with non-Appourchaux width"<< std::endl;
+		std::cout << "Serious debug required here. The program will exit now" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
+
 
 	tmpXd.resize(4);
 	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
@@ -472,15 +513,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
-	tmpXd << 0.1, 50., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
-	for(int i=0; i<w_inputs.size(); i++){
-		if(w_relax[i]){ 
-			io_calls.fill_param(&width_in, "Width_l", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
-		} else{
-			io_calls.fill_param(&width_in, "Width_l", "Fix", w_inputs[i], tmpXd, i, 0);			
-		}
-	}
-
+	
 	// --- Default setup for frequencies ---
 	for(int i=0; i<f_inputs.size(); i++){
 		if(f_relax[i]){
@@ -490,6 +523,45 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
 		}
 	}
+
+	// ----------- Calculate numax -----------
+	// Flated the output vector
+	tmpXd.resize(Nf_el.sum());
+	cpt=0;
+	if(numax <=0){
+		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax..." << std::endl;
+		for(int el=0; el<=3; el++){
+			if( Nf_el[el] != 0){
+				if(el == 0){
+					//std::cout << "l=0" << std::endl;
+					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs; 
+				}
+				if(el == 1){
+					//std::cout << "l=1" << std::endl;
+					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*1.5; ; //using default visibilities as weights 
+				}
+				if(el == 2){
+					//std::cout << "l=2" << std::endl;
+					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.53; //using default visibilities as weights
+				}
+				if(el == 3){
+					//std::cout << "l=3" << std::endl;
+					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.08; //using default visibilities as weights
+				}
+			cpt=cpt+Nf_el[el];
+			//std::cout << "cpt[" << el <<	 "]" << cpt << std::endl;
+			}
+		}
+		//std::cout << "getting in getnumax..." << std::endl;
+		numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
+		std::cout << "     numax: " << numax << std::endl;
+	} else {
+		std::cout << " Using provided numax: " << numax << std::endl;
+	}
+	std::cout << " ------------------" << std::endl;
+
+	//exit(EXIT_SUCCESS);
+ 	// -------------------------------------
 
 	// ----- Switch between the models that handle averaging over n,l or both -----
    if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
@@ -514,10 +586,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     	io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
     }
     
+    
 	// -------------- Set Extra_priors ----------------	
-	extra_priors.resize(2);
+	extra_priors.resize(3);
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
+	extra_priors[2]=0.2; // By default a3/a1<=1
 	// ------------------------------------------------
 	
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
@@ -574,7 +648,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			}
 		}
 		// -- Mode Width ---
-		if(inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width"){
+		if((inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width") && (do_width_Appourchaux == 0)){
 				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 					//fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
                     tmpstr="Jeffreys";
@@ -593,7 +667,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
 				}
 			}
-		}			
+		} 	
+		if((inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width") && (do_width_Appourchaux == 1)){
+				std::cout << "       Width argument found in the model file, but model name is: model_MS_Global_a1etaa3_AppWidth_HarveyLike. "  << std::endl;
+				std::cout << "       This is incompatible. The argument will be ignored. Fit of the Width is performed using Appourchaux+2016 relation (5 parameters + numax)" << std::endl;
+				std::cout << "       Pursuing..." <<std::endl;
+		}	
 		// --- Splittings and asymetry ---
 		if(inputs_MS_global.common_names[i] == "splitting_a1" || inputs_MS_global.common_names[i] == "Splitting_a1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -850,8 +929,17 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	
 	// --- Put the Width ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
-	io_calls.add_param(&all_in, &width_in, p0);
-		
+	if(do_width_Appourchaux == 0){ // Most models
+		io_calls.add_param(&all_in, &width_in, p0);
+	} 
+	if(do_width_Appourchaux == 1){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
+		width_in=set_width_App2016_params_v1(numax, width_in);
+		io_calls.add_param(&all_in, &width_in, p0);
+	}
+	if(do_width_Appourchaux == 2){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
+		width_in=set_width_App2016_params_v2(numax, width_in);
+		io_calls.add_param(&all_in, &width_in, p0);
+	}
 	// --- Put the Noise ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
 	io_calls.add_param(&all_in, &Noise_in, p0);
@@ -881,6 +969,9 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 			std::cout << "   freq_smoothness is set to 1 ==> APPLIES a smoothness condition on frequencies" << std::endl;
 			std::cout << "   smoothness coeficient as specified by the user (of defined by default): " << all_in.extra_priors[1] << " microHz" << std::endl;
 		}
+		
+		std::cout << "    Maximum ratio between a3 and a1: " << all_in.extra_priors[2] << std::endl;
+			
 		std::cout << " -----------------------------------------------------------" << std::endl;
 		std::cout << " ---------- Configuration of the input vectors -------------" << std::endl;
 		std::cout << "    Table of inputs " << std::endl;
@@ -1016,3 +1107,130 @@ short int fatalerror_msg_io_MS_Global(const std::string varname, const std::stri
 	return -1;
 }
 
+double getnumax(VectorXd fl, VectorXd Hl){
+/*
+* Function that uses Heights and frequencies of modes in order to calculate numax
+* The vector of inputs must be flat
+*/
+	double numax=0;
+	double Htot=0;
+	
+	//std::cout << "fl" << fl << std::endl;
+	//std::cout << "Hl" << Hl << std::endl;
+
+	for(long i=0; i<fl.size();i++){
+	 	numax=numax + fl[i]*Hl[i];
+	}
+	//std::cout << "fl*Hl: " << numax << std::endl;
+	//std::cout << " ----" << std::endl;
+	Htot=Hl.sum();
+	//std::cout << "Htot: " << Htot << std::endl;
+	//std::cout << " ----" << std::endl;
+	numax=numax/Htot;
+	
+	return numax;
+}
+
+Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
+/* 
+ * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
+ * Note that these values are taken by hand from the graphs
+ *
+ * Note It would be better to have a function that takes the input widths, fit them using Appourchaux relation so that we 
+ * get good initial guess, on a case-by-case basis. However, this would require to implement more dependencies in the code
+ * (gradient descent minimisation library/algorithms). This is not plan at the moment 
+*/
+ 
+ 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
+
+ 	VectorXd out(5); // numax, nudip, alpha, Gamma_alfa, Wdip, DeltaGammadip
+ 	MatrixXd priors(5,4);
+ 
+ 	priors.setConstant(-9999); // Set the default value for priors
+ 	
+ 	// Input values
+ 	out[0]=numax; // nudip
+ 	out[1]=4./2150.*numax + (1. - 1000.*4./2150.); // alpha
+ 	out[2]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
+ 	out[3]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
+ 	out[4]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
+ 		
+ 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
+ 	priors(0,0)=out[0];
+ 	priors(0,1)=out[0]*0.1; // 10% of numax on nudip
+ 	priors(1,0)=out[1];
+ 	priors(1,1)=out[1]*0.2; // 20% of alpha
+ 	priors(2,0)=out[2];
+ 	priors(2,1)=out[2]*0.2; // 20% of Gamma_alpha
+ 	priors(3,0)=out[3];
+ 	priors(3,1)=out[3]*0.2; // 20% of Wdip
+ 	priors(4,0)=out[4];
+ 	priors(4,1)=out[4]*0.4; // 20% of DeltaGammadip
+
+	//io_calls.show_param(width_in, 0);
+	
+	// Filling the structure of width parameters
+	io_calls.fill_param(&width_in, "width:Appourchaux_v1:nudip", "Gaussian", out[0],priors.row(0), 0, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v1:alpha", "Gaussian", out[1],priors.row(1), 1, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v1:Gamma_alpha", "Gaussian", out[2],priors.row(2), 2, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v1:Wdip", "Gaussian", out[3],priors.row(3), 3, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v1:DeltaGammadip", "Gaussian", out[4],priors.row(4), 4, 0);
+	
+	//io_calls.show_param(width_in, 0);
+	//exit(EXIT_SUCCESS);
+	return width_in;
+}
+
+Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
+/* 
+ * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
+ * Note that these values are taken by hand from the graphs
+ *
+ * Note It would be better to have a function that takes the input widths, fit them using Appourchaux relation so that we 
+ * get good initial guess, on a case-by-case basis. However, this would require to implement more dependencies in the code
+ * (gradient descent minimisation library/algorithms). This is not plan at the moment 
+*/
+ 
+ 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
+
+ 	VectorXd out(6); // numax, nudip, alpha, Gamma_alfa, Wdip, DeltaGammadip
+ 	MatrixXd priors(6,4);
+ 
+ 	priors.setConstant(-9999); // Set the default value for priors
+ 	
+ 	// Input values
+ 	out[0]=numax; // numax
+ 	out[1]=numax; // nudip
+ 	out[2]=4./2150.*numax + (1. - 1000.*4./2150.); // alpha
+ 	out[3]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
+ 	out[4]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
+ 	out[5]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
+ 		
+ 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
+ 	priors(0,0)=out[0];
+ 	priors(0,1)=out[0]*0.1; // 10% of numax on numax
+ 	priors(1,0)=out[1];
+ 	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
+ 	priors(2,0)=out[2];
+ 	priors(2,1)=out[2]*0.2; // 20% of alpha
+ 	priors(3,0)=out[3];
+ 	priors(3,1)=out[3]*0.2; // 20% of Gamma_alpha
+ 	priors(4,0)=out[4];
+ 	priors(4,1)=out[4]*0.2; // 20% of Wdip
+ 	priors(5,0)=out[5];
+ 	priors(5,1)=out[5]*0.4; // 20% of DeltaGammadip
+
+	//io_calls.show_param(width_in, 0);
+	
+	// Filling the structure of width parameters
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:numax", "Gaussian", out[0],priors.row(0), 0, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:nudip", "Gaussian", out[1],priors.row(1), 1, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:alpha", "Gaussian", out[2],priors.row(2), 2, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Gaussian", out[3],priors.row(3), 3, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Gaussian", out[4],priors.row(4), 4, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Gaussian", out[5],priors.row(5), 5, 0);
+	
+	//io_calls.show_param(width_in, 0);
+	//exit(EXIT_SUCCESS);
+	return width_in;
+}

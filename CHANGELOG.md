@@ -1,5 +1,12 @@
 # Version history #
 
+### v1.3.3-dev New model and improvements ###
+	  * Add two models with fit of the Width from Appourchaux 2012 instead of individual widths. 
+	    This is made in a transparent way, using the input widths for defining the guesses. Thus, no need to change drastically the structure of .model files
+	  	Priors on the parameter of the model are hard-coded at the moment. See io_ms_global.cpp for their value (typically 10-20% of the expected values) [DONE] [NEED TEST ON DALMA]
+	  * When starting a new process, a 'version.txt' file is writtent in the object directory. This file gives the code version used for the processing [DONE] [TESTED]
+	  * Adding a hard-coded limit on a3/a1 < 0.2. This to avoid very unphysical solutions (that lead to a star rotating in the opposite direction in the pole [DONE] [TESTED]
+	   
 ### v1.3.2-dev Improvements ###
       * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
       * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
@@ -9,12 +16,12 @@
       			Frequency     GUG     -1    -1    -1     [sigma1]    [sigma2]       (-1 are replaced by values of the table of frequencies)
       	For Uniform the syntax is
       			Frequency     Uniform  -1  -1   -1      (-1 are replaced by values of the table of frequencies)
-      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DONE] 
+      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() 
         This reduced the size of this program significantly by removing redoundant commands
         This allows much easier generation of a model. Note that the function could be used to create any kind of vector of parameters
       * Minor esthetic improvements in the text outputs
-      * Few minor typos and fixes into the .md files [DONE] [TESTED]
-      * Starting a basic documentation in tex [DEV]
+      * Few minor typos and fixes into the .md files [DONE]
+      * Starting a basic documentation in tex [DEV] [POSTPONED: Replace by Wifi on Github]
         
 ### v1.3.1 Minor improvements/Bug fix ###
 	* Correcting a typo in getmodel.cpp that prevented the compilation of getmodel tool
