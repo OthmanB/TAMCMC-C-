@@ -1,0 +1,18 @@
+in config.cpp: need to work on the function around line 426
+
+NEED TO BE DONE:
+ 0. Investigate the following error (probably due to capital letters...):
+ 	Unrecognized name for prior_fct_name=io_MS_Global
+         The name of priors MUST BE those on the following list:
+              - 'prior_Test_Gaussian'
+              - 'prior_Harvey_Gaussian'
+              - 'io_MS_Global (handling I/O for Main-Sequence star models) '
+	Check the configuration file
+	The program will stop now
+
+
+ 1. Implement the model/prior/likelihood listing handling into the error messages
+ 2. Extend the association between name and case to the statistical priors database 
+ 
+ 
+ 

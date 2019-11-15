@@ -1,0 +1,10 @@
+# Case index , model function name, # comment
+0 Test_Gaussian 			
+1 model_Harvey_Gaussian				
+2 model_MS_Global_a1etaa3_HarveyLike		
+3 model_MS_Global_a1etaa3_HarveyLike_Classic	
+4 model_MS_Global_a1etaa3_Harvey1985		
+5 model_MS_Global_a1acta3_Harvey1985		 # obselete
+6 model_MS_Global_a1l_etaa3_HarveyLike		
+7 model_MS_Global_a1n_etaa3_HarveyLike		
+8 model_MS_Global_a1nl_etaa3_HarveyLike		

@@ -1,0 +1,4 @@
+# case index, priors function name, # comments
+0 priors_Test_Gaussian
+1 priors_Harvey_Gaussian
+2 io_MS_Global
