@@ -1067,7 +1067,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 		lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+4])/(1. + pow(e,2));		
 		Wl0=exp(lnGamma0 + lnLorentz);
 
-		std::cout << "Wl0=" << Wl0 << std::endl;
+		//std::cout << "Wl0=" << Wl0 << std::endl;
 		 
 		if(do_amp){
 			Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
@@ -1084,7 +1084,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 			lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+4])/(1. + pow(e,2));		
 			Wl1=exp(lnGamma0 + lnLorentz);
 
-			std::cout << "Wl1=" << Wl1 << std::endl;
+			//std::cout << "Wl1=" << Wl1 << std::endl;
 
 			if(do_amp){
                 Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
@@ -1100,7 +1100,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 			lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+4])/(1. + pow(e,2));		
 			Wl2=exp(lnGamma0 + lnLorentz);
 
-			std::cout << "Wl2=" << Wl2 << std::endl;
+			//std::cout << "Wl2=" << Wl2 << std::endl;
 
 			if(do_amp){
 				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
@@ -1116,7 +1116,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 			lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+4])/(1. + pow(e,2));		
 			Wl3=exp(lnGamma0 + lnLorentz);
 
-			std::cout << "Wl3=" << Wl3 << std::endl;
+			//std::cout << "Wl3=" << Wl3 << std::endl;
 
 			if(do_amp){
               Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
@@ -1143,8 +1143,8 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	
-	std::cout << "End test" << std::endl;
-    exit(EXIT_SUCCESS);
+	//std::cout << "End test" << std::endl;
+       //exit(EXIT_SUCCESS);
 
 	return model_final;
 }
@@ -1258,7 +1258,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
 
-		std::cout << "Wl0=" << Wl0 << std::endl;
+		//std::cout << "Wl0=" << Wl0 << std::endl;
 		
 		if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
@@ -1267,7 +1267,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 			lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+5])/(1. + pow(e,2));		
 			Wl1=exp(lnGamma0 + lnLorentz);
 
-			std::cout << "Wl1=" << Wl1 << std::endl;
+			//std::cout << "Wl1=" << Wl1 << std::endl;
 
 			if(do_amp){
                 Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
@@ -1283,7 +1283,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 			lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+5])/(1. + pow(e,2));		
 			Wl2=exp(lnGamma0 + lnLorentz);
 
-			std::cout << "Wl2=" << Wl2 << std::endl;
+			//std::cout << "Wl2=" << Wl2 << std::endl;
 
 			if(do_amp){
 				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
@@ -1324,8 +1324,8 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	
-	std::cout << "End test" << std::endl;
-    exit(EXIT_SUCCESS);
+	//std::cout << "End test" << std::endl;
+        //exit(EXIT_SUCCESS);
 
 	return model_final;
 }
