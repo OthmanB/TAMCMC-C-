@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.3.2-2dev ###
+    * Models, priors and primordial priors are all now handled through output files in the Config/default/ directory (*.list files). Several core functions have been update to handle this
+
 ### v1.3.2-dev Improvements ###
       * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
       * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 

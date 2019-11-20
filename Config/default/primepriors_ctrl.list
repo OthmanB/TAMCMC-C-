@@ -1,0 +1,15 @@
+# DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING
+# case index, primitive priors function name, # comments
+0 None
+0 Fix
+1 Uniform
+2 Gaussian
+3 multivar_Gaussian
+4 Jeffreys
+5 UG		#Uniform-Gaussian
+6 GU		#Gaussian-Uniform
+7 GUG		#Gaussian-Uniform-Gaussian
+8 Uniform_abs	#Uniform prior on the absolute value of the input
+9 Uniform_cos	# Buggy. Do not use
+10 Jeffreys_abs
+11 Auto

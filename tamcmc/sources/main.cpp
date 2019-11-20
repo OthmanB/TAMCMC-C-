@@ -62,13 +62,18 @@ int main(int argc, char* argv[]){
 
     std::string error_file_default=cpath + "/Config/default/errors_default.cfg"; // This is the file that defines the error values used to initialize the covariance matrix
     std::string cfg_file_default=cpath + "/Config/default/config_default.cfg"; // This is all the parameters required to run the TAMCMC
+	
+	std::string cfg_file_modelslist=cpath + "/Config/default/models_ctrl.list";
+	std::string cfg_file_priorslist=cpath + "/Config/default/priors_ctrl.list";
+	std::string cfg_file_likelihoodslist=cpath + "/Config/default/likelihoods_ctrl.list";
+	std::string cfg_file_primepriorslist=cpath + "/Config/default/primepriors_ctrl.list";
+	
 	std::string cfg_file_presets=cpath + "/Config/config_presets.cfg"; // This is a simpler configuration that allow scripting of the TAMCMC... This is the main configuration file
-
     std::string logfile=cpath + "/processes.log";
     
 	// Load the default configuration
 	std::cout << "- Loading the default configurations..." << std::endl;
-        Config config(cpath, cfg_file_default, error_file_default);
+        Config config(cpath, cfg_file_default, error_file_default, cfg_file_modelslist, cfg_file_priorslist, cfg_file_likelihoodslist, cfg_file_primepriorslist);
 
 	// Load the Preset configuration (Master configurator)
 	std::cout << "- Loading the Preset configuration: config_presets.cfg..." << std::endl;
@@ -84,8 +89,6 @@ int main(int argc, char* argv[]){
 		// BENOIT: after config_preset reset first/last start index to command line parameter values
                 config_master.first_id_ind=startV;
                 config_master.last_id_ind=lastV;
-                //config_master.first_process_ind=startV;
-                //config_master.last_process_ind=lastV;
 		// If the user-defined last index is greater than the size of the table, force the last index to match the size of the array
 		if (config_master.last_process_ind > config_master.processing.size()){ 
 			config_master.last_process_ind=config_master.processing.size()-1;
@@ -150,8 +153,6 @@ int main(int argc, char* argv[]){
 					//std::cout << "After Outputs initialisation" << std::endl;
 					Diagnostics *diags = new Diagnostics(&config);
 
-					//std::cout << "Before TAMCMC->execute" << std::endl;
-					//exit(EXIT_SUCCESS);
 					long begin_time = ben_clock();
 					TAMCMC->execute(model_current, model_propose, &config.data.data, &config, out, diags);
 					std::cout << " ----------------------------" << std::endl;
