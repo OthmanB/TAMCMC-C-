@@ -334,6 +334,32 @@ void Config::read_inputs_priors_MS_Global(){
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
 }
 
+
+void Config::read_inputs_priors_local(){
+
+	bool verbose=1;
+	MCMC_files iMS_local;
+	Input_Data in_vals;
+	
+	std::cout << "Stop in Config::read_inputs_priors_local: Need to be implemented... CHECK CAREFULLY AS IT WAS HALF ADAPTED" << std::endl;
+	exit(EXIT_SUCCESS);
+	
+	//std::cout << "Before read_MCMC" << std::endl;
+	std::cout << "  - Reading the MCMC file: " << modeling.cfg_model_file << "..." << std::endl;
+	iMS_local=read_MCMC_file_local(modeling.cfg_model_file, 0); // Read the MCMC file, with verbose=0 here
+	
+	// WILL NEED TO CONTAIN THE SLICE RANGE? NEED TO THINK ABOUT IT
+	data.data.xrange=iMS_local.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
+	
+	std::cout << "   - Preparing input and priors parameters..." << std::endl;
+    in_vals=build_init_local(iMS_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
+	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	modeling.inputs=in_vals;
+	modeling.model_fct_name=in_vals.model_fullname;
+	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
+}
+
+
 VectorXi Config::convert_priors_names_to_switch(const std::vector<std::string> p_names){
 /* 
  * This function convert the p_names string into a set of pre-defined integer values
@@ -1523,6 +1549,10 @@ void Config::read_inputs_files(){
 	}
 	if((modeling.prior_fct_name == "io_MS_Global")){
 		read_inputs_priors_MS_Global();
+		passed=1;
+	}
+	if((modeling.prior_fct_name == "io_local")){
+		read_inputs_priors_local();
 		passed=1;
 	}
 	if(passed == 0){

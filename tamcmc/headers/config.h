@@ -16,6 +16,8 @@
 #include "matrices.h"
 //#include "string_handler.h"
 #include "io_ms_global.h"
+#include "io_local.h"
+
 
 //using namespace std;
 
@@ -205,15 +207,15 @@ class Config{
 
 		std::string get_model_fct_name_to_switch(const std::string model_name); // same as convert_model_fct_name_to_switch() but return a string. Can list all models as well (used by getmodel tool)
 		
-
 		inline bool file_exists(const std::string& name); 
 		Data_Nd read_data_ascii_Ncols(const std::string file_in_name, const std::string delimiter, const bool verbose_data); // The main function to read ASCII files
 		std::string format_line(const std::string str);
 		void read_restore_files();
 		void read_inputs_files(); // Function that is in charge of handling the input files. These contain the initial values for the parameters as well as the priors
 		void read_inputs_prior_Simple_Matrix(); // Procedure that reads simple configuration file, organized as a Matrix of information. See Config.cpp for further details
-		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure
-
+		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure of global models
+		void read_inputs_priors_local(); // For reading a MCMC and setting the modeling inputs structure of local models
+		
 		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal);
 };
 

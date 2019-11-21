@@ -21,7 +21,7 @@ using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
 
-MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool verbose){
+MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool verbose){
 
 	bool range_done=0;
 	int i, out, nl, el, cpt;
@@ -31,6 +31,9 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	std::ifstream cfg_session;
     MatrixXd tmpXd;
 
+	std::cout << "Stop in read_MCMC_file_local: Need to be implemented..." << std::endl;
+	exit(EXIT_SUCCESS); 
+	
 	MCMC_files iMS_global;
 
 	iMS_global.numax=-9999; // Initialize the optional variable numax
@@ -300,7 +303,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    return iMS_global;
 }
 
-Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
+Input_Data build_init_local(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
 
 	const long double pi = 3.141592653589793238L;
 	const double G=6.667e-8;
@@ -338,6 +341,10 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	// Flatening and ordering of all the inputs/relax variables
 	lmax=inputs_MS_global.els.maxCoeff();
 
+	std::cout << "Stop in build_init_local: Need to be implemented" << std::endl;
+	exit(EXIT_SUCCESS);
+	
+	
 	// -- Initialisation of structures --
     // --- Look for common instruction That must be run before the setup ---------
 	all_in.model_fullname=" "; // Default is an empty string
@@ -1010,7 +1017,7 @@ return all_in;
 }
 
 
-short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const VectorXd noise_params){
+short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, const VectorXd noise_params){
 /*
  *
  * A function that prepares the Noise_in Data structure using 
@@ -1018,6 +1025,9 @@ short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const 
  *
 */
 
+	std::cout << "Stop in set_noise_params_local: Need to be implemented using either constant of linear fct" << std::endl;
+	exit(EXIT_SUCCESS);
+	
 	(*Noise_in).inputs_names[0]="Harvey-Noise_H"; (*Noise_in).inputs_names[3]="Harvey-Noise_H"; (*Noise_in).inputs_names[6]="Harvey-Noise_H";
 	(*Noise_in).inputs_names[1]="Harvey-Noise_tc"; (*Noise_in).inputs_names[4]="Harvey-Noise_tc"; (*Noise_in).inputs_names[7]="Harvey-Noise_tc";
 	(*Noise_in).inputs_names[2]="Harvey-Noise_p"; (*Noise_in).inputs_names[5]="Harvey-Noise_p"; (*Noise_in).inputs_names[8]="Harvey-Noise_p";
@@ -1096,7 +1106,7 @@ short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const 
 	return 0;
 }
 
-short int fatalerror_msg_io_MS_Global(const std::string varname, const std::string param_type, const std::string syntax_vals, const std::string example_vals){
+short int fatalerror_msg_io_local(const std::string varname, const std::string param_type, const std::string syntax_vals, const std::string example_vals){
 /*
 * Function that handle error messages and warnings for io_MS_Global
 */
@@ -1115,123 +1125,4 @@ short int fatalerror_msg_io_MS_Global(const std::string varname, const std::stri
 	std::cout << "         The program will exit now" << std::endl;
 	exit(EXIT_FAILURE);
 	return -1;
-}
-
-double getnumax(VectorXd fl, VectorXd Hl){
-/*
-* Function that uses Heights and frequencies of modes in order to calculate numax
-* The vector of inputs must be flat
-*/
-	double numax=0;
-	double Htot=0;
-	
-	for(long i=0; i<fl.size();i++){
-	 	numax=numax + fl[i]*Hl[i];
-	}
-	Htot=Hl.sum();
-	numax=numax/Htot;
-	
-	return numax;
-}
-
-Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
-/* 
- * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
- * Note that these values are taken by hand from the graphs
- *
- * Note It would be better to have a function that takes the input widths, fit them using Appourchaux relation so that we 
- * get good initial guess, on a case-by-case basis. However, this would require to implement more dependencies in the code
- * (gradient descent minimisation library/algorithms). This is not plan at the moment 
-*/
- 
- 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
-
- 	VectorXd out(5); // numax, nudip, alpha, Gamma_alfa, Wdip, DeltaGammadip
- 	MatrixXd priors(5,4);
- 
- 	priors.setConstant(-9999); // Set the default value for priors
- 	
- 	// Input values
- 	out[0]=numax; // nudip
- 	out[1]=4./2150.*numax + (1. - 1000.*4./2150.); // alpha
- 	out[2]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
- 	out[3]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
- 	out[4]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
- 		
- 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
- 	priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on nudip
- 	priors(1,0)=out[1];
- 	priors(1,1)=out[1]*0.2; // 20% of alpha
- 	priors(2,0)=out[2];
- 	priors(2,1)=out[2]*0.2; // 20% of Gamma_alpha
- 	priors(3,0)=out[3];
- 	priors(3,1)=out[3]*0.2; // 20% of Wdip
- 	priors(4,0)=out[4];
- 	priors(4,1)=out[4]*0.4; // 20% of DeltaGammadip
-
-	//io_calls.show_param(width_in, 0);
-	
-	// Filling the structure of width parameters
-	io_calls.fill_param(&width_in, "width:Appourchaux_v1:nudip", "Gaussian", out[0],priors.row(0), 0, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v1:alpha", "Gaussian", out[1],priors.row(1), 1, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v1:Gamma_alpha", "Gaussian", out[2],priors.row(2), 2, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v1:Wdip", "Gaussian", out[3],priors.row(3), 3, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v1:DeltaGammadip", "Gaussian", out[4],priors.row(4), 4, 0);
-	
-	//io_calls.show_param(width_in, 0);
-	return width_in;
-}
-
-Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
-/* 
- * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
- * Note that these values are taken by hand from the graphs
- *
- * Note It would be better to have a function that takes the input widths, fit them using Appourchaux relation so that we 
- * get good initial guess, on a case-by-case basis. However, this would require to implement more dependencies in the code
- * (gradient descent minimisation library/algorithms). This is not plan at the moment 
-*/
- 
- 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
-
- 	VectorXd out(6); // numax, nudip, alpha, Gamma_alfa, Wdip, DeltaGammadip
- 	MatrixXd priors(6,4);
- 
- 	priors.setConstant(-9999); // Set the default value for priors
- 	
- 	// Input values
- 	out[0]=numax; // numax
- 	out[1]=numax; // nudip
- 	out[2]=4./2150.*numax + (1. - 1000.*4./2150.); // alpha
- 	out[3]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
- 	out[4]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
- 	out[5]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
- 		
- 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
- 	priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on numax
- 	priors(1,0)=out[1];
- 	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
- 	priors(2,0)=out[2];
- 	priors(2,1)=out[2]*0.2; // 20% of alpha
- 	priors(3,0)=out[3];
- 	priors(3,1)=out[3]*0.2; // 20% of Gamma_alpha
- 	priors(4,0)=out[4];
- 	priors(4,1)=out[4]*0.2; // 20% of Wdip
- 	priors(5,0)=out[5];
- 	priors(5,1)=out[5]*0.4; // 20% of DeltaGammadip
-
-	//io_calls.show_param(width_in, 0);
-	
-	// Filling the structure of width parameters
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:numax", "Gaussian", out[0],priors.row(0), 0, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:nudip", "Gaussian", out[1],priors.row(1), 1, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:alpha", "Gaussian", out[2],priors.row(2), 2, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Gaussian", out[3],priors.row(3), 3, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Gaussian", out[4],priors.row(4), 4, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Gaussian", out[5],priors.row(5), 5, 0);
-	
-	//io_calls.show_param(width_in, 0);
-	return width_in;
 }
