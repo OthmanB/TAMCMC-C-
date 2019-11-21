@@ -17,18 +17,56 @@
 #include "io_ms_global.h"
 #include "string_handler.h"
 
-Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors){ // The constructor
+Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors, 
+			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
+			   std::string cfg_primepriors_ctrl_file_in){ // The constructor
+
+	VectorXi c_vals1, c_vals2, c_vals3, c_vals4;
+	std::vector<std::string> str_vals1, str_vals2, str_vals3, str_vals4;
 
 	working_dir=current_path;
 	cfg_file=cfg_file_in;
 	errordefault_file=cfg_file_errors;
-
+	cfg_models_ctrl_file=cfg_models_ctrl_file_in;
+	cfg_priors_ctrl_file=cfg_priors_ctrl_file_in;
+	cfg_likelihoods_ctrl_file=cfg_likelihoods_ctrl_file_in;
+	
+	cfg_primepriors_ctrl_file=cfg_primepriors_ctrl_file_in;
+	
 	// ---- Read the configuration files and perform the setup ----
-	bool verbose=1;
-	std::cout << "       - config_default.cfg..." << std::endl;
+	const bool verbose=1;
+	std::cout << "       - Reading the file with the default configuration: " << std::endl;
+	std::cout << "                 " << cfg_file_in << "..." << std::endl;
 	read_cfg_file(verbose); // read the default configuration file... because it is not necessarily the final configuration, do not verbose
-	std::cout << "       - errors_default.cfg..." << std::endl;
+	std::cout << "       - Reading the file with the default error values on parameters: " << std::endl;
+	std::cout << "                 " << cfg_file_errors << "..." << std::endl;
 	read_defautlerrors(verbose); // read the values that are used to initialized the covariance matrix
+	std::cout << "       - Reading the file listing model functions: " << std::endl;
+	std::cout << "                 " << cfg_models_ctrl_file << "..." << std::endl;
+	read_listfiles(cfg_models_ctrl_file, verbose, &c_vals1, &str_vals1);
+	modeling.models_case_list_ctrl=c_vals1;
+	modeling.models_list_ctrl=str_vals1;
+		
+	std::cout << "       - Reading the file listing (meta)prior functions: " << std::endl;
+	std::cout << "                 " << cfg_priors_ctrl_file << "..." << std::endl;
+	read_listfiles(cfg_priors_ctrl_file, verbose, &c_vals2, &str_vals2);
+	modeling.priors_case_list_ctrl=c_vals2;
+	modeling.priors_list_ctrl=str_vals2;
+	std::cout << "       - Reading the file listing likelihood functions: " << std::endl;
+	std::cout << "                 " << cfg_likelihoods_ctrl_file << "..." << std::endl;
+	read_listfiles(cfg_likelihoods_ctrl_file, verbose, &c_vals3, &str_vals3);
+	modeling.likelihoods_case_list_ctrl=c_vals3;
+	modeling.likelihoods_list_ctrl=str_vals3;
+
+	std::cout << "       - Reading the file listing primitive prior functions : " << std::endl;
+	std::cout << "                 " << cfg_primepriors_ctrl_file << "..." << std::endl;
+	read_listfiles(cfg_primepriors_ctrl_file, verbose, &c_vals4, &str_vals4);
+	modeling.primepriors_case_list_ctrl=c_vals4;
+	modeling.primepriors_list_ctrl=str_vals4;
+
+//	for(int i=0; i< modeling.primepriors_case_list_ctrl.size(); i++){
+//		std::cout << 	 modeling.primepriors_case_list_ctrl[i] << "   " << modeling.primepriors_list_ctrl[i] << std::endl;
+//	}
 	data.data.xrange.resize(2);
 	data.data.xrange.setConstant(-9999); // Initialize the data range to a dummy value easily recognizable
 	// ------------------------------------------------------------
@@ -306,67 +344,27 @@ VectorXi Config::convert_priors_names_to_switch(const std::vector<std::string> p
 */
 
 	bool passed;
-	int i;
+	int i, j;
+	const int Npriors=modeling.primepriors_list_ctrl.size();
 	VectorXi switch_names(p_names.size()); // The output vector
 
-	for(i=0; i<p_names.size();i++){
+	for (i = 0; i< p_names.size(); i++){	
 		passed=0;
-		if (p_names[i] == "NONE" || p_names[i] == "Fix"){
-			switch_names[i]=0;
-			passed=1;
+		for(j = 0; j<Npriors;j++){
+			if (p_names[i] ==  modeling.primepriors_list_ctrl[j]){
+				switch_names[i]= modeling.primepriors_case_list_ctrl[j];
+				passed=1;
+			}
 		}
-		if (p_names[i] == "Uniform"){
-			switch_names[i]=1;
-			passed=1;
-		}
-		if (p_names[i] == "Gaussian"){
-			switch_names[i]=2;
-			passed=1;
-		}
-		if (p_names[i] == "multivar_Gaussian"){
-			switch_names[i]=3;
-			passed=1;
-		}
-		if (p_names[i] == "Jeffreys"){
-			switch_names[i]=4;
-			passed=1;
-		}
-		if (p_names[i] == "UG"){  // Uniform-Gaussian
-			switch_names[i]=5;
-			passed=1;
-		}
-		if (p_names[i] == "GU"){ // Gaussian-Uniform
-			switch_names[i]=6;
-			passed=1;
-		}
-		if (p_names[i] == "GUG"){ // Gaussian-Uniform-Gaussian
-			switch_names[i]=7;
-			passed=1;
-		}
-		if (p_names[i] == "Uniform_abs"){ //Uniform prior on the absolute value of the input
-			switch_names[i]=8;
-			passed=1;
-		}
-		if (p_names[i] == "Uniform_cos"){ // Uniform prior on the cosinus of the input
-			switch_names[i]=9;
-			passed=1;
-		}
-		if (p_names[i] == "Jeffreys_abs"){
-			switch_names[i]=10;
-			passed=1;
-		}
-		if (p_names[i] == "Auto"){ // Usually this is for an hyper-prior, which bundaries cannot be defined at the initialization
-			switch_names[i]=11;
-			passed=1;
-		}
-				
 		if (passed == 0){
 			msg_handler("", "prior_fctname", "Config::convert_priors_names_to_switch()", p_names[i], 1);
 		}
 	}
-
 	return switch_names;
+
+
 }
+
 
 int Config::convert_model_fct_name_to_switch(const std::string model_name){
 /* 
@@ -379,114 +377,21 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
 
 	bool passed;
 	int i;
-	int switch_name; // The output case index
+	const int Nmodels=modeling.models_list_ctrl.size();
+	int switch_name=-9999; // The output case index
 
 	passed=0;
-	if (model_name == "model_Test_Gaussian"){
-		switch_name=0;
-		passed=1;
-	}
-	if (model_name == "model_Harvey_Gaussian"){
-		switch_name=1;
-		passed=1;
-	}
-	if (model_name == "model_MS_Global_a1etaa3_HarveyLike"){
-		switch_name=2;
-		passed=1;
-	}
-	if (model_name == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
-		switch_name=3;
-		passed=1;
-	}
-	if (model_name == "model_MS_Global_a1etaa3_Harvey1985"){
-		switch_name=4;
-		passed=1;
-	}
-	if (model_name == "model_MS_Global_a1acta3_Harvey1985"){
-		switch_name=5;
-		passed=1;
-	}	
-    if (model_name == "model_MS_Global_a1l_etaa3_HarveyLike"){
-        switch_name=6;
-        passed=1;
-    }
-    if (model_name == "model_MS_Global_a1n_etaa3_HarveyLike"){
-        switch_name=7;
-        passed=1;
-    }
-    if (model_name == "model_MS_Global_a1nl_etaa3_HarveyLike"){
-        switch_name=8;
-        passed=1;
-    }
-    if (model_name == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1"){
-        switch_name=9;
-        passed=1;
-    }
-    if (model_name == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){
-        switch_name=10;
-        passed=1;
-    }
-    if (model_name == "list_all_models"){
-        switch_name=100;
-        passed=2;
-    }
-    if (passed == 0){
-		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
-	}
 
-return switch_name;
-}
-
-std::string Config::get_model_fct_name_to_switch(const std::string model_name){
-/* 
- * This function lists the model_names and its association to the integer value that
- * is specifically intended to convert model_name into a limited set of cases.
- * that can be handled by the 'switch(x)' and case statement. The switch statement
- * is faster than the if/else and is prefered when used in loops.
- * See model_def.cpp for the actual use of the switch statement.
-*/
-
-	bool passed;
-	const int Nmodels=10;
-	int switch_name; // The output case index
-	std::string str_out="";
-	std::vector<std::string> models(Nmodels);
-	VectorXi switches(Nmodels);
-
-	models[0]="model_Test_Gaussian"; 		  	switches[0]=0;
-	models[1]="model_Harvey_Gaussian"; 		  	switches[1]=1;
-	models[2]="model_MS_Global_a1etaa3_HarveyLike";   	switches[2]=2;
-	models[3]="model_MS_Global_a1etaa3_HarveyLike_Classic"; switches[3]=3;
-	models[4]="model_MS_Global_a1etaa3_Harvey1985";   	switches[4]=4;
-	models[5]="model_MS_Global_a1acta3_Harvey1985";   	switches[5]=5;
-	models[6]="model_MS_Global_a1l_etaa3_HarveyLike"; 	switches[6]=6;
-	models[7]="model_MS_Global_a1n_etaa3_HarveyLike"; 	switches[7]=7;
-	models[8]="model_MS_Global_a1nl_etaa3_HarveyLike";	switches[8]=8;
-	models[9]="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1";	switches[9]=9;
-	models[10]="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1";	switches[10]=10;
-	
-
-	passed=0;
-	for(int i=0; i<Nmodels; i++){
-		if (model_name == models[i]){
-			switch_name=switches[i];
+	for (i = 0; i< Nmodels; i++){	
+		if (model_name ==  modeling.models_list_ctrl[i]){
+			switch_name= modeling.models_case_list_ctrl[i];
 			passed=1;
 		}
 	}
-    if (model_name == "list_all_models"){
-        switch_name=100;
-        passed=2;
-	for(int i=0; i<Nmodels; i++){
-		str_out=str_out + " " + models[i];
-	}
-	return str_out;
-
-    }
     if (passed == 0){
 		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
-	}
-
-return int_to_str(switch_name);
+	}	
+	return switch_name;
 }
 
 int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
@@ -497,31 +402,24 @@ int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
  * is faster than the if/else and is prefered when used in loops.
  * See model_def.cpp for the actual use of the switch statement.
 */
-
 	bool passed;
 	int i;
-	int switch_name; // The output case index
+	const int Npriors=modeling.priors_list_ctrl.size();
+	int switch_name=-9999; // The output case index
 
 	passed=0;
-	if (prior_name == "prior_Test_Gaussian"){
-		switch_name=0;
-		passed=1;
-	}
-	if (prior_name == "prior_Harvey_Gaussian"){
-		switch_name=1;
-		passed=1;
-	}
-	// Priors for the family of models "prior_MS_global" is handled by the same function 
-	if ( (prior_name == "io_ms_Global") ){ 
-		switch_name=2;
-		passed=1;
+
+	for (i = 0; i< Npriors; i++){	
+		if (prior_name ==  modeling.priors_list_ctrl[i]){
+			switch_name= modeling.priors_case_list_ctrl[i];
+			passed=1;
+		}
 	}
 	if (passed == 0){
 		msg_handler("", "prior_name", "Config::convert_prior_fct_name_to_switch()", prior_name, 1);
 	}
 
-	
-return switch_name;
+	return switch_name;
 }
 
 int Config::convert_likelihood_fct_name_to_switch(const std::string likelihood_name){
@@ -532,35 +430,25 @@ int Config::convert_likelihood_fct_name_to_switch(const std::string likelihood_n
  * is faster than the if/else and is prefered when used in loops.
  * See model_def.cpp for the actual use of the switch statement.
 */
-
+	
 	bool passed;
 	int i;
-	int switch_name; // The output case index
+	const int Npriors=modeling.likelihoods_list_ctrl.size();
+	int switch_name=-9999; // The output case index
 
 	passed=0;
-	passed=0;
-	if (likelihood_name == "chi(2,2p)"){
-		switch_name=0;
-		passed=1;
-	}
-	if (likelihood_name == "chi_square"){
-		switch_name=1;
-		passed=1;
+
+	for (i = 0; i< Npriors; i++){	
+		if (likelihood_name ==  modeling.likelihoods_list_ctrl[i]){
+			switch_name= modeling.likelihoods_case_list_ctrl[i];
+			passed=1;
+		}
 	}
 	if (passed == 0){
-		std::cout << "Warning: Error in config.cpp" << std::endl;
-		std::cout << "Warning: Problem in the definition of the likelihood name" << std::endl;
-		std::cout << "         Unknown model name detected: " << likelihood_name << std::endl;
-		std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
-		std::cout << "              - 'chi_square'" << std::endl;
-		std::cout << "              - 'chi(2,2p)'" << std::endl;
-		std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
-		std::cout << "         The program will stop now" << std::endl;
-		exit(EXIT_FAILURE);
+		msg_handler("", "likelihood_name", "Config::convert_likelihood_fct_name_to_switch()", likelihood_name, 1);
 	}
+	return switch_name;
 
-
-return switch_name;
 }
 
 Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std::string delimiter, const bool verbose_data){
@@ -749,7 +637,6 @@ void Config::write_cfg_file(std::string cfg_file_out){
 /*
  * This function writes the configuration file by reading the configuration
  * within the class Config
- * NOT TESTED AND NOT IN USE CURRENTLY!
 */	
 
     std::ofstream cfg_file_session;
@@ -1621,6 +1508,7 @@ void Config::read_restore_files(){
 
 }
 
+
 void Config::read_inputs_files(){
 
     bool passed=0; 
@@ -1632,27 +1520,13 @@ void Config::read_inputs_files(){
 	if(modeling.prior_fct_name == "prior_Harvey_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
-		//exit(EXIT_SUCCESS);
 	}
-	if((modeling.prior_fct_name == "io_ms_Global")){// || (modeling.prior_fct_name == "prior_MS_Global_a1etaa3_HarveyLike") ||
-		 //(modeling.prior_fct_name == "prior_MS_Global_a1etaa3_Harvey1985") || (modeling.prior_fct_name == "prior_MS_Global_a1acta3_HarveyLike") ||
-		 //(modeling.prior_fct_name == "prior_MS_Global_a1acta3_Harvey1985") ) { // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
+	if((modeling.prior_fct_name == "io_MS_Global")){
 		read_inputs_priors_MS_Global();
 		passed=1;
 	}
-	//if(modeling.prior_fct_name == "prior_MS_Global"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
-	//	read_inputs_priors_MS_Global();
-	//	passed=1;
-	//}
 	if(passed == 0){
-		std::cout << "Unrecognized name for prior_fct_name=" << modeling.prior_fct_name << std::endl;
-		std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
-		std::cout << "              - 'prior_Test_Gaussian'" << std::endl;
-		std::cout << "              - 'prior_Harvey_Gaussian'" << std::endl;
-		std::cout << "              - 'io_MS_Global (handling I/O for Main-Sequence star models) '" << std::endl;
-		std::cout << "Check the configuration file" << std::endl;
-		std::cout << "The program will stop now" << std::endl;
-		exit(EXIT_FAILURE);
+		msg_handler("", "prior_name", "Config::read_inputs_files()", modeling.prior_fct_name, 1);
 	}
 
 }
@@ -1829,6 +1703,49 @@ void Config::read_inputs_prior_Simple_Matrix(){
 }
 
 /*
+ Simple function that read a two-column file that contains the case index in the first column and the name of a function in the second
+ Comment lines can be put as header
+*/
+void Config::read_listfiles(const std::string file, const bool verbose, VectorXi *case_val, std::vector<std::string> *strarr){
+	std::vector<std::string> tmp, case_val_str;
+	std::string line0, char0;
+	std::ifstream cfg_session;
+
+    cfg_session.open(file.c_str());
+    if (cfg_session.is_open()) {
+
+		char0="#"; 
+		// ------ Skip header lines ------
+		while(char0 == "#" && !cfg_session.eof()){ 
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			char0=strtrim(line0.substr(0, 1)); 
+		}
+
+		while(!cfg_session.eof()){
+			// ---------- Dealing with the inputs strings -----------
+			tmp=strsplit(line0.substr(0), " \t");
+			case_val_str.push_back(tmp[0]); 
+			(*strarr).push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
+		
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+		}
+		cfg_session.close();
+
+	// Process the last line
+		tmp=strsplit(line0.substr(0), " \t");
+		case_val_str.push_back(tmp[0]); 
+		(*strarr).push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
+	
+		*case_val=arrstr_to_Xiarr(case_val_str);
+	} else{
+		msg_handler(file, "openfile", "Config::read_listfiles()", "", 1);
+	}
+}
+
+
+/*
  * Function that show an error message depending on error_type
  * It receives the filename, fonction name specific message values (arguments) and returns an error code
  * A negative error code correspond to a fatal error. A positive
@@ -1884,44 +1801,26 @@ int Config::msg_handler(const std::string file, const std::string error_type, co
 		std::cout << "         Problem in the definition of the model name" << std::endl;
 		std::cout << "         Unknown model name detected: " << arguments << std::endl;
 		std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
-		std::cout << "              - 'model_Test_Gaussian'" << std::endl;
-		std::cout << "              - 'model_Harvey_Gaussian'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1acta3_HarveyLike'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1acta3_Harvey1985'" << std::endl;
-        	std::cout << "              - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
-		std::cout << "              - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
+		for(int i=0; i< modeling.models_case_list_ctrl.size();i++){
+			std::cout <<  "              - " << modeling.models_list_ctrl[i] << std::endl;
+		}
 		std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
 	}
 	if(error_type == "prior_fctname"){
 			std::cout << "         Problem in the definition of the prior names" << std::endl;
 			std::cout << "         Unknown prior name detected: " << arguments << std::endl;
 			std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
-			std::cout << "              - 'NONE'" << std::endl;
-			std::cout << "              - 'Uniform'" << std::endl;
-			std::cout << "              - 'Uniform_abs'" << std::endl;
-			std::cout << "              - 'Uniform_cos'" << std::endl;
-			std::cout << "              - 'Gaussian'" << std::endl;
-			std::cout << "              - 'multivar_Gaussian'" << std::endl;
-			std::cout << "              - 'Jeffreys'" << std::endl;
-			std::cout << "              - 'Jeffreys_abs'" << std::endl;
-			std::cout << "              - 'UG' (Uniform-Gaussian prior)" << std::endl;
-			std::cout << "              - 'GU' (Gaussian-Uniform prior)" << std::endl;
-			std::cout << "              - 'GUG' (Uniform-Gaussian-Uniform prior)" << std::endl;
-			std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
+				for(int i=0; i< modeling.primepriors_case_list_ctrl.size();i++){
+					std::cout <<  "              - " << modeling.primepriors_list_ctrl[i] << std::endl;
+				}
 	}
 	if(error_type == "prior_name"){
 		std::cout << "         Problem in the definition of the prior name" << std::endl;
 		std::cout << "         Unknown model name detected: " << arguments << std::endl;
 		std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
-		std::cout << "              - 'prior_Test_Gaussian'" << std::endl;
-		std::cout << "              - 'prior_Harvey_Gaussian'" << std::endl;
-		std::cout << "              - 'io_ms_Global' (Handling all the family of MS_Global models)" << std::endl;
-	    	//std::cout << "              - prior_MS_Global_a1etaa3_HarveyLike (same prior handler as 'prior_MS_Global')" << std::endl;		
+		for(int i=0; i< modeling.priors_case_list_ctrl.size();i++){
+			std::cout <<  "              - " << modeling.priors_list_ctrl[i] << std::endl;
+		}
 		std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
 	}
     	if(error_type == "" || err_msg == 0){
@@ -1929,6 +1828,16 @@ int Config::msg_handler(const std::string file, const std::string error_type, co
     	    std::cout << "Could not open the file: " << file << std::endl;
     	    std::cout << "Neeed debuging..." << std::endl;
     	}
+	if(error_type =="likelihood_name"){
+		std::cout << "Warning: Error in config.cpp" << std::endl;
+		std::cout << "Warning: Problem in the definition of the likelihood name" << std::endl;
+		std::cout << "         Unknown model name detected: " << arguments << std::endl;
+		std::cout << "         The name of priors MUST BE those on the following list:" << std::endl;
+		for(int i=0; i< modeling.likelihoods_case_list_ctrl.size();i++){
+			std::cout <<  "              - " << modeling.likelihoods_list_ctrl[i] << std::endl;
+		}
+		std::cout << "         Check that this the names that you use in the configuration file" << std::endl;
+	}
 	if(fatal == 1){
 		std::cout << "The program will stop now" << std::endl;
 		exit(EXIT_FAILURE);
