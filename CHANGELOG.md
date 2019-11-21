@@ -6,7 +6,9 @@
 	  	Priors on the parameter of the model are hard-coded at the moment. See io_ms_global.cpp for their value (typically 10-20% of the expected values) [DONE] [NEED TEST ON DALMA]
 	  * When starting a new process, a 'version.txt' file is writtent in the object directory. This file gives the code version used for the processing [DONE] [TESTED]
 	  * Adding a hard-coded limit on a3/a1 < 0.2. This to avoid very unphysical solutions (that lead to a star rotating in the opposite direction in the pole [DONE] [TESTED]
-	   
+	  * Redesigning the way likelihoods, models, priors and prime priors are handled: Instead of having them hard coded, they are now defined along with their switch case into *.list 
+	    files within Config/default. This significantly simplifies the implementation of new models.
+	    
 ### v1.3.2-dev Improvements ###
       * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
       * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
