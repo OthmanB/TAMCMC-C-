@@ -29,7 +29,7 @@ Config_presets::Config_presets(std::string cfg_file_presets_in, Config *cfg0){
 
 	current_id_ind=0; // index pointing to the current object id that we have to process
 	current_process_ind=0; // index pointing to the current processing step that we have to execute
-
+	current_slice_ind=0; // The index pointing to the current subdataset range (e.g. frequency range for io_local models)
 	Nt_learn0=cfg0->MALA.Nt_learn; // We need this to be sure that this configuration is static when iterating on id_ind and process_ind
 	dN_mixing0=cfg0->MALA.dN_mixing; // We need this to be sure that this configuration is static when iterating on id_ind and process_ind
 
@@ -115,9 +115,13 @@ void Config_presets::apply_presets(Config *cfg, const bool verbose){
 		process_id=table_ids[current_id_ind].at(0);
 
 		// We define the root_name for all files
-		cfg->outputs.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
-		cfg->diags.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
-
+		if (Nslices == 1){ // If there is only one slice of data to analyse, no need to add the slice index
+			cfg->outputs.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
+			cfg->diags.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
+		} else{ // If there is more than one slice, we need to add the slice index on output files
+			cfg->outputs.output_root_name=process_id + "_" + int_to_str(current_slice_ind+1) + "_" + core_out[current_process_ind] + "_";
+			cfg->diags.output_root_name=process_id + "_" + int_to_str(current_slice_ind+1) + "_" + core_out[current_process_ind] +  "_";		
+		}
 		// We define the name of the model file
 		cfg->modeling.cfg_model_file=cfg_models_dir +  table_ids[current_id_ind].at(0) + ".model";
 
@@ -129,9 +133,13 @@ void Config_presets::apply_presets(Config *cfg, const bool verbose){
 		cfg->MALA.c0=c0[current_process_ind];
 
 		// We define the name for the restoration files
-		cfg->outputs.restore_file_in=process_id +"_restore_" + core_in[current_process_ind] + "_";
-		cfg->outputs.restore_file_out=process_id +"_restore_" + core_out[current_process_ind] + "_";
-
+		if (Nslices ==1){
+			cfg->outputs.restore_file_in=process_id +"_restore_" + core_in[current_process_ind] + "_";
+			cfg->outputs.restore_file_out=process_id +"_restore_" + core_out[current_process_ind] + "_";
+		} else{
+			cfg->outputs.restore_file_in=process_id + "_" + int_to_str(current_slice_ind+1) + "_restore_" + core_in[current_process_ind] +  "_";
+			cfg->outputs.restore_file_out=process_id + "_" + int_to_str(current_slice_ind+1)+ "_restore_" + core_out[current_process_ind] + "_";		
+		}
 		// We deal with restoration conditions
 		if(restore[current_process_ind] <= 3){
 		

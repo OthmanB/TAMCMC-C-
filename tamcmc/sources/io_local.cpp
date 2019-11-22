@@ -21,38 +21,34 @@ using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
 
-MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool verbose){
+MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const int slice_ind,  const bool verbose){
 
-	bool range_done=0;
-	int i, out, nl, el, cpt;
+	int i, out, nl, el, cpt, range_counter;
 	std::vector<int> pos;
 	std::string line0, char0, char1, char2;
 	std::vector<std::string> word, tmp;
 	std::ifstream cfg_session;
     MatrixXd tmpXd;
 
-	std::cout << "Stop in read_MCMC_file_local: Need to be implemented..." << std::endl;
-	exit(EXIT_SUCCESS); 
-	
-	MCMC_files iMS_global;
+	MCMC_files i_local;
 
-	iMS_global.numax=-9999; // Initialize the optional variable numax
+	i_local.numax=-9999; // Initialize the optional variable numax
 	
+	range_counter=0;
     cpt=0;
     i=0;
     out=0;
     nl=200; // maximum number of lines
     el=4; // maximum degree of the modes
-    //cfg_session.open(modeling.cfg_model_file.c_str());
     cfg_session.open(cfg_model_file.c_str());
     if (cfg_session.is_open()) {
 
 	char0="#"; 
 	std::getline(cfg_session, line0);
 	if(verbose == 1) {std::cout << "  - Global parameters:" << std::endl;}
-	iMS_global.freq_range.resize(2);
-	iMS_global.els.resize(400);
-	iMS_global.freqs_ref.resize(400);
+	i_local.freq_range.resize(2);
+	i_local.els.resize(400);
+	i_local.freqs_ref.resize(400);
 	while((out < 3) && (!cfg_session.eof())){
 
 		line0=strtrim(line0);
@@ -60,62 +56,59 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 		char1=line0.substr(1, 1);
 		if (char0 == "#" && char1 == "K"){
 			word=strsplit(line0, "= \t");
-			iMS_global.ID=strtrim(strtrim(word[1]));
-			if(verbose == 1) {std::cout << "           ID=" << iMS_global.ID << std::endl;}
+			i_local.ID=strtrim(strtrim(word[1]));
+			if(verbose == 1) {std::cout << "           ID=" << i_local.ID << std::endl;}
 		}
 		if (char0 == "!" && char1 == "n"){
 			word=strsplit(line0, " ");
-			iMS_global.numax=str_to_dbl(word[1]);
-			if(verbose == 1) {std::cout << "           numax =" << iMS_global.numax << std::endl;}		
+			i_local.numax=str_to_dbl(word[1]);
+			if(verbose == 1) {std::cout << "           numax =" << i_local.numax << std::endl;}		
 		}
 		if (char0 == "!" && (char1 != "!" || char1 != "n")){
 			word=strsplit(line0, " ");
-			iMS_global.Dnu=str_to_dbl(word[1]);
-			if(verbose == 1) {std::cout << "           Dnu =" << iMS_global.Dnu << std::endl;}
+			i_local.Dnu=str_to_dbl(word[1]);
+			if(verbose == 1) {std::cout << "           Dnu =" << i_local.Dnu << std::endl;}
 		}
 		if (char0 == "!" && char1 == "!"){
 			word=strsplit(line0, " ");
-			iMS_global.C_l=str_to_dbl(word[1]);
-			if(verbose == 1) {std::cout << "           C_l =" << iMS_global.C_l << std::endl;}
+			i_local.C_l=str_to_dbl(word[1]);
+			if(verbose == 1) {std::cout << "           C_l =" << i_local.C_l << std::endl;}
 		}
 		if (char0 == "*"){
-			if (range_done == 0){
+			if (range_counter == slice_ind){
 				word=strsplit(line0, " ");
-				iMS_global.freq_range[0]=str_to_dbl(word[1]);
-				iMS_global.freq_range[1]=str_to_dbl(word[2]);
-				if(verbose == 1) {std::cout << "           freq_range = [" << iMS_global.freq_range[0] << " , " << iMS_global.freq_range[1] << "]" << std::endl;}
-				range_done=1;
+				i_local.freq_range[0]=str_to_dbl(word[1]);
+				i_local.freq_range[1]=str_to_dbl(word[2]);
+				if(verbose == 1) {std::cout << "       Analysed freq_range = [" << i_local.freq_range[0] << " , " << i_local.freq_range[1] << "]" << std::endl;}
 			} else{
-				std::cout << "Error: Multiple range detected. This is not allowed with io_ms_global models and priors" << std::endl;
-				std::cout << "       Check you .model file and correct the configuration accordingly" << std::endl;
-				std::cout << "       The program will exit now" << std::endl;
-				exit(EXIT_FAILURE);
+				if(verbose == 1) {std::cout << "       Skipped freq_range = [" << str_to_dbl(word[1]) << " , " << str_to_dbl(word[2]) << "]  (skipped as we do not analyse this slice now...)" << std::endl;}
 			}
+			range_counter=range_counter + 1;	
 		}
 		if ((char0 != "#") && (char0 != "!") && (char0 != "*")){
 			word=strsplit(line0, " ");
 			if(strtrim(word[0]) == "p" || strtrim(word[0]) == "g" || strtrim(word[0]) == "co"){
-				iMS_global.param_type.push_back(strtrim(word[0]));
-				iMS_global.els[cpt]=str_to_int(word[1]);
-                iMS_global.freqs_ref[cpt]=str_to_dbl(word[2]);
+				i_local.param_type.push_back(strtrim(word[0]));
+				i_local.els[cpt]=str_to_int(word[1]);
+                i_local.freqs_ref[cpt]=str_to_dbl(word[2]);
                 if (word.size() >=4){
-                    iMS_global.relax_freq.push_back(str_to_bool(word[3]));
+                    i_local.relax_freq.push_back(str_to_bool(word[3]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    iMS_global.relax_freq.push_back(1);  // By default, we fit frequencies
+                    i_local.relax_freq.push_back(1);  // By default, we fit frequencies
                 }
                 if (word.size() >=5){
-                    iMS_global.relax_gamma.push_back(str_to_bool(word[4]));
+                    i_local.relax_gamma.push_back(str_to_bool(word[4]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Width of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    iMS_global.relax_gamma.push_back(1);
+                    i_local.relax_gamma.push_back(1);
                 }
                 //std::cout << "H" << std::endl;
                 if (word.size() >=6){
-                    iMS_global.relax_H.push_back(str_to_bool(word[5]));
+                    i_local.relax_H.push_back(str_to_bool(word[5]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Height of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    iMS_global.relax_H.push_back(1);
+                    i_local.relax_H.push_back(1);
                 }
                 cpt=cpt+1;
 			} else{
@@ -134,14 +127,14 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 		char1="";
 		std::getline(cfg_session, line0);
 	}
-	iMS_global.freqs_ref.conservativeResize(iMS_global.relax_freq.size());
-	iMS_global.els.conservativeResize(iMS_global.relax_freq.size());
+	i_local.freqs_ref.conservativeResize(i_local.relax_freq.size());
+	i_local.els.conservativeResize(i_local.relax_freq.size());
 	if(verbose == 1) {
 		std::cout << " - List of relaxed parameters:" << std::endl;
 		std::cout << "          l    nu       relax(nu)   relax(W)  relax(H)" << std::endl;
-		for(int k=0; k<iMS_global.freqs_ref.size();k++){
-			std::cout << "              " << iMS_global.els[k] << "       " << iMS_global.freqs_ref[k] << "       " << iMS_global.relax_freq[k] << "  "
-				  << iMS_global.relax_gamma[k] << "      " << iMS_global.relax_H[k] << std::endl;
+		for(int k=0; k<i_local.freqs_ref.size();k++){
+			std::cout << "              " << i_local.els[k] << "       " << i_local.freqs_ref[k] << "       " << i_local.relax_freq[k] << "  "
+				  << i_local.relax_gamma[k] << "      " << i_local.relax_H[k] << std::endl;
 		}
 	}
     
@@ -149,28 +142,28 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 	
 	i=0;
 	cpt=0;
-	iMS_global.hyper_priors.resize(10);
+	i_local.hyper_priors.resize(10);
 	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
 	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
 			std::getline(cfg_session, line0);
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
-				iMS_global.hyper_priors[i]=str_to_dbl(line0);
+				i_local.hyper_priors[i]=str_to_dbl(line0);
 				cpt=cpt+1;
 			} else{
 				 out=out+1;
 			}
 			i=i+1;
 	  }
-	  iMS_global.hyper_priors.conservativeResize(cpt);
+	  i_local.hyper_priors.conservativeResize(cpt);
 	  if(verbose == 1) {
-		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
+		std::cout << i_local.hyper_priors.transpose() << std::endl;
 	  }
 
 	i=0;
 	cpt=0;
-	iMS_global.eigen_params.resize(200,6);
+	i_local.eigen_params.resize(200,6);
 	std::getline(cfg_session, line0);
 	if(verbose == 1) {std::cout << " - Initial guesses and frequency priors:" << std::endl;}
 	while ((out < 5) && !cfg_session.eof() ){ //the priors, until we reach the 5th # symbol
@@ -178,7 +171,7 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
 				word=strsplit(line0, " \t");
-				iMS_global.eigen_params.row(i)=str_to_Xdarr(line0, " \t");
+				i_local.eigen_params.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 		 	} else{
 				out=out+1;
@@ -186,22 +179,22 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 			i=i+1;
 			std::getline(cfg_session, line0);
 	}
-	iMS_global.eigen_params.conservativeResize(cpt, 6);
+	i_local.eigen_params.conservativeResize(cpt, 6);
 	if(verbose == 1) {
-		std::cout << iMS_global.eigen_params << std::endl;
+		std::cout << i_local.eigen_params << std::endl;
 	}
 	// -------------------------------------
 
 	i=0;
 	cpt=0;
-	iMS_global.noise_params.resize(10);
+	i_local.noise_params.resize(10);
 	while ( (out < 6) && !cfg_session.eof() ){  // the priors, until we reach the 6th # symbol
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){		
 				word=strsplit(line0," \t");
           			for(int j=0; j<word.size(); j++){
-          			 	iMS_global.noise_params[cpt+j]=str_to_dbl(word[j]);
+          			 	i_local.noise_params[cpt+j]=str_to_dbl(word[j]);
           			}
 				cpt=cpt+word.size();
 		 	} else{
@@ -212,25 +205,25 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 	  }
     // Ensure a compatibility with the 3 Harvey profile + White noise standard
       if(cpt < 10){
-        tmpXd=iMS_global.noise_params.segment(0,cpt);
-        iMS_global.noise_params.setConstant(-1);
-        iMS_global.noise_params.segment(10-cpt, cpt)=tmpXd;
+        tmpXd=i_local.noise_params.segment(0,cpt);
+        i_local.noise_params.setConstant(-1);
+        i_local.noise_params.segment(10-cpt, cpt)=tmpXd;
       }
 	if(verbose == 1) {
 		std::cout << " - Noise inputs:" << std::endl;
-		std::cout << iMS_global.noise_params.transpose() << std::endl;
+		std::cout << i_local.noise_params.transpose() << std::endl;
 	}
 	// -------------------------------------	
 
 	i=0;
 	cpt=0;
-	iMS_global.noise_s2.resize(10, 3);
+	i_local.noise_s2.resize(10, 3);
 	while ((out < 7) && !cfg_session.eof() ){ //the priors, until we reach the 7th # symbol
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
 				word=strsplit(line0," \t");
-				iMS_global.noise_s2.row(i)=str_to_Xdarr(line0, " \t");
+				i_local.noise_s2.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 		 	} else{
 				out=out+1;
@@ -239,37 +232,36 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 			std::getline(cfg_session, line0);
 	}
     if(i < 11){
-        tmpXd=iMS_global.noise_s2.block(0,0,cpt,iMS_global.noise_s2.cols());
-        iMS_global.noise_s2.setConstant(-1);
-        iMS_global.noise_s2.block(10-cpt, 0, tmpXd.rows(), tmpXd.cols())=tmpXd;
+        tmpXd=i_local.noise_s2.block(0,0,cpt,i_local.noise_s2.cols());
+        i_local.noise_s2.setConstant(-1);
+        i_local.noise_s2.block(10-cpt, 0, tmpXd.rows(), tmpXd.cols())=tmpXd;
     }
     if(verbose == 1) {
 		std::cout << " - Noise information extracted during step s2:" << std::endl;
-		std::cout << iMS_global.noise_s2 << std::endl;
+		std::cout << i_local.noise_s2 << std::endl;
     }
-    //	exit(EXIT_SUCCESS);
 	// -------------------------------------	
 	
 	// -------- The common parameters follow ------
 	VectorXd a;
 	i=0;
 	cpt=0;
-	iMS_global.modes_common.resize(20,5);
-	iMS_global.modes_common.setConstant(-9999); // up to 10 variables and 4 prior parameters
+	i_local.modes_common.resize(20,5);
+	i_local.modes_common.setConstant(-9999); // up to 10 variables and 4 prior parameters
 	while ( (out < 9) && !cfg_session.eof() ){ // the initial values for the common parameters + priors, until we reach the 9th # symbol
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			word=strsplit(line0," \t");
 			if (char0 != "#"){
 				word=strsplit(line0," \t");
-				iMS_global.common_names.push_back(strtrim(word[0]));
-				iMS_global.common_names_priors.push_back(strtrim(word[1]));
+				i_local.common_names.push_back(strtrim(word[0]));
+				i_local.common_names_priors.push_back(strtrim(word[1]));
  				word.erase(word.begin()); // erase the slot containing the keyword name
 				word.erase(word.begin()); // erase the slot containing the type of prior/switch
 				a=arrstr_to_Xdarrdbl(word);
 				
 				for(int k=0; k<a.size();k++){
-					iMS_global.modes_common(cpt, k)=a[k];
+					i_local.modes_common(cpt, k)=a[k];
 				}
 				cpt=cpt+1;
 		 	} else{
@@ -279,14 +271,14 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
 			std::getline(cfg_session, line0);
 	}
 
-	iMS_global.modes_common.conservativeResize(iMS_global.common_names.size(), 5);
+	i_local.modes_common.conservativeResize(i_local.common_names.size(), 5);
 
 	if(verbose == 1) {
 		std::cout << " - Common parameters for modes:" << std::endl;
-		for(i=0; i<iMS_global.common_names.size();i++){
-			std::cout << "  " << iMS_global.common_names[i] << "  ";
-			std::cout << "  " << iMS_global.common_names_priors[i] << "  ";
-			std::cout << "  " << iMS_global.modes_common.row(i) << std::endl;
+		for(i=0; i<i_local.common_names.size();i++){
+			std::cout << "  " << i_local.common_names[i] << "  ";
+			std::cout << "  " << i_local.common_names_priors[i] << "  ";
+			std::cout << "  " << i_local.modes_common.row(i) << std::endl;
 		}
 	}
     
@@ -299,8 +291,11 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const bool ver
    		std::cout << "The program will exit now" << std::endl;
    		exit(EXIT_FAILURE);
    }
-      
-   return iMS_global;
+ 
+ 	std::cout << "Stop in read_MCMC_file_local: Currently implemented (implemented until line 86 but debug required in the rendering for verbose =1) ..." << std::endl;
+    exit(EXIT_SUCCESS);
+     
+   return i_local;
 }
 
 Input_Data build_init_local(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
