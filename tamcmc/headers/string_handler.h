@@ -24,6 +24,8 @@ std::vector<int> where_int(std::vector<int> vec, int value);
 VectorXi where_int(VectorXi vec, int value);
 VectorXi where_dbl(VectorXd vec, double value, double tolerance);
 std::vector<int> where_dbl(std::vector<double> vec, double value, double tolerance);
+std::vector<int> where_in_range(std::vector<double> vec, double value_min, double value_max, bool strict);
+VectorXi where_in_range(VectorXd vec, double value_min, double value_max, bool strict);
 VectorXi str_to_Xiarr(const std::string str, const std::string delimiters);
 VectorXd str_to_Xdarr(const std::string str, const std::string delimiters);
 std::vector<double> arrstr_to_arrdbl(const std::vector<std::string> vals_strs);

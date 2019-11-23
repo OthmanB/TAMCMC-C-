@@ -42,7 +42,9 @@ class Config_presets{
 
 		int current_id_ind; // index pointing to the current object id that we have to process
 		int current_process_ind; // index pointing to the current processing step that we have to execute
-	
+		int current_slice_ind; // The index pointing to the current subdataset range (e.g. frequency range for io_local models)
+		int Nslices; // Total number of subdataset ranges (ie, the max value that current_slice_ind can take)
+		
 		int first_id_ind; // Index of the first object id that we have to process
 		int first_process_ind; // Index of the first processing step that we have to execute
 		int last_id_ind; // Index of the last object id that we have to process

@@ -84,6 +84,7 @@ class Config{
 
 			double likelihood_params; // Parameters that could define the likelihood. e.g., in the case of a chi(2,2p) statistics (chi22p function), we need p
 			std::string cfg_model_file; // Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected
+			int slice_ind; // Index of the subset of data that should be analysed (setting e.g. the frequency range when multiple ranges are requested)
 			Input_Data inputs;
 		};
 		struct Data_cfg{ // all the configuration required for the Data
@@ -193,7 +194,7 @@ class Config{
 
 		Config(); // Empty constructor if one wants to only use the internal functions
 		void init(std::string current_path, std::string cfg_file_in); // An initialization method
-		void setup();
+		void setup(const int slice_ind);
 		void reset(); // reset to 0-sized containers
 
 		void read_defautlerrors(bool verbose); // Function in charge of reading the default error configuration file
