@@ -90,13 +90,13 @@ void Config::setup(const int slice_ind){
     data.data_all=data_in; // save the whole data file into the configuration class
     
     // ---- Reading the model-specific configuration files ----
+	modeling.slice_ind=slice_ind;
     std::cout << " ---------- " << std::endl;
     read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
     modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
     modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
     modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
-	modeling.slice_ind=slice_ind;
 	
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all

@@ -56,6 +56,7 @@ void Config_presets::apply_presets(Config *cfg, const bool verbose){
 	if(verbose == 1){
 		std::cout << "     current_process_ind=" << current_process_ind << std::endl;
 		std::cout << "     current_id_ind =" << current_id_ind << std::endl;
+		std::cout << "     current_slice_ind =" << current_slice_ind << std::endl;
 	}
 	
 	if(force_manual_config == 1){
