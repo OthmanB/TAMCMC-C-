@@ -64,6 +64,8 @@ Config::Config(std::string current_path, std::string cfg_file_in, std::string cf
 	modeling.primepriors_case_list_ctrl=c_vals4;
 	modeling.primepriors_list_ctrl=str_vals4;
 
+	modeling.slice_ind=0; // Default there is only one slice of data that is analysed
+	
 //	for(int i=0; i< modeling.primepriors_case_list_ctrl.size(); i++){
 //		std::cout << 	 modeling.primepriors_case_list_ctrl[i] << "   " << modeling.primepriors_list_ctrl[i] << std::endl;
 //	}
@@ -76,7 +78,7 @@ Config::Config(){ // The empty constructor
 
 }
 
-void Config::setup(){ 
+void Config::setup(const int slice_ind){ 
 	
 	long imin, imax;
 
@@ -88,13 +90,14 @@ void Config::setup(){
     data.data_all=data_in; // save the whole data file into the configuration class
     
     // ---- Reading the model-specific configuration files ----
+	modeling.slice_ind=slice_ind;
     std::cout << " ---------- " << std::endl;
     read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
     modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
     modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
     modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
-
+	
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
@@ -210,6 +213,7 @@ void Config::reset(){
 
 
 	// --------------- Model parameters --------------
+	modeling.slice_ind=0;
 	modeling.model_fct_name="";
 	modeling.likelihood_fct_name="";
 	modeling.prior_fct_name="";
@@ -337,22 +341,21 @@ void Config::read_inputs_priors_MS_Global(){
 
 void Config::read_inputs_priors_local(){
 
-	bool verbose=1;
-	MCMC_files iMS_local;
+	const bool verbose=1;
+	MCMC_files i_local;
 	Input_Data in_vals;
-	
-	std::cout << "Stop in Config::read_inputs_priors_local: Need to be implemented... CHECK CAREFULLY AS IT WAS HALF ADAPTED" << std::endl;
-	exit(EXIT_SUCCESS);
-	
+		
 	//std::cout << "Before read_MCMC" << std::endl;
 	std::cout << "  - Reading the MCMC file: " << modeling.cfg_model_file << "..." << std::endl;
-	iMS_local=read_MCMC_file_local(modeling.cfg_model_file, 0); // Read the MCMC file, with verbose=0 here
+	i_local=read_MCMC_file_local(modeling.cfg_model_file, modeling.slice_ind, 0); // Read the MCMC file, with verbose=0 here
 	
-	// WILL NEED TO CONTAIN THE SLICE RANGE? NEED TO THINK ABOUT IT
-	data.data.xrange=iMS_local.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
+	data.data.xrange=i_local.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
+	
+//	std::cout << "Stop in Config::read_inputs_priors_local: Need to be implemented from here..." << std::endl;
+//	exit(EXIT_SUCCESS);
 	
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
-    in_vals=build_init_local(iMS_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
+    in_vals=build_init_local(i_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -417,6 +420,8 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
     if (passed == 0){
 		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
 	}	
+	std::cout << model_name << "    ==> " << switch_name << std::endl;
+
 	return switch_name;
 }
 
@@ -444,6 +449,8 @@ int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
 	if (passed == 0){
 		msg_handler("", "prior_name", "Config::convert_prior_fct_name_to_switch()", prior_name, 1);
 	}
+	std::cout << prior_name << "    ==> " << switch_name << std::endl;
+	exit(EXIT_SUCCESS);
 
 	return switch_name;
 }
@@ -473,6 +480,8 @@ int Config::convert_likelihood_fct_name_to_switch(const std::string likelihood_n
 	if (passed == 0){
 		msg_handler("", "likelihood_name", "Config::convert_likelihood_fct_name_to_switch()", likelihood_name, 1);
 	}
+	std::cout << likelihood_name << "    ==> " << switch_name << std::endl;
+
 	return switch_name;
 
 }

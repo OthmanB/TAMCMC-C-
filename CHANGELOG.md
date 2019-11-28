@@ -1,5 +1,9 @@
 # Version history #
 
+### v1.4-dev Local fit implementation ###
+	* Adding a whole new serie of function to handle a local fit. Warning: Changes require slight changes in the .model file. The various fitting ranges have to be defined 
+          using the '*' marker [DEBUGING PHASE]
+ 
 ### v1.3.3-dev New model and improvements ###
 	  * Add two models with fit of the Width from Appourchaux 2012 instead of individual widths. 
 	    This is made in a transparent way, using the input widths for defining the guesses. Thus, no need to change drastically the structure of .model files

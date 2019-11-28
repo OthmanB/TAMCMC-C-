@@ -1,6 +1,6 @@
 /*
    A small function that extract one parameter from the binary output
-   That parameter is save into a output file
+   That parameter is saved into a output file
 */
 
 #include <Eigen/Dense>

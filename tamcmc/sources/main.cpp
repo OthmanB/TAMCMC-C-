@@ -83,7 +83,7 @@ int main(int argc, char* argv[]){
 		exit(EXIT_SUCCESS);
 	}
     
-	long begin_time, Nslices;
+	long begin_time;//, Nslices;
 	MatrixXd franges;
 	std::string modelfile="";
 	if(config_master.force_manual_config == 0){
@@ -101,20 +101,22 @@ int main(int argc, char* argv[]){
  
         // ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
+  
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
         	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
-        	Nslices=franges.rows();
-        	for(int s=0; s<Nslices; s++){ // For as many Frequency ranges as given in the model file...
+        	//Nslices=franges.rows();
+        	config_master.Nslices=franges.rows();  					
+        	for(int s=0; s<config_master.Nslices; s++){ // For as many Frequency ranges as given in the model file...
  				for(int jj=config_master.first_process_ind; jj<=config_master.last_process_ind; jj++){  // and for each phase
 					std::cout << "---------------------------------------------------------------------------------------\n" << std::endl;
 					begin_time = ben_clock();
-					config_master.current_id_ind=i; // index pointing to the current object id that we have to process
+      				config_master.current_id_ind=i; // index pointing to the current object id that we have to process
+      				config_master.current_slice_ind=s;
 					config_master.current_process_ind=jj;
-
 					std::cout << "                       --------------------------------" << std::endl;
 					std::cout << "                       Processing Object " << i+1 << "/" << config_master.table_ids.size() << ": ";
 					std::cout << config_master.table_ids[i].at(0) << std::endl;
-					std::cout << "                         Frequency Slice " << s+1 << "/" << Nslices << std::endl;
+					std::cout << "                         Frequency Slice " << s+1 << "/" << config_master.Nslices << std::endl;
 					std::cout << "                                   Phase " << jj+1 << "/" << config_master.processing.size() << ": ";
 					std::cout << config_master.processing[jj] << std::endl;
 					std::cout << "                       --------------------------------" << std::endl;
@@ -124,7 +126,7 @@ int main(int argc, char* argv[]){
 
 					// Setup the configuration according to user-requested options (either presets configuration or manual configuration)
 					std::cout << " Loading the observational constraints (data) and restore setup..." << std::endl;
-					config.setup();
+					config.setup(s);
 
 					if( config.outputs.do_backup_cfg_files == 1){
 						std::cout << "    do_backup_cfg_files = 1 ===> Backup of the files *.cfg and *.model in progress..." << std::endl;
@@ -376,7 +378,7 @@ Output:
     MatrixXd slicesranges;
 
 	Ncols=2;    //Ranges have only a min and a max 
-	Nrows=1;    // By default we have only one slice
+	Nrows=0;    // By default we have only one slice
 	
 	if(verbose == 1){
 		std::cout << "  - Retrieving slices information from the model file..." << std::endl;

@@ -148,6 +148,79 @@ VectorXi where_dbl(VectorXd vec, double value, double tolerance){
 	return index_out;
 }
 
+
+VectorXi where_in_range(VectorXd vec, double value_min, double value_max, bool strict){
+/*
+ * Gives the indexes of values of an array within a specified range 
+ *
+*/
+   int cpt;
+   VectorXi index_out;
+  
+   std::vector<int> index;
+   index.resize(vec.size());
+	
+	cpt=0;
+	for(int i=0; i<vec.size(); i++){
+		if (strict == 1){
+			if(vec[i] > value_min && vec[i] < value_max){
+				index[cpt]=i;
+				cpt=cpt+1;
+			}
+		} else{
+			if(vec[i] >= value_min && vec[i] <= value_max){
+				index[cpt]=i;
+				cpt=cpt+1;
+			}		
+		}		
+	}
+	if(cpt >=1){
+		index_out.resize(cpt);
+		for(int i=0; i<cpt; i++){
+			index_out[i]=index[i];
+		}
+	} else{
+		index_out.resize(1);
+		index_out[0]=-1;
+	}
+	return index_out;
+}
+
+std::vector<int> where_in_range(std::vector<double> vec, double value_min, double value_max, bool strict){
+/*
+ * Gives the indexes of values of an array within a range.
+ * If strict = 1 values have to be strictly within the range. 
+ *
+*/
+   int cpt;
+  
+   std::vector<int> index;
+   index.resize(vec.size());
+	
+	cpt=0;
+	for(int i=0; i<vec.size(); i++){
+		if (strict == 1){
+			if(vec[i] > value_min && vec[i] < value_max){
+				index[cpt]=i;
+				cpt=cpt+1;
+			}
+		} else{
+			if(vec[i] >= value_min && vec[i] <= value_max){
+				index[cpt]=i;
+				cpt=cpt+1;
+			}
+		}	
+	}
+	if(cpt >=1){
+		index.resize(cpt);
+	} else{
+		index.resize(1);
+		index[0]=-1;
+	}
+
+	return index;
+}
+
 VectorXi where_int(VectorXi vec, int value){
 /*
  * Gives the indexes of values of an array that match the value.
@@ -409,3 +482,48 @@ std::vector<int> str_to_arrint(const std::string str, const std::string delimite
 
 	return int_out;
 }
+
+std::vector<double> filter_range(const std::vector<double> param_in, const std::vector<double> f_in, const double fmin, const double fmax){
+/* This function takes a vector of parameters (param_in) and returns only its values at
+   The indexes that matches the range condition fmin < f_in < fmax
+   Inputs:
+   	param_in: input vector to be filtered
+   	f_in: vector that contains the values that define the filtering condition
+   	fmin: minimum valid value of f_in (lower bound for the rejection)
+   	fmax: maximum valid value of f_in (upper bound for the rejection)
+*/
+	std::vector<int> pos_OK;
+	std::vector<double> param_out;
+	
+	pos_OK=where_in_range(f_in, fmin, fmax, 1);
+		
+	for (int i=0; i<pos_OK.size(); i++){
+		if (pos_OK[i] != -1){
+			param_out.push_back(param_in[pos_OK[i]]);
+		}
+	}
+	return param_out;
+}
+
+std::vector<bool> filter_range(const std::vector<bool> param_in, const std::vector<double> f_in, const double fmin, const double fmax){
+/* This function takes a vector of parameters (param_in) and returns only its values at
+   The indexes that matches the range condition fmin < f_in < fmax
+   Inputs:
+   	param_in: input vector to be filtered
+   	f_in: vector that contains the values that define the filtering condition
+   	fmin: minimum valid value of f_in (lower bound for the rejection)
+   	fmax: maximum valid value of f_in (upper bound for the rejection)
+*/
+	std::vector<int> pos_OK;
+	std::vector<bool> param_out;
+	
+	pos_OK=where_in_range(f_in, fmin, fmax, 1);
+		
+	for (int i=0; i<pos_OK.size(); i++){
+		if (pos_OK[i] != -1){
+			param_out.push_back(param_in[pos_OK[i]]);
+		}
+	}
+	return param_out;
+}
+

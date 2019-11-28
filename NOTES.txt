@@ -11,7 +11,11 @@ Progress on 1.3.3-Dev
 
 4. If all ok, then consolidate the version and transfer if to github. Then start v1.3.4 that includes the slice analysis of MS stars [Need check]
 
-5. Implement io_local.cpp. Note that it has been already integrated into the program and in the MakeFile. All work should focus on it. [In Progress]
+5a. Adapt the output name for files by adding the slice number at the end (if more than 1 slice available): DONE. Once 6 is finished, will need to see if there is no forgoten names of files that are overwritten
+
+5b. Implement io_local.cpp. Note that it has been already integrated into the program and in the MakeFile. All work should focus on it. [In Progress]
+		- WEIRD THING HAPPENING WITH THE SWITCH AUTO-DEFINITION USING FILE: Values are a getting a bit random. Need serious investigation in config.cpp
+		  Potential cullprit could be (1) type conversion (2) overwriting at later stage
 
 6. Need to implement if necessary the new functions (from io_MS_Global, with Appourchaux widths or from io_local) into the getmodel and other tools (bin2txt) etc.. [NOT YET]
 

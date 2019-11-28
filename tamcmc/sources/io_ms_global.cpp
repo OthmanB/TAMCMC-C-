@@ -65,7 +65,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			iMS_global.numax=str_to_dbl(word[1]);
 			if(verbose == 1) {std::cout << "           numax =" << iMS_global.numax << std::endl;}		
 		}
-		if (char0 == "!" && (char1 != "!" || char1 != "n")){
+		if (char0 == "!" && char1 != "!" && char1 != "n"){
 			word=strsplit(line0, " ");
 			iMS_global.Dnu=str_to_dbl(word[1]);
 			if(verbose == 1) {std::cout << "           Dnu =" << iMS_global.Dnu << std::endl;}

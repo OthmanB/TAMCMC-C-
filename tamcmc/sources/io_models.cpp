@@ -57,6 +57,26 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
 	return 0;
 }
 
+short int IO_models::fill_param_vect(Input_Data *data, const std::vector<double> vec_inputs, 
+				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
+				const VectorXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
+/* 
+	This function takes a vector of inputs and fill an initialized Input_Data structure starting from pos
+	All fields are filled with the same parameter name and the same prior definition
+	            
+*/
+    int i;
+    for(i=0; i<vec_inputs.size(); i++){
+		if(vec_relax[i]){
+			fill_param(data, input_name, prior_name, vec_inputs[i],  prior_vals, i+pos, i0_prior_if);
+		} else{
+			fill_param(data, input_name,  "Fix", vec_inputs[i],  prior_vals, i+pos, i0_prior_else);		
+		}
+	}
+	show_param(*data);
+	return 0;
+}
+
 short int IO_models::add_param(Input_Data *data, const Input_Data *data_param, const int pos){//, const int Nparams){
 /* 
  *

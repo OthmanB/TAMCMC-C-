@@ -25,15 +25,6 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 
 	long double f=0;
 
-	//const long double pi = 3.141592653589793238462643383279502884L;
-	//const long double G=6.667e-8;
-	//const long double Teff_sun= 5777; 
-	//const long double Dnu_sun=135.1;
-	//const long double numax_sun=3150.;
-	//const long double R_sun=6.96342e5; //in km
-	//const long double M_sun=1.98855e30; //in kg
-	//const long double rho_sun=M_sun*1e3/(4L*pi*std::pow(R_sun*1e5,3L)/3L); //in g.cm-3
-
 	const int smooth_switch=extra_priors[0];
 	const int a3ova1_limit=extra_priors[2];
 	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
@@ -54,7 +45,6 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	//std::cout << "After generic priors ==> f=" << f << std::endl;	
 
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
@@ -79,7 +69,6 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 		}
 	}
 		
-	
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
 			case 1: // Case with smoothness
@@ -124,24 +113,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
 		f=-INFINITY;
 	}
-	
-/*	// If requested, we impose a user-defined prior on the intensity coeficient for the magnetic effect on rotational splitting
-	// OBSELETE
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3] == 10){
-		a1=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3];
-		alfa=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4];
-		b=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3];
-		fmax=priors_params.block(1, Nmax+lmax, 1, Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3).maxCoeff();
-		el=1.; em=1.;
-		Q11=(el*(el+1) - 3.*pow(em,2))/( (2*el - 1)*(2*el + 3) );
-		max_b=1.1*std::abs( a1/(Q11 * pow(fmax*1e-3,alfa)) ); //Beware, it is an hyperparameter
-		f=f+logP_jeffrey(0.05, max_b, std::abs(b));
-		
-		std::cout << "This part of the code IS OBSELETE" << std::endl;
-		std::cout << "The program will exit now"<< std::endl;
-		exit(EXIT_SUCCESS);	
-	}
-*/		
+
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
 		f=-INFINITY;
@@ -168,6 +140,53 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	
 return f;
 } 
+
+
+long double priors_local(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){
+
+	long double f=0;
+
+	//const int smooth_switch=extra_priors[0];
+	const int a3ova1_limit=extra_priors[2];
+	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
+	
+	const int Nmax=params_length[0]; // Number of Heights
+	const int Nvis=params_length[1]; // number of degree - 1
+	const int Nfl0=params_length[2]; // number of l=0 frequencies
+	const int Nfl1=params_length[3]; // number of l=1 frequencies
+	const int Nfl2=params_length[4]; // number of l=2 frequencies
+	const int Nfl3=params_length[5]; // number of l=3 frequencies
+	const int Nsplit=params_length[6]; // number of splitting parameters. Should be 3 for a global MS model (a1,a2,a3)
+	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+	
+	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
+	
+ 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+
+	// ----- Add a positivity condition on inclination -------
+	// The prior could return values -90<i<90. We want it to give only 0<i<90
+	//f=f+logP_uniform(0., 90., params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
+			
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
+		f=-INFINITY;
+	}
+
+	if((priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
+		f=-INFINITY;
+	}
+		
+return f;
+} 
+
+
+
+
+
+
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
 long double priors_Test_Gaussian(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch){

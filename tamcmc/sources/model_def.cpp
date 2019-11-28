@@ -247,7 +247,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 	       	case 10:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
           break;
-          
+          	 case 11:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x);
+		   break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -260,14 +262,15 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
-
+		  
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
           std::cout << "    - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;
+          
+          std::cout << "    - 'model_MS_local_basic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}
-
 
 	return fail; // This might never be used but avoid warnings from the compiler
 }
@@ -320,14 +323,19 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		case 2: // model_MS_Global
 		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
+		case 3: // model_local
+		   std::cout << "Hello" << std::endl;
+		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
 		  std::cout << " This value is not associated to any known case statement " << std::endl;
 		  std::cout << " Keywords with valid statements so far:" << std::endl;
-		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
-		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
-		  std::cout << "    - 'MS_Global'" << std::endl;
+		  std::cout << "    - 'priors_Test_Gaussian' (For Debug only)" << std::endl;
+		  std::cout << "    - 'priors_Harvey_Gaussian'" << std::endl;
+		  std::cout << "    - 'io_MS_Global'" << std::endl;
+		  std::cout << "    - 'io_local'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}
