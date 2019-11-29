@@ -131,4 +131,7 @@ namespace gnuplotio {
     };
 }
 
-
+struct Data_Basic{
+	std::vector<std::string> strarr; // Any comment
+	VectorXi vecXi; // Case number
+};

@@ -31,12 +31,12 @@ class IO_models{
 		//Input_Data create_param();
         short int fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const VectorXd prior_vals, const int pos, const int i0_prior);
         //short int fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const double prior_val, const int pos);
-	short int fill_param_vect(Input_Data *data, const std::vector<double> vec_inputs, 
+		short int fill_param_vect(Input_Data *data, const std::vector<double> vec_inputs, 
 				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
 				const VectorXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else); 	
-	short int add_param(Input_Data *all_in, const Input_Data *data_param, const int pos0); // Get a structure of parameters (data_param) that we wish to add into the main structure
+		short int add_param(Input_Data *all_in, const Input_Data *data_param, const int pos0); // Get a structure of parameters (data_param) that we wish to add into the main structure
         short int append_param(Input_Data *all_in, const Input_Data *data_param, const int Nparams);
-	short int add_extra_priors(Input_Data *all_in, const VectorXd extra, const int pos0); //
+		short int add_extra_priors(Input_Data *all_in, const VectorXd extra, const int pos0); //
     
     	short int show_param(Input_Data data, const bool show_metadata);
     	short int show_param(Input_Data data);

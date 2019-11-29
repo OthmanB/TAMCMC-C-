@@ -324,7 +324,6 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
 		case 3: // model_local
-		   std::cout << "Hello" << std::endl;
 		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
 		default:

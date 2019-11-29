@@ -341,7 +341,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	// Flatening and ordering of all the inputs/relax variables
 	lmax=inputs_local.els.maxCoeff();
 	
-	
 	// -- Initialisation of structures --
     // --- Look for common instruction That must be run before the setup ---------
 	all_in.model_fullname=" "; // Default is an empty string
@@ -370,7 +369,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
     }
  	//io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1); // NOT USED FOR LOCAL FIT
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);	
-
+	
 	// -----------------------------------------------------------------
 	// ------------ Handling Frequencies/Widths/Heights ----------------
 	// -----------------------------------------------------------------
@@ -480,37 +479,48 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 		f0_relax=filter_range(f0_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		h0_relax=filter_range(h0_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		w0_relax=filter_range(w0_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f0_priors_min=filter_range(f0_priors_min, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f0_priors_max=filter_range(f0_priors_max, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 	}
 	if (Nf_el[1] != 0){
-		f1_inputs=filter_range(f1_inputs, f1_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		h1_inputs=filter_range(h1_inputs, f1_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		w1_inputs=filter_range(w1_inputs, f1_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f_el=f1_inputs;
+		f1_inputs=filter_range(f1_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		h1_inputs=filter_range(h1_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		w1_inputs=filter_range(w1_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		f1_relax=filter_range(f1_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		h1_relax=filter_range(h1_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		w1_relax=filter_range(w1_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f1_priors_min=filter_range(f1_priors_min, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f1_priors_max=filter_range(f1_priors_max, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 	}
 	if (Nf_el[2] != 0){
-		f2_inputs=filter_range(f2_inputs, f2_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		h2_inputs=filter_range(h2_inputs, f2_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		w2_inputs=filter_range(w2_inputs, f2_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f_el=f2_inputs;
+		f2_inputs=filter_range(f2_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		h2_inputs=filter_range(h2_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		w2_inputs=filter_range(w2_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		f2_relax=filter_range(f2_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		h2_relax=filter_range(h2_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		w2_relax=filter_range(w2_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f2_priors_min=filter_range(f2_priors_min, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f2_priors_max=filter_range(f2_priors_max, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 	}
 	if (Nf_el[3] != 0){
-		f3_inputs=filter_range(f3_inputs, f3_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		h3_inputs=filter_range(h3_inputs, f3_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
-		w3_inputs=filter_range(w3_inputs, f3_inputs, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f_el=f3_inputs;
+		f3_inputs=filter_range(f3_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		h3_inputs=filter_range(h3_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		w3_inputs=filter_range(w3_inputs, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		f3_relax=filter_range(f3_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		h3_relax=filter_range(h3_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 		w3_relax=filter_range(w3_relax, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f3_priors_min=filter_range(f3_priors_min, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
+		f3_priors_max=filter_range(f3_priors_max, f_el, inputs_local.freq_range[0], inputs_local.freq_range[1]);
 	}
 	// Resizing the pointers for the number of modes
 	Nf_el[0]=f0_inputs.size();
 	Nf_el[1]=f1_inputs.size();
 	Nf_el[2]=f2_inputs.size();
 	Nf_el[3]=f3_inputs.size();
-
+	
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
@@ -532,7 +542,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	} else{
 		tmpstr_h="Height_l";
 	}
-
+	
 	// ------------------------ 		
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
@@ -551,7 +561,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
 	io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
 
-
 	// --- Default setup for widths ---
 	tmpXd.resize(4);
     tmpXd << resol, inputs_local.Dnu/3., -9999., -9999.;
@@ -564,6 +573,8 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	io_calls.fill_param_vect(&width_in, w2_inputs, w2_relax, "Width_l", "Jeffreys", tmpXd, p0, 0, 0);
 	p0=w0_inputs.size()+w1_inputs.size()+w2_inputs.size();
 	io_calls.fill_param_vect(&width_in, w3_inputs, w3_relax,"Width_l", "Jeffreys", tmpXd, p0, 0, 0);
+
+	std::cout << " 7 " << std::endl;
 	
 	// --- Default setup for frequencies ---
 	p0=0;
@@ -625,8 +636,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){
     	io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
     }
-    
-    
+       
 	// -------------- Set Extra_priors ----------------	
 	extra_priors.resize(3);
 	extra_priors[0]=0; // Empty slot
@@ -655,7 +665,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 				trunc_c=inputs_local.modes_common(i,0); // This value is added to the input vector at the end of this function.
 			}
 		}	
-
 
 		// --- Frequencies ---
 //  ----- WE REMOVE THE POSSIBILITY OF CHANGING THE DEFAULT PRIRO ON THE FREQUENCY FROM GUG TO UNIFORM ------
@@ -912,7 +921,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	// ------------- Sticking everything together in a Input_Data structure --------------
 	// -------------------------------------------------------------------------------------
 	
-	std::cout << "Setting plength..." << std::endl;
+	//std::cout << "Setting plength..." << std::endl;
 	plength.resize(11);
 	plength[0]=h0_inputs.size()+h1_inputs.size()+h2_inputs.size()+h3_inputs.size(); 
 	plength[1]=0; // Local models do not have visibilities // lmax                  ; 
@@ -922,26 +931,12 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	plength[8]=Noise_in.inputs.size(); 
 	plength[9]=Inc_in.inputs.size();
 	plength[10]=2; // This is trunc_c and do_amp;
-
-	std::cout << " ---" << std::endl;
-	io_calls.show_param(freq_in, 1);
-	std::cout << " ---" << std::endl;
-	io_calls.show_param(width_in, 1);
-	std::cout << " ---" << std::endl;
-	io_calls.show_param(Snlm_in, 1);
-	std::cout << " ---" << std::endl;
-	io_calls.show_param(Inc_in, 1);
-	std::cout << " ---" << std::endl;
-	io_calls.show_param(Noise_in, 1);
-	std::cout << " ---" << std::endl;
-
-	std::cout << "init all_in..." << std::endl;
 	
+	//std::cout << "init all_in..." << std::endl;	
 	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors);
 	
 	// --- Put the Height or Amplitudes---
-	std::cout << "Setting heights..." << std::endl;
-
+	//std::cout << "Setting heights..." << std::endl;
 	p0=0;
 	io_calls.add_param(&all_in, &height_in, p0); // height_in may contain either height or amplitudes depending on specified keywords
 	// --- Put the Visibilities --- // NOT USED FOR LOCAL FIT
@@ -950,32 +945,32 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	//io_calls.add_param(&all_in, &Vis_in, p0);
 	
 	// --- Put the Frequencies ---
-	std::cout << "Setting freqs..." << std::endl;
+	//std::cout << "Setting freqs..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1];	
 	io_calls.add_param(&all_in, &freq_in, p0);
 
 	// --- Put the Snlm (splittings and asymetry) ---
-	std::cout << "Setting asym..." << std::endl;
+	//std::cout << "Setting asym..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5];
 	io_calls.add_param(&all_in, &Snlm_in, p0);
 	
 	// --- Put the Width ---
-	std::cout << "Setting widths..." << std::endl;
+	//std::cout << "Setting widths..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
 	io_calls.add_param(&all_in, &width_in, p0);
 	
 	// --- Put the Noise ---
-	std::cout << "Setting noise..." << std::endl;
+	//std::cout << "Setting noise..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
 	io_calls.add_param(&all_in, &Noise_in, p0);
 	
 	// --- Put the Inclination ---
-	std::cout << "Setting inc..." << std::endl;	
+	//std::cout << "Setting inc..." << std::endl;	
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8];
 	io_calls.add_param(&all_in, &Inc_in, p0);
 	
 	// --- Add trunc_c that controls the truncation of the Lorentzian ---
-	std::cout << "Setting trunc..." << std::endl;
+	//std::cout << "Setting trunc..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_local.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
@@ -983,7 +978,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
 	// -- Add the Amplitude switch --
-	std::cout << "Setting amp_switch..." << std::endl;
+	//std::cout << "Setting amp_switch..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_local.modes_common.row(0), p0,1);
 					
@@ -1020,9 +1015,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	//std::cout << "Stop in io_local: Need to be checked" << std::endl;
 	//exit(EXIT_SUCCESS);
-
 return all_in;
 }
 

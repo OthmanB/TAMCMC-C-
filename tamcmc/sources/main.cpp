@@ -32,7 +32,7 @@ int main(int argc, char* argv[]){
 	bool execute=1; // if argv[1]="execute" then look for argv[2]==execute. 
 			// argv[3]=start_index_ids argv[4]=last_index_ids. 
 			// If execute = 0 ==> Show only the setup
-	int id_index=0, process_index=0,startV=-1,lastV=-1;
+	int id_index=0, process_index=0,startV=-1,lastV=-1, lastslice=-1, startslice=-1;
 	std::string dir_backup;
 	int msg_code;
 	
@@ -49,8 +49,16 @@ int main(int argc, char* argv[]){
 			std::istringstream(argv[2]) >> execute;
 			std::istringstream(argv[3]) >> startV;
 			std::istringstream(argv[4]) >> lastV;
+			if(argc > 5){
+				std::istringstream(argv[5]) >> startslice;
+				if(argc > 6){
+					std::istringstream(argv[6]) >> lastslice;
+				}
+			}
 			startV=startV-1;
-			lastV=lastV-1;	
+			lastV=lastV-1;
+			startslice=startslice-1;
+			lastslice=lastslice-1; 
 		}
 	}
 
@@ -104,9 +112,18 @@ int main(int argc, char* argv[]){
   
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
         	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
-        	//Nslices=franges.rows();
-        	config_master.Nslices=franges.rows();  					
-        	for(int s=0; s<config_master.Nslices; s++){ // For as many Frequency ranges as given in the model file...
+        	config_master.Nslices=franges.rows(); 
+			if(startslice<0){
+				config_master.first_slice_ind=0;			
+        	} else{
+        		config_master.first_slice_ind=startslice;
+        	}
+        	if(lastslice<0 || (lastslice < startslice & lastslice > 0)){
+        		config_master.last_slice_ind=config_master.Nslices;
+        	} else{
+        		config_master.last_slice_ind=lastslice;
+        	}
+        	for(int s=config_master.first_slice_ind; s<config_master.last_slice_ind; s++){ // For as many Frequency ranges as given in the model file...
  				for(int jj=config_master.first_process_ind; jj<=config_master.last_process_ind; jj++){  // and for each phase
 					std::cout << "---------------------------------------------------------------------------------------\n" << std::endl;
 					begin_time = ben_clock();
@@ -331,7 +348,7 @@ int options(int argc, char* argv[]){
 			val=-1;
 		}
 	}
-	if(argc == 5){
+	if(argc >=5 && argc <= 7){
 		val=11;
 	}
 
@@ -352,7 +369,9 @@ int options(int argc, char* argv[]){
 void usage(int argc, char* argv[]){
 
 			std::cout << "Unrecognized argument" << std::endl;
-			std::cout << "     - To execute: " << argv[0] << " execute 1 <start_idx> <last_idx>" << std::endl;
+			std::cout << "     - To execute: " << argv[0] << " execute 1 <start_idx_object> <last_idx_object>  <first_idx_slice> <last_idx_slice>" << std::endl;
+			std::cout << "       <first_idx_slice> and <last_idx_slice> are optional. If none provided, then the program does all slices." << std::endl;
+			std::cout << "       If only <first_idx_slice> is provided, then the program does all slices starting from that specified one. <last_idx_slice> must always be precedented by <start_idx_slice>" << std::endl;
 			std::cout << "     - To stop after reading the configuration: " << argv[0] << " execute 0" << std::endl;
 			std::cout << "     - To show version: " << argv[0] << " version" << std::endl;
 			exit(EXIT_FAILURE);

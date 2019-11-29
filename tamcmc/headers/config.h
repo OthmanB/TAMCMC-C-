@@ -200,14 +200,14 @@ class Config{
 		void read_defautlerrors(bool verbose); // Function in charge of reading the default error configuration file
 		void read_cfg_file(bool verbose);
 		void write_cfg_file(std::string cfg_file_out);
-		void read_listfiles(const std::string file, const bool verbose, VectorXi *case_val, std::vector<std::string> *strarr); //NEW
+		struct Data_Basic read_listfiles(const std::string file, const bool verbose);	// NEW
 		VectorXi convert_priors_names_to_switch(const std::vector<std::string> p_names);
 		int convert_model_fct_name_to_switch(const std::string model_name);
 		int convert_prior_fct_name_to_switch(const std::string prior_name);
 		int convert_likelihood_fct_name_to_switch(const std::string likelihood_name);
 
 		std::string get_model_fct_name_to_switch(const std::string model_name); // same as convert_model_fct_name_to_switch() but return a string. Can list all models as well (used by getmodel tool)
-		
+
 		inline bool file_exists(const std::string& name); 
 		Data_Nd read_data_ascii_Ncols(const std::string file_in_name, const std::string delimiter, const bool verbose_data); // The main function to read ASCII files
 		std::string format_line(const std::string str);

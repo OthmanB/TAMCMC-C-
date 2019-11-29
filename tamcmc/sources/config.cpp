@@ -21,20 +21,18 @@ Config::Config(std::string current_path, std::string cfg_file_in, std::string cf
 			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
 			   std::string cfg_primepriors_ctrl_file_in){ // The constructor
 
-	VectorXi c_vals1, c_vals2, c_vals3, c_vals4;
-	std::vector<std::string> str_vals1, str_vals2, str_vals3, str_vals4;
-
+	Data_Basic listoutputs;
+	
 	working_dir=current_path;
 	cfg_file=cfg_file_in;
 	errordefault_file=cfg_file_errors;
 	cfg_models_ctrl_file=cfg_models_ctrl_file_in;
 	cfg_priors_ctrl_file=cfg_priors_ctrl_file_in;
 	cfg_likelihoods_ctrl_file=cfg_likelihoods_ctrl_file_in;
-	
 	cfg_primepriors_ctrl_file=cfg_primepriors_ctrl_file_in;
 	
 	// ---- Read the configuration files and perform the setup ----
-	const bool verbose=1;
+	const bool verbose=0;
 	std::cout << "       - Reading the file with the default configuration: " << std::endl;
 	std::cout << "                 " << cfg_file_in << "..." << std::endl;
 	read_cfg_file(verbose); // read the default configuration file... because it is not necessarily the final configuration, do not verbose
@@ -43,26 +41,27 @@ Config::Config(std::string current_path, std::string cfg_file_in, std::string cf
 	read_defautlerrors(verbose); // read the values that are used to initialized the covariance matrix
 	std::cout << "       - Reading the file listing model functions: " << std::endl;
 	std::cout << "                 " << cfg_models_ctrl_file << "..." << std::endl;
-	read_listfiles(cfg_models_ctrl_file, verbose, &c_vals1, &str_vals1);
-	modeling.models_case_list_ctrl=c_vals1;
-	modeling.models_list_ctrl=str_vals1;
+	listoutputs=read_listfiles(cfg_models_ctrl_file, verbose);
+	modeling.models_case_list_ctrl=listoutputs.vecXi;
+	modeling.models_list_ctrl=listoutputs.strarr;
 		
 	std::cout << "       - Reading the file listing (meta)prior functions: " << std::endl;
 	std::cout << "                 " << cfg_priors_ctrl_file << "..." << std::endl;
-	read_listfiles(cfg_priors_ctrl_file, verbose, &c_vals2, &str_vals2);
-	modeling.priors_case_list_ctrl=c_vals2;
-	modeling.priors_list_ctrl=str_vals2;
+	listoutputs=read_listfiles(cfg_priors_ctrl_file, verbose);
+	modeling.priors_case_list_ctrl=listoutputs.vecXi;
+	modeling.priors_list_ctrl=listoutputs.strarr;
+	
 	std::cout << "       - Reading the file listing likelihood functions: " << std::endl;
 	std::cout << "                 " << cfg_likelihoods_ctrl_file << "..." << std::endl;
-	read_listfiles(cfg_likelihoods_ctrl_file, verbose, &c_vals3, &str_vals3);
-	modeling.likelihoods_case_list_ctrl=c_vals3;
-	modeling.likelihoods_list_ctrl=str_vals3;
+	listoutputs=read_listfiles(cfg_likelihoods_ctrl_file, verbose);
+	modeling.likelihoods_case_list_ctrl=listoutputs.vecXi;
+	modeling.likelihoods_list_ctrl=listoutputs.strarr;
 
 	std::cout << "       - Reading the file listing primitive prior functions : " << std::endl;
 	std::cout << "                 " << cfg_primepriors_ctrl_file << "..." << std::endl;
-	read_listfiles(cfg_primepriors_ctrl_file, verbose, &c_vals4, &str_vals4);
-	modeling.primepriors_case_list_ctrl=c_vals4;
-	modeling.primepriors_list_ctrl=str_vals4;
+	listoutputs=read_listfiles(cfg_primepriors_ctrl_file, verbose);
+	modeling.primepriors_case_list_ctrl=listoutputs.vecXi;
+	modeling.primepriors_list_ctrl=listoutputs.strarr;
 
 	modeling.slice_ind=0; // Default there is only one slice of data that is analysed
 	
@@ -420,7 +419,7 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
     if (passed == 0){
 		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
 	}	
-	std::cout << model_name << "    ==> " << switch_name << std::endl;
+	//std::cout << model_name << "    ==> " << switch_name << std::endl;
 
 	return switch_name;
 }
@@ -449,8 +448,8 @@ int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
 	if (passed == 0){
 		msg_handler("", "prior_name", "Config::convert_prior_fct_name_to_switch()", prior_name, 1);
 	}
-	std::cout << prior_name << "    ==> " << switch_name << std::endl;
-	exit(EXIT_SUCCESS);
+	//std::cout << prior_name << "    ==> " << switch_name << std::endl;
+	//exit(EXIT_SUCCESS);
 
 	return switch_name;
 }
@@ -480,7 +479,7 @@ int Config::convert_likelihood_fct_name_to_switch(const std::string likelihood_n
 	if (passed == 0){
 		msg_handler("", "likelihood_name", "Config::convert_likelihood_fct_name_to_switch()", likelihood_name, 1);
 	}
-	std::cout << likelihood_name << "    ==> " << switch_name << std::endl;
+	//std::cout << likelihood_name << "    ==> " << switch_name << std::endl;
 
 	return switch_name;
 
@@ -1741,15 +1740,19 @@ void Config::read_inputs_prior_Simple_Matrix(){
    }
 }
 
+
+struct Data_Basic Config::read_listfiles(const std::string file, const bool verbose){
 /*
  Simple function that read a two-column file that contains the case index in the first column and the name of a function in the second
  Comment lines can be put as header
+
 */
-void Config::read_listfiles(const std::string file, const bool verbose, VectorXi *case_val, std::vector<std::string> *strarr){
-	std::vector<std::string> tmp, case_val_str;
+
+	std::vector<std::string> tmp, case_val_str, strarr;
 	std::string line0, char0;
 	std::ifstream cfg_session;
-
+	Data_Basic outputs;
+	
     cfg_session.open(file.c_str());
     if (cfg_session.is_open()) {
 
@@ -1764,23 +1767,37 @@ void Config::read_listfiles(const std::string file, const bool verbose, VectorXi
 		while(!cfg_session.eof()){
 			// ---------- Dealing with the inputs strings -----------
 			tmp=strsplit(line0.substr(0), " \t");
-			case_val_str.push_back(tmp[0]); 
-			(*strarr).push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
-		
-			std::getline(cfg_session, line0);
-			line0=strtrim(line0);
+			if (line0.empty() == 0){ // Increment only lines that are not empty
+				case_val_str.push_back(tmp[0]); 
+				strarr.push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
+			}
+				std::getline(cfg_session, line0);
+				line0=strtrim(line0);
 		}
 		cfg_session.close();
 
-	// Process the last line
+	// Process the last line		
 		tmp=strsplit(line0.substr(0), " \t");
-		case_val_str.push_back(tmp[0]); 
-		(*strarr).push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
-	
-		*case_val=arrstr_to_Xiarr(case_val_str);
+		if (line0.empty() == 0){ // Increment only lines that are not empty
+			case_val_str.push_back(tmp[0]); 
+			strarr.push_back(tmp[1]);  // Split the line assuming spaces (" ") OR tabulations ("\t") for separator
+		}
+		
+	// Agregate data into the structure
+		outputs.vecXi=arrstr_to_Xiarr(case_val_str);
+		outputs.strarr=strarr;
+		
 	} else{
 		msg_handler(file, "openfile", "Config::read_listfiles()", "", 1);
 	}
+	if (verbose == 1){
+		std::cout << " ------ Read parameters ----" << std::endl;
+		std::cout << " Model name / Case number" << std::endl;
+		for (int i=0; i<outputs.vecXi.size(); i++){
+			std::cout << outputs.strarr[i] << "     "  << outputs.vecXi[i] << std::endl;
+		}
+	}
+	return outputs;
 }
 
 
