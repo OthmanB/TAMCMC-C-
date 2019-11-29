@@ -31,22 +31,29 @@ Use cmake to install the program. For the main directory of the program:
 	make
 ```
 Some options exists to deactivate functions (eg. GSL and/or OpenMP):
-   -DWITH_OPENMP=OFF : turn off implementation of parrallel computation with OpenMP
-   -DWITH_GSL=OFF : turn off the gnuplot capabilities
+   ```-DWITH_OPENMP=OFF``` : turn off implementation of parrallel computation with OpenMP
+   ```-DWITH_GSL=OFF``` : turn off the gnuplot capabilities
 
 ### Quick start and first test ###
    0. You might review the details on the code in the Github wiki: https://github.com/OthmanB/TAMCMC-C/wiki (still under construction)
-   Here I will just quickly state the important steps of an analysis, with specifics about running a quick on one of the provided models
-   1. Review the default configuration file [prog_root]/Config/default/config_default.cfg. For a basic use, there is probably nothing to change there.
+   Here I will just quickly state the important steps of an analysis, with specifics about running a quick on one of the provided models.
+
+   1. Review the default configuration file ```[prog_root]/Config/default/config_default.cfg```. For a basic use, there is probably nothing to change there.
+
    2. Review and adapt the paths to the inputs files (*.model and *.data files). You will need to also provide the list of objects (ie, stars) that you want to process.
       See the provided config_presets.cfg as an template.
+
    3. Review the phase of the analysis (B, L, A). The template show a typical setup, but the number of samples is your choice and depends on the model complexity.
       The current template (for v1.4.0) is adequate for a test and for a local fit. L ~ 700 000 might be more suitable for a real analysis, with A ~ 50 000 on small parameter space. A ~ 500 000 - 2 000 000 may be required when fitting ~ 100 parameters. Consult the Github wiki to understand the parameters. But for a test, no need to touch anything except the paths to the inputs and output files. 
-   3. Once compiled, the main file of the code ('cpptamcmc') should be moved from the build directory, to the root directory of the program [prog_root].
+
+   3. Once compiled, the main file of the code (```cpptamcmc```) should be moved from the build directory, to the root directory of the program [prog_root].
       You need to execute it. The syntax for a call is reminded at execution of ./cpptamcmc
-      for a test, just type: ./cpptamcmc execute 1 1 1 1 . This will execute the first model of the list on config_presets.cfg and start the analysis of the slice 1 in the model file (first range of frequency that was requested to analyse by the user).
-      If you just want to proceed the analysis on the first slice (ignoring other frequency ranges), then './cpptamcmc execute 1 1 1 1 2' (there is a slight bug here as it would be better to have 1 1 1 1 1 for consistency with past choice. It will be corrected later). 
-   4. Once the whole analysis is finished, you will get a lot of files in [your_output_directory]/[the_name_of_the_analysed_object]. The subdirectory 'diags' contains plots and some diagnostics files. 'inputs_backup' contains some zip of the configurations that was used. 'restore' contains a snapshot of the MCMC chain state that can be used to restart an analysis. More importantly 'outputs' contains the results of the analysis. By default (also highly recommended), it is in a binary format. You can extract outputs from those files using the tools that were compiled at the same time than cpptamcmc. The most important of those tool is certainly 'bin2txt' because it converts the binary list of MCMC samples for each parameters into plain ASCII files. Run ./bin2txt to have a set of instruction on how to use it.
+      for a test, just type: ```./cpptamcmc execute 1 1 1 1``` . This will execute the first model of the list on config_presets.cfg and start the analysis of the slice 1 in the model file (first range of frequency that was requested to analyse by the user).
+      If you just want to proceed the analysis on the first slice (ignoring other frequency ranges), then ```./cpptamcmc execute 1 1 1 1 2``` (there is a slight bug here as it would be better to have 1 1 1 1 1 for consistency with past choice. It will be corrected later). 
+
+   4. Once the whole analysis is finished, you will get a lot of files in ```[your_output_directory]/[the_name_of_the_analysed_object]```. The subdirectory ```diags``` contains plots and some diagnostics files. ```inputs_backup``` contains some zip of the configurations that was used. ```restore``` contains a snapshot of the MCMC chain state that can be used to restart an analysis. More importantly ```outputs``` contains the results of the analysis. 
+      By default (also highly recommended), it is in a binary format. You can extract outputs from those files using the tools that were compiled at the same time than cpptamcmc. 
+      The most important of those tool is certainly 'bin2txt' because it converts the binary list of MCMC samples for each parameters into plain ASCII files. Run ```./bin2txt``` to have a set of instruction on how to use it.
    
 That's it, with that, you should have some fun playing around!
   
