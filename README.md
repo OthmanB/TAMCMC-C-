@@ -63,5 +63,5 @@ No external contribution is expected. This project is constantly improved, so pl
 
 ### Who do I talk to? ###
 
-* Owner: Othman Benomar (Project Associate Professor at NAOJ / NYUAD research associate)
+* Owner: Othman Benomar (Project Associate Professor at NAOJ / NYUAD Visiting Scientist)
 * Contact: ob19@nyu.edu  /  othman.benomar@nao.ac.jp
