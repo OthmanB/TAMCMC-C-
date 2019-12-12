@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.4.1)
 
 project(cpptamcmc VERSION 1.3.1)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
 option(BUILD_ON_DALMA "Building for NYU DALMA Supercomputer" OFF)
@@ -150,6 +153,7 @@ include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(tamcmc/headers)
 
 #Dependencies that are not portable (BOOST)
+set(Boost_USE_MULTITHREADED=OFF)
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
 include_directories(... ${Boost_INCLUDE_DIRS})
 link_directories(... ${Boost_LIBRARY_DIRS})

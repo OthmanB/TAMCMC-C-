@@ -7,7 +7,7 @@ Programs to perform asteroseismic analysis using a MCMC optinmisation algorithm.
 The algorithm implementation is based on the IDL implementation of my code described in Benomar et al. (2009), see http://adsabs.harvard.edu/abs/2009A%26A...506...15B
 This implementation is itself based on the Metropolis-Hasting-Langevin scheme described in Atchade Y. (2006), see https://link.springer.com/article/10.1007/s11009-006-8550-0
 
-* Version 1.4.0, read the file CHANGELOG.md for a full list of the code history.
+* Version 1.4.1, read the file CHANGELOG.md for a full list of the code history.
 	The current implementation focuses on the asteroseismic analysis (individual pulsations) of main sequence stars. For other stars, one would need to write
 	dedicated functions, but the code is modular so that only minimal effort is required to do so. The version 1.4.0 distinguish itself from previous version by the fact you have the possibility to carry out local fit through the model_name = 'model_MS_local_basic' 
 	
@@ -63,5 +63,5 @@ No external contribution is expected. This project is constantly improved, so pl
 
 ### Who do I talk to? ###
 
-* Owner: Othman Benomar (NYUAD research associate)
-* Contact: ob19@nyu.edu
+* Owner: Othman Benomar (Project Associate Professor at NAOJ / NYUAD research associate)
+* Contact: ob19@nyu.edu  /  othman.benomar@nao.ac.jp

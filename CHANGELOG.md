@@ -1,5 +1,10 @@
 # Version history #
 
+### v1.4.1-dev Bug fixes ###
+	* Fixing a bug that was preventing to evaluate properly the initial guess for the noise level in simulations and with local fitting models
+	* Fixing a bug seemingly due to difference between clang and g++ when parsing a string with strtrim(). For some reason g++ remove the return to the line (ASCII code 13) when asked to remove whitespace or tabulation. But clang does not. Thus, I had to add a logical test for the ASCII character 13 at the end 
+	  of the tested string into strtrim()
+	* io_local.cpp: Adding a safe exit when the user attempt to set a range that does not contain any mode frequency into the .model file  
 ### v1.4.0-dev Local fit implementation ###
 	* Adding a whole new serie of function to handle a local fit. Warning: Changes require slight changes in the .model file. The various fitting ranges have to be defined 
           using the '*' marker [DONE] [TESTED]

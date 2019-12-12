@@ -346,9 +346,8 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	all_in.model_fullname=" "; // Default is an empty string
     for(int i=0; i<inputs_local.common_names.size(); i++){
         if(inputs_local.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
-        	all_in.model_fullname=inputs_local.common_names_priors[i];
+        	all_in.model_fullname=strtrim(inputs_local.common_names_priors[i]);
             if(all_in.model_fullname == "model_MS_local_basic"){
-            	//Previously corresponding to average_a1nl     bool    1    1 
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
@@ -367,7 +366,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
     	exit(EXIT_FAILURE);
     }
- 	//io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1); // NOT USED FOR LOCAL FIT
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);	
 	
 	// -----------------------------------------------------------------
@@ -521,6 +519,12 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	Nf_el[2]=f2_inputs.size();
 	Nf_el[3]=f3_inputs.size();
 	
+	if(Nf_el.sum() == 0){
+		std::cout << "Error : No mode found in the specified frequency range!" << std::endl;
+		std::cout << "        You must have at least one mode per slice!" << std::endl;
+		std::cout << "        The program will now exit" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
@@ -1035,16 +1039,27 @@ short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, 
 	
 	const int Nharvey=(noise_params.size()-1)/3;
 	VectorXd y0(2), noise_vals;
-;
+	VectorXd noise_p=noise_params;
+
 	y0 << 0, 0;
 	
-	noise_vals=harvey_like(noise_params, freq_range, y0, Nharvey);
+	for (int i=0; i<noise_p.size(); i++){
+		if (noise_p[i] < 0){
+				noise_p[i]=0;
+		}
+	}
+	noise_vals=harvey_like(noise_p, freq_range, y0, Nharvey);
 	(*Noise_in).inputs[0]=noise_vals.sum()/noise_vals.size();
 	(*Noise_in).priors(0,0)=noise_vals.minCoeff()*0.5;
 	(*Noise_in).priors(1,0)=noise_vals.maxCoeff()*1.5;	 
 	
-/*//	 --- For debug only ---
+///	 --- For debug only ---
+/*
 	std::cout << "Stop in set_noise_params_local: Need to be checked" << std::endl;	
+	std::cout << "Nharvey = " << Nharvey << std::endl;
+	std::cout << "freq_range = " << freq_range << std::endl;
+	std::cout << "noise_params = " <<  noise_p << std::endl;
+	std::cout << "------" << std::endl;
 	std::cout << "noise_vals:" << noise_vals << std::endl;
 	std::cout << "(*Noise_in).inputs : " << (*Noise_in).inputs << std::endl;
 	std::cout << "(*Noise_in).priors : " << (*Noise_in).priors << std::endl;

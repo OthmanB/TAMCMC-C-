@@ -9,13 +9,13 @@ void writeversion();
 #define APP_ID        "TAMCMC"
 #define APP_NAME      "CPPTAMCMC"
 #define APP_DESC      "MCMC for Asteroseismology"
-#define APP_VERSION   "1.4.0-dev"
+#define APP_VERSION   "1.4.1-dev"
 #define APP_DOMAIN    ""
-#define APP_SITE      ""
+#define APP_SITE      "github.com/othmanB"
 #define APP_COPYRIGHT "Othman Benomar"
 
 #define APP_VER_MAJOR  1
-#define APP_VER_MINOR  3
+#define APP_VER_MINOR  4
 //#define APP_VER_BUILD  0
 //#define APP_VER_REV    0
 

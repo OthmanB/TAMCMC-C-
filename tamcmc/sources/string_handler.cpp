@@ -28,7 +28,7 @@ std::string strtrim(const std::string& str){
  *  	- const auto --> const string
  *      - optional argument for the separator is now hardcoded
 */
-    std::string whitespace = " \t";
+    std::string tmp, whitespace = " \t";
     size_t strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos)
         return ""; // no content
@@ -36,7 +36,16 @@ std::string strtrim(const std::string& str){
     size_t strEnd = str.find_last_not_of(whitespace);
     size_t strRange = strEnd - strBegin + 1;
 
-    return str.substr(strBegin, strRange);
+    tmp=str.substr(strBegin, strRange);
+    std::vector<char> bytes(tmp.begin(), tmp.end());
+ 	if(int(bytes[bytes.size()-1]) == 13){ // Check that CR (return) is not a last character. If so, it has to be removed
+ 			//std::cout << "Reducing size by 1" << std::endl;
+ 			return str.substr(strBegin, strRange-1);
+	} else{
+			//std::cout << "Keeping full size..." << std::endl;
+		    return str.substr(strBegin, strRange);
+	}
+	return "";
 }
 
 
