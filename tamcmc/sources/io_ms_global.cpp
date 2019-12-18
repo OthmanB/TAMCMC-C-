@@ -513,6 +513,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
 
 
+	// DEFAULT HEIGHTS
 	tmpXd.resize(4);
 	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
 	for(int i=0; i<h_inputs.size(); i++){
@@ -520,6 +521,17 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&height_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
 		} else{
 			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
+		}
+	}
+
+	// DEFAULT WIDTH
+	tmpXd.resize(4);
+	tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
+	for(int i=0; i<w_inputs.size(); i++){
+		if(w_relax[i]){
+			io_calls.fill_param(&width_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+		} else{
+			io_calls.fill_param(&width_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
 	
