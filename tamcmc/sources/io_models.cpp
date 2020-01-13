@@ -53,7 +53,6 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
 			(*data).priors(k,pos)=prior_vals(k+i0_prior);  // The row becomes a col and this is normal
 		}
 	}
-
 	return 0;
 }
 
@@ -73,7 +72,7 @@ short int IO_models::fill_param_vect(Input_Data *data, const std::vector<double>
 			fill_param(data, input_name,  "Fix", vec_inputs[i],  prior_vals, i+pos, i0_prior_else);		
 		}
 	}
-	show_param(*data);
+	//show_param(*data);
 	return 0;
 }
 

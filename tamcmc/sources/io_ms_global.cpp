@@ -102,17 +102,21 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
                     iMS_global.relax_freq.push_back(1);  // By default, we fit frequencies
                 }
                 if (word.size() >=5){
-                    iMS_global.relax_gamma.push_back(str_to_bool(word[4]));
+                    //iMS_global.relax_gamma.push_back(str_to_bool(word[4]));
+                    iMS_global.relax_H.push_back(str_to_bool(word[4]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Width of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    iMS_global.relax_gamma.push_back(1);
+                    //iMS_global.relax_gamma.push_back(1);
+                    iMS_global.relax_H.push_back(1);
                 }
                 //std::cout << "H" << std::endl;
                 if (word.size() >=6){
-                    iMS_global.relax_H.push_back(str_to_bool(word[5]));
+                    //iMS_global.relax_H.push_back(str_to_bool(word[5]));
+                    iMS_global.relax_gamma.push_back(str_to_bool(word[5]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Height of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    iMS_global.relax_H.push_back(1);
+                    //iMS_global.relax_H.push_back(1);
+                    iMS_global.relax_gamma.push_back(1);
                 }
                 cpt=cpt+1;
 			} else{

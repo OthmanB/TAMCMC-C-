@@ -100,17 +100,20 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const int slic
                     i_local.relax_freq.push_back(1);  // By default, we fit frequencies
                 }
                 if (word.size() >=5){
-                    i_local.relax_gamma.push_back(str_to_bool(word[4]));
+                    //i_local.relax_gamma.push_back(str_to_bool(word[4]));
+                    i_local.relax_H.push_back(str_to_bool(word[4]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Width of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    i_local.relax_gamma.push_back(1);
+                    //i_local.relax_gamma.push_back(1);
+                    i_local.relax_H.push_back(1);
                 }
-                //std::cout << "H" << std::endl;
                 if (word.size() >=6){
-                    i_local.relax_H.push_back(str_to_bool(word[5]));
+                    //i_local.relax_H.push_back(str_to_bool(word[5]));
+                    i_local.relax_gamma.push_back(str_to_bool(word[5]));
                 } else{
                     std::cout << "Warning: The .model file does not specify if the Height of the mode at frequency f=" << word[2] << " is fixed/free! ==> Using default condition (free parameter) " << std::endl;
-                    i_local.relax_H.push_back(1);
+                    //i_local.relax_H.push_back(1);
+                    i_local.relax_gamma.push_back(1);
                 }
                 cpt=cpt+1;
 			} else{
@@ -346,8 +349,9 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	all_in.model_fullname=" "; // Default is an empty string
     for(int i=0; i<inputs_local.common_names.size(); i++){
         if(inputs_local.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
-        	all_in.model_fullname=strtrim(inputs_local.common_names_priors[i]);
+        	all_in.model_fullname=inputs_local.common_names_priors[i];
             if(all_in.model_fullname == "model_MS_local_basic"){
+            	//Previously corresponding to average_a1nl     bool    1    1 
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
@@ -366,6 +370,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
     	exit(EXIT_FAILURE);
     }
+ 	//io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1); // NOT USED FOR LOCAL FIT
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);	
 	
 	// -----------------------------------------------------------------
@@ -379,92 +384,89 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 		}
 		// --- sublist of relax taken from the first frequency list at the given el----
 		pos_relax0=where_int(inputs_local.els, el); // Get all the positions for the modes of degree el in the relax tab
-		for(int i=0; i<pos_relax0.size(); i++){ // fill temporary variables for the given el 
-			// Select only the modes that are within the specified range for the analysis
-			//if (inputs_local.freqs_ref[pos_relax0[i]] >= inputs_local.freq_range[0] && (inputs_local.freqs_ref[pos_relax0[i]] >= freq_range[0])){
+		if (pos_relax0[0] != -1){
+			for(int i=0; i<pos_relax0.size(); i++){ // fill temporary variables for the given el 
 				f_el.push_back(inputs_local.freqs_ref[pos_relax0[i]]);
 				rf_el.push_back(inputs_local.relax_freq[pos_relax0[i]]);
 				rw_el.push_back(inputs_local.relax_gamma[pos_relax0[i]]);
 				rh_el.push_back(inputs_local.relax_H[pos_relax0[i]]);
-			//}
-		}
-		pos_el=where_int(els_eigen, el); // find where we have modes of degree el in the eigen vectors
-		Nf_el[el]=pos_el.size(); // Get the Number of frequencies of a given el... this will be used in plength
-		for(int en=0; en<pos_el.size(); en++){
-			if(el ==0){
-				f0_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
-				f0_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
-				f0_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
-				w0_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
-				h0_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
 			}
-			if(el ==1){
-				f1_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
-				f1_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
-				f1_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
-				w1_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
-				h1_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
-			}
-			if(el ==2){
-				f2_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
-				f2_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
-				f2_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
-				w2_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
-				h2_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
-			}
-			if(el ==3){
-				f3_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
-				f3_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
-				f3_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
-				w3_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
-				h3_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
-			}			
-			pos_relax=where_dbl(f_el, inputs_local.eigen_params(pos_el[en],1), tol); // Get the (unique) position in the relax tab for the seeked frequency
-
-			if(pos_relax[0] != -1 && pos_relax.size() == 1){ // We impose uniqueness of the solution, within the tolerance
+			pos_el=where_int(els_eigen, el); // find where we have modes of degree el in the eigen vectors
+			Nf_el[el]=pos_el.size(); // Get the Number of frequencies of a given el... this will be used in plength
+			for(int en=0; en<pos_el.size(); en++){
 				if(el ==0){
-					f0_relax.push_back(rf_el[pos_relax[0]]);
-					w0_relax.push_back(rw_el[pos_relax[0]]);
-					h0_relax.push_back(rh_el[pos_relax[0]]);
+					f0_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
+					f0_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
+					f0_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
+					w0_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
+					h0_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
 				}
 				if(el ==1){
-					f1_relax.push_back(rf_el[pos_relax[0]]);
-					w1_relax.push_back(rw_el[pos_relax[0]]);
-					h1_relax.push_back(rh_el[pos_relax[0]]);
+					f1_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
+					f1_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
+					f1_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
+					w1_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
+					h1_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
 				}
 				if(el ==2){
-					f2_relax.push_back(rf_el[pos_relax[0]]);
-					w2_relax.push_back(rw_el[pos_relax[0]]);
-					h2_relax.push_back(rh_el[pos_relax[0]]);
+					f2_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
+					f2_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
+					f2_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
+					w2_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
+					h2_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
 				}
 				if(el ==3){
-					f3_relax.push_back(rf_el[pos_relax[0]]);
-					w3_relax.push_back(rw_el[pos_relax[0]]);
-					h3_relax.push_back(rh_el[pos_relax[0]]);
-				}
-			} else{
-				std::cout << "Error when preparing the vector of parameters using the MCMC file" << std::endl;
-				std::cout << "The uniqueness of the frequency " << inputs_local.eigen_params(pos_el[en],1) << " is not respected" << std::endl;
-				std::cout << "     - pos_relax.size() =" << pos_relax.size() << std::endl;
-				std::cout << "     - pos_relax[0] =" << pos_relax[0] << std::endl;
-				if(pos_relax.size() != 1){
-					std::cout << "Check that you do not have duplicated values in your MCMC file " << std::endl;
+					f3_inputs.push_back(inputs_local.eigen_params(pos_el[en],1));
+					f3_priors_min.push_back(inputs_local.eigen_params(pos_el[en],2));
+					f3_priors_max.push_back(inputs_local.eigen_params(pos_el[en],3));
+					w3_inputs.push_back(inputs_local.eigen_params(pos_el[en],4)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE WIDTH ARE INTERPOLATED USING l=0
+					h3_inputs.push_back(inputs_local.eigen_params(pos_el[en],5)); // COLUMNS for el>0 ARE IGNORED BECAUSE THE HEIGHT ARE SCALED USING VISBILITIES				
+				}			
+				pos_relax=where_dbl(f_el, inputs_local.eigen_params(pos_el[en],1), tol); // Get the (unique) position in the relax tab for the seeked frequency
 
+				if(pos_relax[0] != -1 && pos_relax.size() == 1){ // We impose uniqueness of the solution, within the tolerance
+					if(el ==0){
+						f0_relax.push_back(rf_el[pos_relax[0]]);
+						w0_relax.push_back(rw_el[pos_relax[0]]);
+						h0_relax.push_back(rh_el[pos_relax[0]]);
+					}
+					if(el ==1){
+						f1_relax.push_back(rf_el[pos_relax[0]]);
+						w1_relax.push_back(rw_el[pos_relax[0]]);
+						h1_relax.push_back(rh_el[pos_relax[0]]);
+					}
+					if(el ==2){
+						f2_relax.push_back(rf_el[pos_relax[0]]);
+						w2_relax.push_back(rw_el[pos_relax[0]]);
+						h2_relax.push_back(rh_el[pos_relax[0]]);
+					}
+					if(el ==3){
+						f3_relax.push_back(rf_el[pos_relax[0]]);
+						w3_relax.push_back(rw_el[pos_relax[0]]);
+						h3_relax.push_back(rh_el[pos_relax[0]]);
+					}
+				} else{
+					std::cout << "Error when preparing the vector of parameters using the MCMC file" << std::endl;
+					std::cout << "The uniqueness of the frequency " << inputs_local.eigen_params(pos_el[en],1) << " is not respected" << std::endl;
+					std::cout << "     - pos_relax.size() =" << pos_relax.size() << std::endl;
+					std::cout << "     - pos_relax[0] =" << pos_relax[0] << std::endl;
+					if(pos_relax.size() != 1){
+						std::cout << "Check that you do not have duplicated values in your MCMC file " << std::endl;
+					}
+					if(pos_relax[0] == -1){
+						std::cout << "Check that you do not the same values in the relax list and in the eigen list of your MCMC file " << std::endl;
+					}
+					std::cout << "The program will exit now" << std::endl;
+					exit(EXIT_FAILURE);
 				}
-				if(pos_relax[0] == -1){
-					std::cout << "Check that you do not the same values in the relax list and in the eigen list of your MCMC file " << std::endl;
-				}
-				std::cout << "The program will exit now" << std::endl;
-				exit(EXIT_FAILURE);
 			}
-		}
+		} 
 		// Empty the temporary variables for the relax and the freqs_ref at a given el
 		f_el.resize(0);
 		rf_el.resize(0);
 		rw_el.resize(0);
 		rh_el.resize(0);
 	}
-	
 	// -------------------------------------------------------------------------------------------		
 	// ------------------- Filtering according to specified the frequency range ------------------
 	// -------------------------------------------------------------------------------------------
@@ -519,12 +521,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	Nf_el[2]=f2_inputs.size();
 	Nf_el[3]=f3_inputs.size();
 	
-	if(Nf_el.sum() == 0){
-		std::cout << "Error : No mode found in the specified frequency range!" << std::endl;
-		std::cout << "        You must have at least one mode per slice!" << std::endl;
-		std::cout << "        The program will now exit" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
@@ -546,7 +542,6 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	} else{
 		tmpstr_h="Height_l";
 	}
-	
 	// ------------------------ 		
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
@@ -567,8 +562,14 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 
 	// --- Default setup for widths ---
 	tmpXd.resize(4);
-    tmpXd << resol, inputs_local.Dnu/3., -9999., -9999.;
-	
+	if (inputs_local.Dnu > 0){
+    	tmpXd << resol, inputs_local.Dnu/3., -9999., -9999.;
+	} else{
+		std::cout << "Warning: No large separation provided. The default maximum width will be set to 20 microHz " << std::endl;
+		std::cout << "         If you want to set this yourself, use the 'width' keyword for the section '# Controls and priors for common parameters'" << std::endl;
+		std::cout << "         of the .model file" << std::endl;
+		tmpXd << resol, 20., -9999., -9999.;
+	}
 	p0=0;
 	io_calls.fill_param_vect(&width_in, w0_inputs, w0_relax, "Width_l", "Jeffreys", tmpXd, p0, 0, 0);
 	p0=w0_inputs.size();
@@ -577,14 +578,12 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	io_calls.fill_param_vect(&width_in, w2_inputs, w2_relax, "Width_l", "Jeffreys", tmpXd, p0, 0, 0);
 	p0=w0_inputs.size()+w1_inputs.size()+w2_inputs.size();
 	io_calls.fill_param_vect(&width_in, w3_inputs, w3_relax,"Width_l", "Jeffreys", tmpXd, p0, 0, 0);
-
-	std::cout << " 7 " << std::endl;
 	
 	// --- Default setup for frequencies ---
 	p0=0;
 	for(int i=0; i<f0_inputs.size(); i++){
 		if(f0_relax[i]){
-			tmpXd << f0_priors_min[i], f0_priors_max[i], 0.01*inputs_local.Dnu, 0.01*inputs_local.Dnu; // default parameters for a GUG prior on frequencies
+			tmpXd << f0_priors_min[i], f0_priors_max[i], 0.01*std::abs(f0_priors_max[i]-f0_priors_min[i]), 0.01*std::abs(f0_priors_max[i]-f0_priors_min[i]); // default parameters for a GUG prior on frequencies
 			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f0_inputs[i], tmpXd, i+p0, 0);	
 		} else{
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f0_inputs[i], tmpXd, i+p0, 0);			
@@ -593,7 +592,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	p0=f0_inputs.size();
 	for(int i=0; i<f1_inputs.size(); i++){
 		if(f1_relax[i]){
-			tmpXd << f1_priors_min[i], f1_priors_max[i], 0.01*inputs_local.Dnu, 0.01*inputs_local.Dnu; // default parameters for a GUG prior on frequencies
+			tmpXd << f1_priors_min[i], f1_priors_max[i], 0.01*std::abs(f1_priors_max[i]-f1_priors_min[i]), 0.01*std::abs(f1_priors_max[i]-f1_priors_min[i]); // default parameters for a GUG prior on frequencies
 			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f1_inputs[i], tmpXd, i+p0, 0);	
 		} else{
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f1_inputs[i], tmpXd, i+p0, 0);			
@@ -602,7 +601,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	p0=f0_inputs.size()+f1_inputs.size();
 	for(int i=0; i<f2_inputs.size(); i++){
 		if(f2_relax[i]){
-			tmpXd << f2_priors_min[i], f2_priors_max[i], 0.01*inputs_local.Dnu, 0.01*inputs_local.Dnu; // default parameters for a GUG prior on frequencies
+			tmpXd << f2_priors_min[i], f2_priors_max[i], 0.01*std::abs(f2_priors_max[i]-f2_priors_min[i]), 0.01*std::abs(f2_priors_max[i]-f2_priors_min[i]); // default parameters for a GUG prior on frequencies
 			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f2_inputs[i], tmpXd, i+p0, 0);	
 		} else{
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f2_inputs[i], tmpXd, i+p0, 0);			
@@ -611,7 +610,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	p0=f0_inputs.size()+f1_inputs.size()+f2_inputs.size();
 	for(int i=0; i<f3_inputs.size(); i++){
 		if(f3_relax[i]){
-			tmpXd << f3_priors_min[i], f3_priors_max[i], 0.01*inputs_local.Dnu, 0.01*inputs_local.Dnu; // default parameters for a GUG prior on frequencies
+			tmpXd << f3_priors_min[i], f3_priors_max[i], 0.01*std::abs(f3_priors_max[i]-f3_priors_min[i]), 0.01*std::abs(f3_priors_max[i]-f3_priors_min[i]); // default parameters for a GUG prior on frequencies
 			io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f3_inputs[i], tmpXd, i+p0, 0);	
 		} else{
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f3_inputs[i], tmpXd, i+p0, 0);			
@@ -714,24 +713,29 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 		}
 		// -- Mode Width ---
 		if(inputs_local.common_names[i] == "width" || inputs_local.common_names[i] == "Width"){
+				std::cout << "In width condition" << std::endl;
 				if(inputs_local.common_names_priors[i] == "Fix_Auto"){
-                    //tmpstr="Jeffreys";
-                    //tmpXd << resol, inputs_local.Dnu/3., -9999., -9999.;
-                    std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
-                    std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                   std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
+                    if(inputs_local.Dnu > 0){
+                    	std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+                    } else{
+                    	std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   20   -9999    -9999" << std::endl;                   	
+                    }
                     std::cout << "          " << "Resolution: " << resol << std::endl;
                 } else{
+                	std::cout << "Using user-defined width prior" << std::endl;
                     tmpstr=inputs_local.common_names_priors[i];
                     tmpXd=inputs_local.modes_common.row(i);
                 }
             p0=0;
             io_calls.fill_param_vect(&width_in, w0_inputs, w0_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
             p0=w0_inputs.size();
-            io_calls.fill_param_vect(&width_in, w0_inputs, w0_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
+            io_calls.fill_param_vect(&width_in, w1_inputs, w1_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
             p0=w0_inputs.size()+w1_inputs.size();
-            io_calls.fill_param_vect(&width_in, w0_inputs, w0_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
+            io_calls.fill_param_vect(&width_in, w2_inputs, w2_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
             p0=w0_inputs.size()+w1_inputs.size()+w2_inputs.size();
-            io_calls.fill_param_vect(&width_in, w0_inputs, w0_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
+            io_calls.fill_param_vect(&width_in, w3_inputs, w3_relax, "Width_l", tmpstr, tmpXd, p0, 0, 1);
+            //exit(EXIT_SUCCESS);
 		} 	
 		// --- Splittings and asymetry ---
 		if(inputs_local.common_names[i] == "splitting_a1" || inputs_local.common_names[i] == "Splitting_a1"){
@@ -772,7 +776,12 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 				if(inputs_local.modes_common(i,0) == 1){
   					if (Snlm_in.inputs[0] != -9999){ 
 						//eta=(4./3.)*!pi*Dnl*(a1_init*1d-6)^2/(rho*G)
-						Snlm_in.inputs[1]=(4./3.)*pi*Dnl*pow(Snlm_in.inputs[0]*1e-6,2.)/(rho*G);
+						if(inputs_local.Dnu > 0){
+							Snlm_in.inputs[1]=(4./3.)*pi*Dnl*pow(Snlm_in.inputs[0]*1e-6,2.)/(rho*G); // rho is calculated using Dnu
+						} else{
+							std::cout << "Centrifugal force set to 0 because the user did not provide Dnu in the model file" << std::endl;
+							Snlm_in.inputs[1]=0; // If Dnu was not provided, we must fix the centrifugal distorsion to 0.
+						}
 						std::cout << " -------------" << std::endl;
 						std::cout << "Asphericity_eta given with Fix_Auto ==> Setting the asphericity to the centrifugal force" << std::endl;
 						std::cout << "      eta=" << Snlm_in.inputs[1] << std::endl;
@@ -1030,31 +1039,50 @@ short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, 
  * inputs of the .model file regrouped inside the noise_s2 matrixXd
  *
 */
-	
+	int cpt=0;
+	VectorXi pos;
+	VectorXd noise_p;
+
 	// On a local fit, we just need to approximate the noise by a constant... Later refinements may include a slope, 
 	//but this might no be necessary
 	(*Noise_in).inputs_names[0]="White_Noise_N0"; 
 	(*Noise_in).priors_names[0]="Uniform"; 
 	(*Noise_in).relax[0]=1; 
 	
-	const int Nharvey=(noise_params.size()-1)/3;
+	int Nharvey;
 	VectorXd y0(2), noise_vals;
-	VectorXd noise_p=noise_params;
+	pos=where_dbl(noise_params, -2, 1e-6);
+
+	if(pos[0] != -1){
+		noise_p.resize(noise_params.size() -pos.size());
+	}
+	else{
+		noise_p.resize(noise_params.size());	
+	}
+	noise_p.setConstant(-9999);
 
 	y0 << 0, 0;
 	
-	for (int i=0; i<noise_p.size(); i++){
-		if (noise_p[i] < 0){
-				noise_p[i]=0;
+	for (int i=0; i<noise_params.size(); i++){
+		std::cout << i << "  " << cpt << std::endl;
+		if (noise_params[i] ==-1){
+				noise_p[cpt]=0;
+				cpt=cpt+1;
+		}
+		if (noise_params[i] >=0){
+				noise_p[cpt] = noise_params[i];
+				cpt=cpt+1;
 		}
 	}
+
+	Nharvey=(noise_p.size()-1)/3;
 	noise_vals=harvey_like(noise_p, freq_range, y0, Nharvey);
+
 	(*Noise_in).inputs[0]=noise_vals.sum()/noise_vals.size();
 	(*Noise_in).priors(0,0)=noise_vals.minCoeff()*0.5;
 	(*Noise_in).priors(1,0)=noise_vals.maxCoeff()*1.5;	 
 	
 ///	 --- For debug only ---
-/*
 	std::cout << "Stop in set_noise_params_local: Need to be checked" << std::endl;	
 	std::cout << "Nharvey = " << Nharvey << std::endl;
 	std::cout << "freq_range = " << freq_range << std::endl;
@@ -1063,8 +1091,6 @@ short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, 
 	std::cout << "noise_vals:" << noise_vals << std::endl;
 	std::cout << "(*Noise_in).inputs : " << (*Noise_in).inputs << std::endl;
 	std::cout << "(*Noise_in).priors : " << (*Noise_in).priors << std::endl;
-	exit(EXIT_SUCCESS);
-*/
 	return 0;
 }
 

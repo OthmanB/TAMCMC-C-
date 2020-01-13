@@ -359,7 +359,6 @@ void Config::read_inputs_priors_local(){
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
-
 }
 
 
@@ -404,8 +403,6 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
  * See model_def.cpp for the actual use of the switch statement.
 */
 
-
-	std::string strc, test="aa";
 	bool passed;
 	int i;
 	const int Nmodels=modeling.models_list_ctrl.size();
@@ -414,23 +411,16 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
 	passed=0;
 
 	for (i = 0; i< Nmodels; i++){	
-//		strc=strtrim(modeling.models_list_ctrl[i]);
-//		std::cout << "model_name =" << model_name << std::endl;
-//		std::cout << "models_list[" << i << "]=" << modeling.models_list_ctrl[i] << std::endl;
-//		std::cout << "model_name.compare(modeling.models_list_ctrl[i]) = " << model_name.compare(strc) << std::endl;
-		if (strtrim(model_name) ==  strtrim(modeling.models_list_ctrl[i])){
+		if (model_name ==  modeling.models_list_ctrl[i]){
 			switch_name= modeling.models_case_list_ctrl[i];
 			passed=1;
 		}
 	}
-//	std::cout << strc.compare("model_MS_local_basic") << std::endl;
-//	std::cout << model_name.compare("model_MS_local_basic") << std::endl;
-//	exit(EXIT_SUCCESS);
     if (passed == 0){
 		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
 	}	
 	//std::cout << model_name << "    ==> " << switch_name << std::endl;
-
+	//exit(EXIT_SUCCESS);
 	return switch_name;
 }
 

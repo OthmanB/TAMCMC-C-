@@ -1,10 +1,18 @@
 # Version history #
 
-### v1.4.1-dev Bug fixes ###
-	* Fixing a bug that was preventing to evaluate properly the initial guess for the noise level in simulations and with local fitting models
-	* Fixing a bug seemingly due to difference between clang and g++ when parsing a string with strtrim(). For some reason g++ remove the return to the line (ASCII code 13) when asked to remove whitespace or tabulation. But clang does not. Thus, I had to add a logical test for the ASCII character 13 at the end 
-	  of the tested string into strtrim()
-	* io_local.cpp: Adding a safe exit when the user attempt to set a range that does not contain any mode frequency into the .model file  
+### v1.4.1-dev improvements and fixes ###
+    * Bug fix on local fitting models (io_local.cpp):
+    	- When providing only a single degree for the local fitting case, the code crashes as it assumes that lmin=0. 
+          This limitation has been fixed
+        - Priors are mostly improperly set if Dnu is not provided as an argument on the top of the .model file (with the exclamation mark and followed by the value)
+          Corrected by:
+          		- For Widths: Warning the user that the default is in that case a maximum width of 20 microHz (instead of the dynamically defined max width, based on Dnu/3)
+          		- For Frequencies: The GUG priors was using 0.01*Dnu for the Gaussian edges. Now it uses 0.01*(window_max(n,l) - window_min(n,l)). This is valid only for local models. models relying on io_ms_global.cpp still use 0.01*Dnu.
+        - Remaining bug on the noise background: The white noise detection was done improperly if the user provded -2 values in the last line of the section '# Noise  parameters: A0/B0/p0, A1/B1/p1, A2/B2/p2, N0'. These were not removed in the noise parameter vector.
+          This is fixed.
+    * General bug fix: When reading .model files, the relax parameter for Heights an Widths were reversed. This affect all previous version since the origin of the MCMC code.
+    		This is fixed.
+
 ### v1.4.0-dev Local fit implementation ###
 	* Adding a whole new serie of function to handle a local fit. Warning: Changes require slight changes in the .model file. The various fitting ranges have to be defined 
           using the '*' marker [DONE] [TESTED]
