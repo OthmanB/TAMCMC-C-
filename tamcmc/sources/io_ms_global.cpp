@@ -15,6 +15,7 @@
 //#include "string_handler.h"
 #include "io_ms_global.h"
 #include "io_models.h"
+#include "function_rot.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -316,23 +317,27 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const double rho_sun=M_sun*1e3/(4*pi*std::pow(R_sun*1e5,3)/3); //in g.cm-3
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
 
+	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
+
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	double numax=inputs_MS_global.numax;
 	
+
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-	int lmax, en, Ntot, p0, cpt;
+	int lmax, en, ind, Ntot, p0, cpt;
 	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd extra_priors, tmpXd;
+	VectorXd extra_priors, ratios_l, tmpXd;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
-	
+	std::vector<std::string> tmpstr_vec;
+
 	std::string tmpstr_h, tmpstr;
 	
 	Input_Data Snlm_in, Vis_in, Inc_in, Noise_in, freq_in, height_in, width_in; //, width_App2016_params; // This is by block, each category of parameters		
@@ -349,13 +354,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
-            if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
-            	//Previously corresponding to average_a1nl     bool    1    1 
+            if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic" || all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v2" ||
+               all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v3"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike"){
-            	//Previously corresponding to average_a1nl     bool    1    1 
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
@@ -377,7 +381,6 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
            		do_avg_a1n=1;
            	}
         	if(all_in.model_fullname == "model_MS_Global_a1n_etaa3_HarveyLike"){
-           		//Previously corresponding to average_a1nl     bool    1    0            	    
            		do_a11_eq_a12=1;
         		do_avg_a1n=0;
             }
@@ -490,12 +493,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	// ------------------------------------------------------------------------------------------
 	if( do_amp){
 		std::cout << "   ===> Requested to fit squared amplitudes instead of Height... Converting height inputs into A_squared = pi*Height*Width..." << std::endl;
-		tmpstr_h="Amplitude_l";
+		tmpstr_h="Amplitude_l0";
 		for(int i=0; i<h_inputs.size(); i++){
 			h_inputs[i]=pi*w_inputs[i]*h_inputs[i]; 
 		}
 	} else{
-		tmpstr_h="Height_l";
+		tmpstr_h="Height_l0";
 	}
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
@@ -519,7 +522,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 
 	// DEFAULT HEIGHTS
 	tmpXd.resize(4);
-	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
+	tmpXd << Hmin, Hmax, -9999., -9999.; // default hmin and hmax for the Jeffreys prior
 	for(int i=0; i<h_inputs.size(); i++){
 		if(h_relax[i]){
 			io_calls.fill_param(&height_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
@@ -533,9 +536,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
 	for(int i=0; i<w_inputs.size(); i++){
 		if(w_relax[i]){
-			io_calls.fill_param(&width_in, tmpstr_h, "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+			io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", h_inputs[i], tmpXd, i, 0);	
 		} else{
-			io_calls.fill_param(&width_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
+			io_calls.fill_param(&width_in, "Width_l0", "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
 	
@@ -867,7 +870,7 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 	std::cout << "The program will exit now" << std::endl;
 	exit(EXIT_FAILURE);
 }
-if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used 
+if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used (CLASSIC and CLASSIC_vX models)
 	if( (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike") || (all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985") ||
 		(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1") || (all_in.model_fullname=="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2")){
 		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
@@ -903,6 +906,66 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
         io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
         io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
 	}
+	// ----------------                                                                                      ----------------
+	// ----------------                                                                                      ----------------
+	// The models in this section are not fitting the inclination. Instead they consider Hlm or the Ratios as free parameters
+	// ----------------                                                                                      ----------------
+	// ----------------    
+	//----------------
+
+	if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v2"){
+		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
+		io_calls.initialise_param(&Inc_in, 9, Nmax_prior_params, -1, -1); // 2 param for l=1, 3 for l=2 and 4 for l=3
+		ind=0;
+		tmpXd.resize(4);
+		tmpXd << 0, 1, -9999., -9999.;
+		for(int el=1; el<=lmax; el++){
+			ratios_l=amplitude_ratio(el, tmp); 
+			for(int em=0; em<=el; em++){
+				io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(el) + "," + int_to_str(em), "Uniform", ratios_l[el+em], tmpXd, ind, 0);
+				ind=ind+1;
+			}
+		}
+	}
+	if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v3"){
+		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
+		std::cout << "WARNING      WARNING     WARNING     WARNING     WARNING     WARNING     WARNING     " << std::endl;
+		std::cout << "                   THIS FUNCTION IS NOT SUITABLE FOR A GLOBAL FIT! " <<std::endl;
+		std::cout << "            YOUR ARE LIKE TO HAVE TOO MANY PARAMETERS FOR MODES HEIGHTS " << std::endl;
+		std::cout << "      WE RECOMMEND TO USE model_MS_Global_a1etaa3_HarveyLike_Classic_v2 FOR A GLOBAL FIT" << std::endl;
+		std::cout << "               OR TO SWITCH TO A LOCAL FIT (see config_default.cfg)" <<std::endl;
+		std::cout << "WARNING      WARNING     WARNING     WARNING     WARNING     WARNING     WARNING     " << std::endl;
+		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
+	
+		tmpXd.resize(4);
+		tmpXd << -9999, -9999, -9999., -9999.;
+		// Visibilities are not used in the is model ==> deactivated
+		const VectorXd Vistmp=Vis_in.inputs; 
+		std::cout << Vistmp << std::endl;
+		for (int el=1; el<lmax;el++){
+			io_calls.fill_param(&Vis_in, "Empty", "Fix", 0, tmpXd, el-1, 0); 
+		}
+		//
+		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
+		io_calls.initialise_param(&Inc_in, Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1); // 2 param for each l=1, 3 for l=2 and 4 for l=3
+		ind=0;
+		tmpXd << Hmin, Hmax, -9999., -9999.;
+		for(int el=1; el<=lmax; el++){
+			ratios_l=amplitude_ratio(el, tmp); 
+			for(int en=1; en<Nf_el[el]; en++){
+				for(int em=0; em<=el; em++){
+					io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
+					ind=ind+1;
+				}
+			}
+		}
+		//exit(EXIT_SUCCESS);
+	}
+	// ----------------                                                                                      ----------------
+	// ----------------                                                                                      ----------------
+	// ----------------                                                                                      ----------------
+	// ----------------                                                                                      ----------------
+
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){

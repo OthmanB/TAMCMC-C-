@@ -16,6 +16,8 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_l
 VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(VectorXd params, VectorXi params_length, VectorXd x);
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(VectorXd params, VectorXi params_length, VectorXd x); // Added on 10 Feb 2020
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(VectorXd params, VectorXi params_length, VectorXd x); // Added on 10 Feb 2020
 VectorXd model_MS_Global_a1acta3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1etaa3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1acta3_Harvey1985(VectorXd params, VectorXi params_length, VectorXd x);

@@ -4,6 +4,7 @@ project(cpptamcmc VERSION 1.3.1)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(Boost_USE_MULTITHREADED TRUE)
 
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)

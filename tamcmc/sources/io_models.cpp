@@ -48,8 +48,11 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
 			(*data).priors(k,pos)=-9999;//prior_vals(k+1);  // The row becomes a col and this is normal
 		}
 	} else{
+		//std::cout << "taking care of relax...";
 		(*data).relax[pos]=1;
+		//std::cout << "putting priors...";
 		for(int k=0; k<Nmax_prior_params; k++){
+			//std::cout << k << "...";
 			(*data).priors(k,pos)=prior_vals(k+i0_prior);  // The row becomes a col and this is normal
 		}
 	}

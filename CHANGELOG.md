@@ -1,5 +1,8 @@
 # Version history #
 
+### ROADMAP v1.4.2-dev improvements: Expected target release on 15/02/2020 ###
+	* Adding the possibility to fit Heights of (l,m) instead of the stellar inclination
+	
 ### v1.4.1-dev improvements and fixes ###
     * Bug fix on local fitting models (io_local.cpp):
     	- When providing only a single degree for the local fitting case, the code crashes as it assumes that lmin=0. 
