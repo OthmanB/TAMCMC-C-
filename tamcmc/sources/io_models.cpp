@@ -144,6 +144,7 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 	return 0;
 }
 
+
 short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi plength, const VectorXd extra_priors){
 /* 
  * Define sizes of vectors/matrixes and set the provided plength and extra_priors vector. Other parameters are set to safe default values 

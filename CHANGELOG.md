@@ -2,6 +2,9 @@
 
 ### ROADMAP v1.4.2-dev improvements: Expected target release on 15/02/2020 ###
 	* Adding the possibility to fit Heights of (l,m) instead of the stellar inclination
+	  For that purpose, the following is going to be implemented:
+		- New models for the io_MS_Global class of models:  model_MS_Global_xxx [Status: 100% developped, 99% tested]
+		- A New model for the io_local class of models: model_MS_local_basic_v2 [Status: 10% developped, 0% tested]
 	
 ### v1.4.1-dev improvements and fixes ###
     * Bug fix on local fitting models (io_local.cpp):

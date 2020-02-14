@@ -355,6 +355,11 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
+            if(all_in.model_fullname == "model_MS_local_basic_v2"){
+            	//Previously corresponding to average_a1nl     bool    1    1 
+            	do_a11_eq_a12=1;
+            	do_avg_a1n=1;
+            }
         }
         if(inputs_local.common_names[i] == "fit_squareAmplitude_instead_Height" ){ 
         		do_amp=1;
@@ -906,6 +911,31 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
         io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy
         io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy
 	}
+
+	/*if(all_in.model_fullname == "model_MS_local_basic_v2"){	
+		tmpXd.resize(4);
+		tmpXd << -9999, -9999, -9999., -9999.;
+		// Visibilities are not used in the is model ==> deactivated
+		const VectorXd Vistmp=Vis_in.inputs; 
+		std::cout << Vistmp << std::endl;
+		for (int el=1; el<lmax;el++){
+			io_calls.fill_param(&Vis_in, "Empty", "Fix", 0, tmpXd, el-1, 0); 
+		}
+		//
+		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
+		io_calls.initialise_param(&Inc_in, Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1); // 2 param for each l=1, 3 for l=2 and 4 for l=3
+		ind=0;
+		tmpXd << Hmin, Hmax, -9999., -9999.;
+		for(int el=1; el<=lmax; el++){
+			ratios_l=amplitude_ratio(el, tmp); 
+			for(int en=1; en<Nf_el[el]; en++){
+				for(int em=0; em<=el; em++){
+					io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
+					ind=ind+1;
+				}
+			}
+		}
+	*/
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 /*	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){

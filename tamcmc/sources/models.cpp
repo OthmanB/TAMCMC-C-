@@ -993,27 +993,41 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(VectorXd params, VectorXi
        -------------------------------------------------------
     */
     trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
+    if(lmax >=1){
+        Vl1=std::abs(params[Nmax]);
+        //std::cout << "Vl1 " << Vl1 << std::endl;
+    }
+    if(lmax >=2){
+        Vl2=std::abs(params[Nmax+1]);
+        //std::cout << "Vl2 " << Vl2 << std::endl;
+
+    }
+    if(lmax >=3){
+        Vl3=std::abs(params[Nmax+2]);
+    }
 
     // l=1 Heights are defined by two parameters 
-    ratios_l1[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1];  // m=-1
-    ratios_l1[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise]; // m=0
-    ratios_l1[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]; // m=+1 
+    ratios_l0[0]=1;
+
+    ratios_l1[0]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]);  // m=-1
+    ratios_l1[1]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise]); // m=0
+    ratios_l1[2]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // m=+1 
 
     // l=2 Heights are defined by three parameters  
-    ratios_l2[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4];  // m=-2
-    ratios_l2[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]; // m=-1
-    ratios_l2[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]; // m=0 
-    ratios_l2[3]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]; // m=+1
-    ratios_l2[4]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]; // m=+2 
+    ratios_l2[0]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]);  // m=-2
+    ratios_l2[1]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]); // m=-1
+    ratios_l2[2]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]); // m=0 
+    ratios_l2[3]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]); // m=+1
+    ratios_l2[4]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]); // m=+2 
  
     // l=3 Heights are defined by four parameters 
-    ratios_l3[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8];  // m=-3
-    ratios_l3[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]; // m=-2
-    ratios_l3[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]; // m=-1 
-    ratios_l3[3]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5];  // m=0
-    ratios_l3[4]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]; // m=+1
-    ratios_l3[5]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]; // m=+2 
-    ratios_l3[6]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]; // m=+3
+    ratios_l3[0]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]);  // m=-3
+    ratios_l3[1]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]); // m=-2
+    ratios_l3[2]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]); // m=-1 
+    ratios_l3[3]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]);  // m=0
+    ratios_l3[4]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]); // m=+1
+    ratios_l3[5]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]); // m=+2 
+    ratios_l3[6]=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]); // m=+3
  
     fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
     Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
@@ -1074,7 +1088,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(VectorXd params, VectorXi
                 Hl3=std::abs(params[n]*Vl3);            
             }       
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-        }       
+        }     
     }
 
     /* -------------------------------------------------------
@@ -1133,11 +1147,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(VectorXd params, VectorXi
 
     double trunc_c;
 
-    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
     VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
 
     VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise); //Hl0_all[Nmax],
-    VectorXd Hl0(1), Hl1(2), Hl2(3), Hl3(4);
+    VectorXd Hl0(1), Hl1(3), Hl2(5), Hl3(7);
     double fl0, fl1, fl2, fl3, Wl0, Wl1, Wl2, Wl3, a1,eta,a3, asym;
     int Nharvey;
     long cpt, pos0;
@@ -1180,62 +1193,82 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(VectorXd params, VectorXi
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
             pos0=2*n;
+            Hl1[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];
+            Hl1[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0];
+            Hl1[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];
             if(do_amp){
-                Hl1=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 2)/(pi*Wl1);
-                //Hl10=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]/(pi*Wl1));
-                //Hl11=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1]/(pi*Wl1));
-            } else{
-                Hl1=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 2);
-                //Hl10=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]);
-                //Hl11=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1 ]);
+                //tmp=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 2);
+                Hl1=Hl1/(pi*Wl1);
             } 
             Hl1=Hl1.cwiseAbs();
-            std::cout << "Hl1=" << Hl1 << std::endl;     
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, step, trunc_c);
-            //model_final=model_final + model_l1;
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
             Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
             pos0=3*n;
+            Hl2[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+2];
+            Hl2[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];     
+            Hl2[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0];
+            Hl2[3]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];
+            Hl2[4]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+2];
             if(do_amp){
-                Hl2=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 3)/(pi*Wl1);
-                //Hl20=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]/(pi*Wl2));
-                //Hl21=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1]/(pi*Wl2));
-                //Hl22=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 2]/(pi*Wl2));
-           } else{
-                Hl2=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 3);
-                //Hl20=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]);
-                //Hl21=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1]);
-                //Hl22=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 2]);
-            }
-            Hl2=Hl2.cwiseAbs();   
-            std::cout << "Hl2=" << Hl2 << std::endl;     
+                //Hl2=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 3)/(pi*Wl2);
+                Hl2=Hl2/(pi*Wl2);
+           }
+            Hl2=Hl2.cwiseAbs();
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, step, trunc_c);
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
             Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
             pos0=4*n;
+            Hl3[0]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+3];
+            Hl3[1]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+2];
+            Hl3[2]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];     
+            Hl3[3]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0];
+            Hl3[4]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+1];
+            Hl3[5]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+2];
+            Hl3[6]=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0+3];
             if(do_amp){
-               Hl3=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 4)/(pi*Wl3);
-                //Hl30=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]/(pi*Wl3));
-                //Hl31=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1]/(pi*Wl3));
-                //Hl32=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 2]/(pi*Wl3));
-                //Hl33=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 3]/(pi*Wl3));
-            } else{
-               Hl3=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 4);
-                //Hl30=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 ]);
-                //Hl31=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 1]);
-                //Hl32=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 2]);
-                //Hl33=std::abs(params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0 + 3]);
-            }  
+               //Hl3=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise + pos0, 4)/(pi*Wl3);
+                Hl3=Hl3/(pi*Wl3);
+            }
             Hl3=Hl3.cwiseAbs();
-            std::cout << "Hl3=" << Hl3 << std::endl;     
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, step, trunc_c);
-        }       
-    }
+        }  
+ /*       std::cout << "[" << n << "]" << std::endl;
+        std::cout << "fl0[" << n << "] = " << fl0 << std::endl;
+        std::cout << "Wl0[" << n << "] = " << Wl0 << std::endl;
+        std::cout << "Hl0[" << n << "] = " << Hl0 << std::endl;
+         std::cout << "---------" << std::endl;
+        std::cout << "fl1[" << n << "] = " << fl1 << std::endl;
+        std::cout << "Wl1[" << n << "] = " << Wl1 << std::endl;
+        std::cout << "Hl1[" << n << "] = " << Hl1 << std::endl;
+        std::cout << "---------" << std::endl;
+        std::cout << "fl2[" << n << "] = " << fl2 << std::endl;
+        std::cout << "Wl2[" << n << "] = " << Wl2 << std::endl;
+        std::cout << "Hl2[" << n << "] = " << Hl2 << std::endl;
+        std::cout << "---------" << std::endl;
+        if(lmax>=3){
+            std::cout << "fl3[" << n << "] = " << fl3 << std::endl;
+            std::cout << "Wl3[" << n << "] = " << Hl3 << std::endl;
+            std::cout << "Hl3[" << n << "] = " << Hl3 << std::endl;
+            std::cout << "---------" << std::endl;
+        }
+        std::cout << "a1 = " << Wl0 << std::endl;
+        std::cout << "eta = " << Wl1 << std::endl;
+        std::cout << "a3 = " << Wl2 << std::endl;
 
+       for(long indd=0; indd<model_final.size(); indd++){
+            if (std::isfinite(model_final[indd]) == false){
+                std::cout << indd << " Not finite" << std::endl;
+                std::cout << "      " << model_final[indd] << std::endl;
+                exit(EXIT_SUCCESS);
+            }
+        }  
+*/
+    }
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
        -------------------------------------------------------
@@ -1251,7 +1284,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(VectorXd params, VectorXi
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
     
-    exit(EXIT_SUCCESS);
+    //exit(EXIT_SUCCESS);
 
     return model_final;
 }
@@ -1791,6 +1824,7 @@ VectorXd model_MS_local_basic(VectorXd params, VectorXi params_length, VectorXd 
 
 	return model_final;
 }
+
 
 
 VectorXd model_Harvey_Gaussian(VectorXd params, VectorXi params_length, VectorXd x){

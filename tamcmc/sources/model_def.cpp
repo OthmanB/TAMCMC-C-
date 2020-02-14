@@ -2,7 +2,6 @@
  * model_def.cpp
  *
  * Contains the methods associated to the class 'Model'
- * The header file of that class is in encapsulators.h
  * Note that all models should be put in models.cpp
  * 
  *  Created on: 22 Feb 2016
@@ -158,7 +157,7 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 		}
 		if(std::abs(logPrior[0]) > warning_thld){
 			std::cout << " --------------------------------- WARNING ----------------------------------" << std::endl;
-			std::cout << "                    The initial logPrior[0] >" << warning_thld << std::endl;
+			std::cout << "               The initial logPrior[0] >" << warning_thld << " or is inf" << std::endl;
 			std::cout << "  The penalisation arising from the priors is exceeding the warning threshold " << std::endl;
 			std::cout << "   Check that your initial vector of parameter is compatible with the priors" << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;

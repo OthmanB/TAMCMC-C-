@@ -331,7 +331,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd extra_priors, ratios_l, tmpXd;
+	VectorXd ratios_l, tmpXd, extra_priors;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
@@ -616,10 +616,11 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     
     
 	// -------------- Set Extra_priors ----------------	
-	extra_priors.resize(3);
+	extra_priors.resize(4);
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
 	extra_priors[2]=0.2; // By default a3/a1<=1
+	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	// ------------------------------------------------
 	
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
@@ -926,6 +927,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				ind=ind+1;
 			}
 		}
+		extra_priors[3]=1; // Import Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 1)
 	}
 	if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v3"){
 		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
@@ -933,7 +935,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 		std::cout << "                   THIS FUNCTION IS NOT SUITABLE FOR A GLOBAL FIT! " <<std::endl;
 		std::cout << "            YOUR ARE LIKE TO HAVE TOO MANY PARAMETERS FOR MODES HEIGHTS " << std::endl;
 		std::cout << "      WE RECOMMEND TO USE model_MS_Global_a1etaa3_HarveyLike_Classic_v2 FOR A GLOBAL FIT" << std::endl;
-		std::cout << "               OR TO SWITCH TO A LOCAL FIT (see config_default.cfg)" <<std::endl;
+		std::cout << "               OR TO SWITCH TO A LOCAL FIT (see config_default.cfg and model model_MS_local_basic_v2)" <<std::endl;
 		std::cout << "WARNING      WARNING     WARNING     WARNING     WARNING     WARNING     WARNING     " << std::endl;
 		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
 	
@@ -959,7 +961,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				}
 			}
 		}
-		//exit(EXIT_SUCCESS);
+		extra_priors[3]=2; // Import Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2)
 	}
 	// ----------------                                                                                      ----------------
 	// ----------------                                                                                      ----------------

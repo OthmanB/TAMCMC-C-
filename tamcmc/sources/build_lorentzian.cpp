@@ -163,6 +163,16 @@ VectorXd build_l_mode_a1etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l,
     VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
 	double Qlm, clm;
 
+	/*std::cout << " ---------- " << std::endl;
+	std::cout << " l = " << l << std::endl;
+	std::cout << "H_lm =" << H_lm << std::endl;
+	std::cout << "fc_l =" << fc_l << std::endl;
+	std::cout << "eta =" << eta << std::endl;
+	std::cout << "a3 =" << a3 << std::endl;
+	std::cout << "asym =" << asym << std::endl;
+	std::cout << "gamma_l =" << gamma_l << std::endl;
+	std::cout << " ---------- " << std::endl;
+*/
 	result.setZero();
 	for(int m=-l; m<=l; m++){
 		if(l != 0){

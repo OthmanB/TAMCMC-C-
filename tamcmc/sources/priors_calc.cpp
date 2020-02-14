@@ -26,7 +26,9 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	long double f=0;
 
 	const int smooth_switch=extra_priors[0];
-	const int a3ova1_limit=extra_priors[2];
+	const double scoef=extra_priors[1];
+	const double a3ova1_limit=extra_priors[2];
+	const int impose_normHnlm=extra_priors[3];
 	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
 	
 	const int Nmax=params_length[0]; // Number of Heights
@@ -39,10 +41,11 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
 	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
 	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
-	
-	double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
+	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3; // Total number of modes
+
+	double Dnu, d02, a1, alfa, b, fmax, Q11, max_b, el, em;
 	Deriv_out frstder, scdder;
-	
+
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
 
@@ -55,7 +58,29 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
 	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
-	
+	switch(impose_normHnlm){ 
+		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
+			//l=1: m=0, m=+/-1
+			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
+
+			//l=2: m=0, m=+/-1, m=+/-2
+ 			// The sum must be positive
+			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]
+							); // The sum must be positive
+
+			//l=3: m=0, m=+/-1, m=+/-2, m=+/-3
+ 			// The sum must be positive
+			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]+
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]
+								   ); // The sum must be positive
+
+		break;
+	}
+
 	// Determine the large separation
 	frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	Dnu=frstder.deriv.sum();
@@ -68,11 +93,9 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
-		
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
 			case 1: // Case with smoothness
-				scoef=extra_priors[1];
 				//std::cout << " ------- Frequency derivatives ------" << std::endl;	
 				if(Nfl0 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // The l=0 frequencies
@@ -108,12 +131,18 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				}
 			  	break;
 	}
-
 	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
 	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
 		f=-INFINITY;
 	}
 
+/*	std::cout << "a3 =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2] << std::endl;
+	std::cout << "a1 ="	<< params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
+	std::cout << "ratio =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
+	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
+	std::cout << "after a3ova1_limit " << f << std::endl;
+	std::cout << "extra_priors = " << extra_priors << std::endl;
+*/
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
 		f=-INFINITY;
@@ -135,7 +164,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-		
+	
 	//exit(EXIT_SUCCESS);
 	
 return f;
