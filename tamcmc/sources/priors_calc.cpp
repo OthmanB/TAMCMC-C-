@@ -79,6 +79,10 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 								   ); // The sum must be positive
 
 		break;
+		case 2:
+			std::cout << "priors_MS_Global: impose_normHnlm=2 YET TO BE IMPLEMENTED!" << std::endl;
+			exit(EXIT_SUCCESS);
+		break;
 	}
 
 	// Determine the large separation

@@ -26,6 +26,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(VectorXd params, VectorX
 VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorXi params_length, VectorXd x);
 
 VectorXd model_MS_local_basic(VectorXd params, VectorXi params_length, VectorXd x);
+VectorXd model_MS_local_Hnlm(VectorXd params, VectorXi params_length, VectorXd x); // Added on 14 Feb 2020 : Handles local fit without fitting inclination... instead used Hnlm
 
 VectorXd model_Test_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_Harvey_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);

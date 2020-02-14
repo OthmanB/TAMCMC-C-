@@ -16,6 +16,7 @@
 #include "io_local.h"
 #include "io_models.h"
 #include "noise_models.h"
+#include "function_rot.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -312,6 +313,8 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	const double rho_sun=M_sun*1e3/(4*pi*std::pow(R_sun*1e5,3)/3); //in g.cm-3
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
 
+	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
+
 	double rho=pow(inputs_local.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	//double numax=inputs_local.numax;
@@ -319,11 +322,11 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-	int lmax, en, Ntot, p0, cpt;
+	int lmax, en, Ntot, p0, cpt, ind;
 	//uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd extra_priors, tmpXd;
+	VectorXd ratios_l, extra_priors, tmpXd;
 	std::vector<int> pos_relax, pos_OK;
 	std::vector<double> f0_inputs, h0_inputs, w0_inputs, f0_priors_min, f0_priors_max, f_el;
 	std::vector<double> f1_inputs, h1_inputs, w1_inputs, f1_priors_min, f1_priors_max;
@@ -355,7 +358,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
-            if(all_in.model_fullname == "model_MS_local_basic_v2"){
+            if(all_in.model_fullname == "model_MS_local_Hnlm"){
             	//Previously corresponding to average_a1nl     bool    1    1 
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
@@ -554,7 +557,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	io_calls.initialise_param(&freq_in, Nf_el.sum(), Nmax_prior_params, -1, -1); 
 
 	tmpXd.resize(4);
-	tmpXd << 1, 100000., -9999., -9999.; // default hmin and hmax for the Jeffreys prior
+	tmpXd << Hmin, Hmax, -9999., -9999.; // default hmin and hmax for the Jeffreys prior
 	
 	p0=0;
 	io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
@@ -650,6 +653,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	extra_priors[0]=0; // Empty slot
 	extra_priors[1]=0; // Empty slot
 	extra_priors[2]=0.2; // By default a3/a1<=1
+	extra_priors[3]=0; // Default is not imposing Sun(Hnlm)_{l=-m, l=+m} = 1
 	// ------------------------------------------------
 	
 	for(int i=0; i<inputs_local.common_names.size(); i++){
@@ -912,16 +916,14 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
         io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy
 	}
 
-	/*if(all_in.model_fullname == "model_MS_local_basic_v2"){	
+	if(all_in.model_fullname == "model_MS_local_Hnlm"){	
 		tmpXd.resize(4);
 		tmpXd << -9999, -9999, -9999., -9999.;
 		// Visibilities are not used in the is model ==> deactivated
-		const VectorXd Vistmp=Vis_in.inputs; 
+        io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy
+		const VectorXd Vistmp(4); // MODIFIED DUMMY 
 		std::cout << Vistmp << std::endl;
-		for (int el=1; el<lmax;el++){
-			io_calls.fill_param(&Vis_in, "Empty", "Fix", 0, tmpXd, el-1, 0); 
-		}
-		//
+		
 		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
 		io_calls.initialise_param(&Inc_in, Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1); // 2 param for each l=1, 3 for l=2 and 4 for l=3
 		ind=0;
@@ -930,12 +932,28 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 			ratios_l=amplitude_ratio(el, tmp); 
 			for(int en=1; en<Nf_el[el]; en++){
 				for(int em=0; em<=el; em++){
-					io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
+					io_calls.fill_param(&Inc_in, "H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
 					ind=ind+1;
 				}
 			}
 		}
-	*/
+		//io_calls.fill_param_vect(&height_in, Inc_in.inputs, h1_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+
+		extra_priors[3]=2; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2 of priors_local())
+	
+		std::cout << "NEED TO WORK ON THIS...The problems are the following:" << std::endl;
+		std::cout << "   - Need to resize the height_in Data_in structure so that it includes not Hl, but all of the Hnlm" << std::endl;
+		std::cout << "   - Need to figure out how to set the input values for Hnlm consistently with Hl values" << std::endl;
+		std::cout << "   - Need to fix this section as it is mostly a copy/past of model_MS_Global_a1etaa3_HarveyLike_Classic_v3" << std::endl;
+		std::cout << "   - Few hints: (1) We may just keep Inc_in with all of its information defined by xxx_Classic_v3" << std::endl;
+		std::cout << "                (2) We then need to change the input values using Hl values inside height_in" << std::endl;
+		std::cout << "                (3) Finally we might just resize + transfer all Inc_in values inside height_in at the correct place (ie, after Hl0)" << std::endl;
+		std::cout << "    - Reminders: " << std::endl;
+		std::cout << "                The model model_MS_local_Hnlm is not yet linked into the list of avaiable models. This still need to be done too" << std::endl; 
+		std::cout << "                The priors_local was not edided yet... The imposition of extra_priors[3] == 2 has to be implemented" << std::endl; 
+		
+		exit(EXIT_SUCCESS);
+	}
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 /*	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){

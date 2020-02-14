@@ -927,13 +927,13 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				ind=ind+1;
 			}
 		}
-		extra_priors[3]=1; // Import Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 1)
+		extra_priors[3]=1; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 1)
 	}
 	if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v3"){
 		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
 		std::cout << "WARNING      WARNING     WARNING     WARNING     WARNING     WARNING     WARNING     " << std::endl;
-		std::cout << "                   THIS FUNCTION IS NOT SUITABLE FOR A GLOBAL FIT! " <<std::endl;
-		std::cout << "            YOUR ARE LIKE TO HAVE TOO MANY PARAMETERS FOR MODES HEIGHTS " << std::endl;
+		std::cout << "                   THIS FUNCTION MAY NOT BE SUITABLE FOR A GLOBAL FIT! " <<std::endl;
+		std::cout << "            YOUR ARE LIKELY TO HAVE TOO MANY PARAMETERS FOR MODES HEIGHTS " << std::endl;
 		std::cout << "      WE RECOMMEND TO USE model_MS_Global_a1etaa3_HarveyLike_Classic_v2 FOR A GLOBAL FIT" << std::endl;
 		std::cout << "               OR TO SWITCH TO A LOCAL FIT (see config_default.cfg and model model_MS_local_basic_v2)" <<std::endl;
 		std::cout << "WARNING      WARNING     WARNING     WARNING     WARNING     WARNING     WARNING     " << std::endl;
@@ -961,7 +961,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				}
 			}
 		}
-		extra_priors[3]=2; // Import Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2)
+		extra_priors[3]=2; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2)
 	}
 	// ----------------                                                                                      ----------------
 	// ----------------                                                                                      ----------------
