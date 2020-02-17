@@ -71,7 +71,7 @@ p  2  3035.2500  1      1       1
        2.0000000       0.0000000       0.0000000
       0.13392108   0.00033912777   0.00033998873
 # Controls and priors for common parameters
-           model_fullname             model_MS_Global_a1etaa3_HarveyLike_Classic_v3
+           model_fullname             model_MS_Global_a1etaa3_HarveyLike_Classic_v2
           freq_smoothness                bool          1.000000          2.000000
              Splitting_a1             Uniform          1.400000          0.000000          5.000000
           Asphericity_eta            Fix_Auto          1.000000
@@ -81,3 +81,5 @@ p  2  3035.2500  1      1       1
             Visibility_l1            Gaussian          1.500000          1.500000          0.150000
             Visibility_l2            Gaussian          0.530000          0.530000          0.050000
             Visibility_l3            Gaussian          0.080000          0.080000          0.020000
+                   Height            Jeffreys          1.000000          1000.000
+                    Width            Fix_Auto          1.000000

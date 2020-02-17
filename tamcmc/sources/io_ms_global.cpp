@@ -664,13 +664,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		// --- Height or Amplitude ---
 		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 
 		   inputs_MS_global.common_names[i] == "amplitude" || inputs_MS_global.common_names[i] == "Amplitude"){
-
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 					fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
 				}
 			for(p0=0; p0<h_inputs.size(); p0++){
 				if(h_relax[p0]){
-					io_calls.fill_param(&height_in, tmpstr_h,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);	
+					io_calls.fill_param(&height_in, tmpstr_h,  inputs_MS_global.common_names_priors[i], h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 0);	
 				} else{
 					io_calls.fill_param(&height_in, tmpstr_h,  "Fix", h_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
 				}
@@ -679,8 +678,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		// -- Mode Width ---
 		if((inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width") && (do_width_Appourchaux == 0)){
 				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-					//fatalerror_msg_io_MS_Global(inputs_MS_global.common_names[i], "Fix_Auto", "", "" );
                     tmpstr="Jeffreys";
+                    tmpXd.resize(4);
                     tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
                     std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
                     std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
@@ -941,6 +940,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 	
 		tmpXd.resize(4);
 		tmpXd << -9999, -9999, -9999., -9999.;
+		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
 		// Visibilities are not used in the is model ==> deactivated
 		const VectorXd Vistmp=Vis_in.inputs; 
 		std::cout << Vistmp << std::endl;
@@ -948,20 +948,19 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 			io_calls.fill_param(&Vis_in, "Empty", "Fix", 0, tmpXd, el-1, 0); 
 		}
 		//
-		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
 		io_calls.initialise_param(&Inc_in, Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1); // 2 param for each l=1, 3 for l=2 and 4 for l=3
 		ind=0;
 		tmpXd << Hmin, Hmax, -9999., -9999.;
 		for(int el=1; el<=lmax; el++){
 			ratios_l=amplitude_ratio(el, tmp); 
-			for(int en=1; en<Nf_el[el]; en++){
+			for(int en=0; en<Nf_el[el]; en++){
 				for(int em=0; em<=el; em++){
 					io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
 					ind=ind+1;
 				}
 			}
 		}
-		extra_priors[3]=2; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2)
+		extra_priors[3]=2; // Cannot impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2) because we do not rely on visbilities
 	}
 	// ----------------                                                                                      ----------------
 	// ----------------                                                                                      ----------------

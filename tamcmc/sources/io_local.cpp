@@ -322,7 +322,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-	int lmax, en, Ntot, p0, cpt, ind;
+	int lmax, en, Ntot, p0, cpt, ind, pos_prior_height=-1;
 	//uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
@@ -552,21 +552,27 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	}
 	// ------------------------ 		
     // Set default value of priors for Height Width and frequency
-	io_calls.initialise_param(&height_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
-	io_calls.initialise_param(&width_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
-	io_calls.initialise_param(&freq_in, Nf_el.sum(), Nmax_prior_params, -1, -1); 
-
 	tmpXd.resize(4);
 	tmpXd << Hmin, Hmax, -9999., -9999.; // default hmin and hmax for the Jeffreys prior
-	
-	p0=0;
-	io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
-	p0=h0_inputs.size();
-	io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
-	p0=h0_inputs.size()+h1_inputs.size();
-	io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
-	p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
-	io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+
+	if(all_in.model_fullname == "model_MS_local_Hnlm"){
+		io_calls.initialise_param(&height_in, Nf_el[0] + Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1);
+		p0=0;
+		io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+		// NOTE; IN THAT CASE WE WAIT THE INCLINATION INFORMATION TO FILL Hnlm for l>0
+	} else{
+		io_calls.initialise_param(&height_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
+		p0=0;
+		io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+		p0=h0_inputs.size();
+		io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+		p0=h0_inputs.size()+h1_inputs.size();
+		io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+		p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
+		io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
+	}
+	io_calls.initialise_param(&width_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
+	io_calls.initialise_param(&freq_in, Nf_el.sum(), Nmax_prior_params, -1, -1); 
 
 	// --- Default setup for widths ---
 	tmpXd.resize(4);
@@ -597,6 +603,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f0_inputs[i], tmpXd, i+p0, 0);			
 		}
 	}
+
 	p0=f0_inputs.size();
 	for(int i=0; i<f1_inputs.size(); i++){
 		if(f1_relax[i]){
@@ -606,6 +613,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f1_inputs[i], tmpXd, i+p0, 0);			
 		}
 	}
+
 	p0=f0_inputs.size()+f1_inputs.size();
 	for(int i=0; i<f2_inputs.size(); i++){
 		if(f2_relax[i]){
@@ -615,6 +623,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f2_inputs[i], tmpXd, i+p0, 0);			
 		}
 	}
+
 	p0=f0_inputs.size()+f1_inputs.size()+f2_inputs.size();
 	for(int i=0; i<f3_inputs.size(); i++){
 		if(f3_relax[i]){
@@ -647,9 +656,9 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){
     	io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
     }
-       
+      
 	// -------------- Set Extra_priors ----------------	
-	extra_priors.resize(3);
+	extra_priors.resize(4);
 	extra_priors[0]=0; // Empty slot
 	extra_priors[1]=0; // Empty slot
 	extra_priors[2]=0.2; // By default a3/a1<=1
@@ -710,25 +719,34 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 					fatalerror_msg_io_local(inputs_local.common_names[i], "Fix_Auto", "", "" );
 			}
 			// l=0
-			p0=0;
-			io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-			p0=h0_inputs.size();
-			io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-			p0=h0_inputs.size()+h1_inputs.size();
-			io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-			p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
-			io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+	
+			if(all_in.model_fullname == "model_MS_local_Hnlm"){
+				pos_prior_height=i;
+				io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 0, 0);
+			} else{
+				p0=0;
+				io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+				p0=h0_inputs.size();
+				io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+				p0=h0_inputs.size()+h1_inputs.size();
+				io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+				p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
+				io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+		}
 
 		}
 		// -- Mode Width ---
 		if(inputs_local.common_names[i] == "width" || inputs_local.common_names[i] == "Width"){
-				std::cout << "In width condition" << std::endl;
 				if(inputs_local.common_names_priors[i] == "Fix_Auto"){
                    std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
+                   tmpstr="Jeffreys";
                     if(inputs_local.Dnu > 0){
                     	std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
+	                    tmpXd << resol, inputs_local.Dnu/3, -9999, -9999;
                     } else{
                     	std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   20   -9999    -9999" << std::endl;                   	
+                    	tmpXd << resol, 20, -9999, -9999;
+
                     }
                     std::cout << "          " << "Resolution: " << resol << std::endl;
                 } else{
@@ -917,53 +935,48 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 	}
 
 	if(all_in.model_fullname == "model_MS_local_Hnlm"){	
+	
 		tmpXd.resize(4);
 		tmpXd << -9999, -9999, -9999., -9999.;
+
+		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
+
 		// Visibilities are not used in the is model ==> deactivated
         io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy
-		const VectorXd Vistmp(4); // MODIFIED DUMMY 
-		std::cout << Vistmp << std::endl;
-		
-		tmp=Inc_in.inputs[0]; // Recover the initial stellar inclination as defined by the user in the .model file
-		io_calls.initialise_param(&Inc_in, Nf_el[1]*2 + Nf_el[2]*3 + Nf_el[3]*4, Nmax_prior_params, -1, -1); // 2 param for each l=1, 3 for l=2 and 4 for l=3
-		ind=0;
-		tmpXd << Hmin, Hmax, -9999., -9999.;
+		ind=h0_inputs.size();
+		if(pos_prior_height <= 0){
+			tmpXd << Hmin, Hmax, -9999., -9999.;
+			tmpstr="Jeffreys";
+		} else{
+			tmpXd=inputs_local.modes_common.row(pos_prior_height);
+			tmpstr=inputs_local.common_names_priors[pos_prior_height];
+		}
 		for(int el=1; el<=lmax; el++){
 			ratios_l=amplitude_ratio(el, tmp); 
-			for(int en=1; en<Nf_el[el]; en++){
+			for(int en=0; en<Nf_el[el]; en++){
 				for(int em=0; em<=el; em++){
-					io_calls.fill_param(&Inc_in, "H" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em), "Jeffreys", height_in.inputs[en]*Vistmp[el-1]*ratios_l[el+em], tmpXd, ind, 0);
-					ind=ind+1;
+					switch(el){
+						case 1:
+							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h1_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							ind=ind+1;
+							break;
+						case 2:
+							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h2_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							ind=ind+1;
+							break;
+						case 3:
+							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h3_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							ind=ind+1;
+							break;
+					}
 				}
 			}
 		}
-		//io_calls.fill_param_vect(&height_in, Inc_in.inputs, h1_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
-
 		extra_priors[3]=2; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2 of priors_local())
-	
-		std::cout << "NEED TO WORK ON THIS...The problems are the following:" << std::endl;
-		std::cout << "   - Need to resize the height_in Data_in structure so that it includes not Hl, but all of the Hnlm" << std::endl;
-		std::cout << "   - Need to figure out how to set the input values for Hnlm consistently with Hl values" << std::endl;
-		std::cout << "   - Need to fix this section as it is mostly a copy/past of model_MS_Global_a1etaa3_HarveyLike_Classic_v3" << std::endl;
-		std::cout << "   - Few hints: (1) We may just keep Inc_in with all of its information defined by xxx_Classic_v3" << std::endl;
-		std::cout << "                (2) We then need to change the input values using Hl values inside height_in" << std::endl;
-		std::cout << "                (3) Finally we might just resize + transfer all Inc_in values inside height_in at the correct place (ie, after Hl0)" << std::endl;
-		std::cout << "    - Reminders: " << std::endl;
-		std::cout << "                The model model_MS_local_Hnlm is not yet linked into the list of avaiable models. This still need to be done too" << std::endl; 
-		std::cout << "                The priors_local was not edided yet... The imposition of extra_priors[3] == 2 has to be implemented" << std::endl; 
-		
-		exit(EXIT_SUCCESS);
+		//exit(EXIT_SUCCESS);
 	}
 }
 if((bool_a1cosi == 1) && (bool_a1sini ==1)){
-/*	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
-		std::cout << "Warning: We cannot use " << all_in.model_fullname << " with variables sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini..." << std::endl;
-		std::cout << "         Use Inclination and Splitting_a1 instead for the model this model"  << std::endl;
-		std::cout << "	       Alternatively, you can use 'model_MS_Global_a1etaa3_HarveyLike with sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini keywords'" <<std::endl;
-		std::cout << "         The program will exit now" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-*/
     std::cout << "    NOTICE: sqrt(splitting_a1).sini and sqrt(splitting_a1).cosi superseed inclination and splitting" << std::endl;
     std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
     std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
@@ -984,7 +997,11 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	
 	//std::cout << "Setting plength..." << std::endl;
 	plength.resize(11);
-	plength[0]=h0_inputs.size()+h1_inputs.size()+h2_inputs.size()+h3_inputs.size(); 
+	if(all_in.model_fullname == "model_MS_local_Hnlm"){
+		plength[0]=h0_inputs.size()+2*h1_inputs.size()+3*h2_inputs.size()+4*h3_inputs.size(); 
+	} else{
+		plength[0]=h0_inputs.size()+h1_inputs.size()+h2_inputs.size()+h3_inputs.size(); 		
+	}
 	plength[1]=0; // Local models do not have visibilities // lmax                  ; 
 	plength[2]=Nf_el[0];            plength[3]=Nf_el[1]       ; plength[4]=Nf_el[2]		   ; plength[5]=Nf_el[3];
 	plength[6]=Snlm_in.inputs.size(); 
@@ -1131,14 +1148,14 @@ short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, 
 	(*Noise_in).priors(1,0)=noise_vals.maxCoeff()*1.5;	 
 	
 ///	 --- For debug only ---
-	std::cout << "Stop in set_noise_params_local: Need to be checked" << std::endl;	
-	std::cout << "Nharvey = " << Nharvey << std::endl;
-	std::cout << "freq_range = " << freq_range << std::endl;
-	std::cout << "noise_params = " <<  noise_p << std::endl;
-	std::cout << "------" << std::endl;
-	std::cout << "noise_vals:" << noise_vals << std::endl;
-	std::cout << "(*Noise_in).inputs : " << (*Noise_in).inputs << std::endl;
-	std::cout << "(*Noise_in).priors : " << (*Noise_in).priors << std::endl;
+//	std::cout << "Stop in set_noise_params_local: Need to be checked" << std::endl;	
+//	std::cout << "Nharvey = " << Nharvey << std::endl;
+//	std::cout << "freq_range = " << freq_range << std::endl;
+//	std::cout << "noise_params = " <<  noise_p << std::endl;
+//	std::cout << "------" << std::endl;
+//	std::cout << "noise_vals:" << noise_vals << std::endl;
+//	std::cout << "(*Noise_in).inputs : " << (*Noise_in).inputs << std::endl;
+//	std::cout << "(*Noise_in).priors : " << (*Noise_in).priors << std::endl;
 	return 0;
 }
 

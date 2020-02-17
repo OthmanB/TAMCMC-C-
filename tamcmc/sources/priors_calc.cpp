@@ -180,7 +180,8 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 	long double f=0;
 
 	//const int smooth_switch=extra_priors[0];
-	const int a3ova1_limit=extra_priors[2];
+	const double a3ova1_limit=extra_priors[2];
+	const int impose_normHnlm=extra_priors[3];
 	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
 	
 	const int Nmax=params_length[0]; // Number of Heights
@@ -193,7 +194,12 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
 	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
 	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
-	
+	const int lmax=3; // lmax is hardcoded here
+
+	int pos0;
+	VectorXi Nf_el(4);  
+	Nf_el[0]=Nfl0; Nf_el[1]=Nfl1; Nf_el[2]=Nfl2; Nf_el[3]=Nfl3; 
+
 	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
 	
  	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
@@ -202,7 +208,48 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
 	//f=f+logP_uniform(0., 90., params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
-			
+
+
+// ALL THIS IS NOT NECESSARY BECAUSE WE DO NOT DEAL WITH VISIBILITIES... NO NORMALISATION TO 1 REQUIRED
+// THEREFORE NO NEED TO EXCLUDE VALUES BEYOND 1.
+/*	switch(impose_normHnlm){ 
+		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
+			//l=1: m=0, m=+/-1
+			std::cout << "priors_MS_local: impose_normHnlm=1 Not required!" << std::endl;
+			std::cout << "                 Likely bug in io_local.cpp ... Exiting now" << std::endl; 
+			exit(EXIT_SUCCESS);	
+			break;
+		case 2:
+			std::cout << "In case 2" << std::endl;
+			std::cout << "lmax=" << lmax << std::endl;
+			for(int el=1; el<=lmax; el++){
+					for(int en=0; en<Nf_el[el]; en++){
+						for(int em=0; em<=el; em++){
+							std::cout << "el=" << el << "   ==> " <<  Nf_el.segment(0,el+1)  << std::endl;
+							pos0=Nf_el.segment(0,el+1).sum() + (el+1)*en;
+							std::cout << pos0 << std::endl;
+							switch(el){
+								case 1: //l=1: m=0, m=+/-1
+									std::cout << "In l=1: m=0, m=+/-1" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0] + 2*params[pos0+1]); // The sum must be positive
+									break;
+								case 2: //l=2: m=0, m=+/-1, m=+/-2
+									std::cout << "In l=2: m=0, m=+/-1, m=+/-2" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0] + 2*params[pos0+1] + 2*params[pos0+2]); // The sum must be positive
+									break;
+								case 3:
+									std::cout << "In l=3: m=0, m=+/-1, m=+/-2, m=+/-3" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0]+ 2*params[pos0+1]+ 2*params[pos0+2] + 2*params[pos0+3]); // The sum must be positive
+									break;
+							}
+						}
+					}
+				}
+
+			break;
+	}
+*/
+
 	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
 	if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
 		f=-INFINITY;
@@ -211,7 +258,8 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 	if((priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-		
+	//exit(EXIT_SUCCESS);
+
 return f;
 } 
 
@@ -261,7 +309,7 @@ long double apply_generic_priors(const VectorXd params, const MatrixXd priors_pa
 		switch(priors_names_switch[i]){
 			case 0: // No Prior Applied --> The parameter is Fixed or for some reason the prior is set to NONE
 			  //std::cout << "CASE 0" << std::endl;
-			  //std::cout << "[" << i << "] FIX OR NONE, pena=" << pena << std::endl;
+			  //std::cout << "[" << i << "] FIX OR NONE, penalizationa=" << pena << std::endl;
 			  break;
 			case 1: // Uniform Prior
 			  pena=pena + logP_uniform(priors_params(0, i), priors_params(1, i), params[i]);

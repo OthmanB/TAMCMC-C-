@@ -257,7 +257,10 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
           case 13:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v3(params.row(m), plength, (*data_struc).x);
 		   break;
-
+          case 14:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x);
+		   break;
+ 
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
