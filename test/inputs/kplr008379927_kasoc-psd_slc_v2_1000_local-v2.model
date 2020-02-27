@@ -3,9 +3,6 @@
 ! 120.18600   # Dnu
 !! 42.563200   # C0 = epsilon.Dnu
 * 2400 2460    # Frequency range for slice 1
-* 2360 2400    # Frequency range for slice 2
-* 2540 2580    # Frequency range for slice 3
-* 2480 2520    # Frequency range for slice 4
 # type / l / value / relax_f / relax_H / relax_W 
 p  0  1728.0601  1      1       1
 p  0  1847.4700  1      1       1

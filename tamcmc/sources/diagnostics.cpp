@@ -436,33 +436,49 @@ void Diagnostics::fwrite_histogram(const Data_Nd samples, const std::string file
     gsl_histogram* hist = gsl_histogram_alloc(Nclasses);
 
     assert( hist != NULL );
+
+ 	std::cout << " minCoeff =" << samples.data.col(ind_param).minCoeff() << "    maxCoeff =" << samples.data.col(ind_param).maxCoeff() << std::endl;
     gsl_histogram_set_ranges_uniform(hist, samples.data.col(ind_param).minCoeff(), samples.data.col(ind_param).maxCoeff());
 
     // add the samples to the histogram
     const gsl_rng_type *T = gsl_rng_default;
     gsl_rng *r = gsl_rng_alloc(T);
 
+    std::cout << " Increment..." << std::endl;
     for(int j = 0; j < samples.data.rows(); j++ ) {
+    	std::cout << "    " << j << std::endl;
       gsl_histogram_increment(hist, samples.data(j,ind_param));            
     }
 
     // Create the pdf for the structure 'histogram'
+    std::cout << "  Alloc" << std::endl;
     gsl_histogram_pdf *MyHistPdf = gsl_histogram_pdf_alloc(Nclasses);
     assert( MyHistPdf != NULL );
+    std::cout << "  gsl_histogram_pdf_init..." << std::endl;
     int status = gsl_histogram_pdf_init(MyHistPdf, hist);
     assert( status != GSL_EDOM );
 
     FILE* tmpout;
+    std::cout << "  gsl_histogram_fprintf..." << std::endl;
     tmpout=fopen(file_hist_tmp.c_str(), "w");
     int stat = gsl_histogram_fprintf(tmpout, hist, "%f", "%f");
     fclose(tmpout);
+    std::cout << "  read_txt_output_params..." << std::endl;
     tmppdf=read_txt_output_params(file_hist_tmp, Nclasses, 0); // read the temporary file
 
+    std::cout << "  Stream......" << std::endl;
     std::ofstream fileout_stream;
+    std::cout << "      opening: " << file_out <<std::endl;
     fileout_stream.open(file_out.c_str());
     if(fileout_stream.is_open()){
-	fileout_stream << "! variable_name= " << samples.labels[ind_param] << std::endl;
+    	std::cout << "      ind_param= " << ind_param << std::endl;
+		std::cout << "      samples.labels[ind_param]=" << std::endl;
+	    std::cout << samples.labels[ind_param] << std::endl;
+	    fileout_stream << "! variable_name= " << samples.labels[ind_param] << std::endl;
 	for(int i=0; i<tmppdf.data.rows();i++){
+		std::cout << "[" << i << "][0] " << tmppdf.data(i,0) << std::endl;
+		std::cout << "[" << i << "][1] " << tmppdf.data(i,1) << std::endl;
+		std::cout << "[" << i << "][2] " << tmppdf.data(i,2) << std::endl;		
 		fileout_stream << (tmppdf.data(i,0) + tmppdf.data(i,1))/2 << "  " << tmppdf.data(i, 2) << std::endl; // simplifies the writting by using a two column format
 	}
     } else{
@@ -470,11 +486,14 @@ void Diagnostics::fwrite_histogram(const Data_Nd samples, const std::string file
     }
     fileout_stream.close();
 #endif
+    std::cout << " out ..." << std::endl;
     //shell_exec("rm " + tmpfile); // erase the temporary file
 
     // These Deletes make crash the code! Investigate how to avoid this (small) memory leaks here...
-    //delete hist;
-    //delete MyHistPdf;
+    delete hist;
+    delete MyHistPdf;
+    //tmpout=NULL;
+    //T=NULL;
     //delete tmpout;
     //delete T;
     //----------------------------------------------------------------------------------
@@ -653,18 +672,24 @@ void Diagnostics::gnuplt_pdfs_diags_main(const int i){
 		data_samples=read_txt_output_params(filename_params, Nsamples, verbose);
 	} 
 	else{
+		std::cout << "     - Reading the hdr..." << std::endl;
 		hdr=read_params_header(filename_params_hdr); // Get the metadata from the header file 
+		std::cout << "     - Reading the matrix of data..." << std::endl;
 		data_array=read_bin_matrix_dbl(filename_params, hdr.Nvars, Nsamples, "dbl");
 		data_samples.data=data_array;
 		data_samples.labels=hdr.variable_names;
 	}
     //Compute and write the histogram on a output file... Do it only if GSL is available
     #ifdef TAMCMC_WITH_GSL
+		std::cout << "     - Use GSL for plotting..." << std::endl;
         for(int ind_param=0; ind_param<data_samples.data.cols(); ind_param++){
             file_out=dir_pdfs_files + output_root_name + "pdf_" + formated_int_to_str(ind_param) + ".txt";
+        	std::cout << file_out << std::endl;
             fwrite_histogram(data_samples, file_out, Nclasses, ind_param);
         }
+        std::cout << "     - Doing the plots..." << std::endl;
         gnuplt_pdfs_diags(dir_pdfs_files, data_samples.labels);
+        std::cout << "  After gnuplt_pdfs_diags()" << std::endl;
     #else
         std::cout << "         - Program compiled without GSL support ==> Skip histogram rendering" << std::endl;
     #endif
