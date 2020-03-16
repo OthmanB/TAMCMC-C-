@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.4.21-dev Bug Fix: 16/03/2020 ###
+	* Fix name of variables rthat were leading to crash due to forbidden caracters ("=") in the variable names
+
 ### v1.4.2-dev improvements: 17/02/2020 ###
 	* Adding the possibility to fit Heights of (l,m) instead of the stellar inclination
 	  For that purpose, the following is going to be implemented:

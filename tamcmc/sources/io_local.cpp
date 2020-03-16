@@ -957,15 +957,15 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				for(int em=0; em<=el; em++){
 					switch(el){
 						case 1:
-							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h1_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							io_calls.fill_param(&height_in, "H(" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em) + ")", tmpstr, h1_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
 							ind=ind+1;
 							break;
 						case 2:
-							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h2_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							io_calls.fill_param(&height_in, "H(" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em) + ")", tmpstr, h2_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
 							ind=ind+1;
 							break;
 						case 3:
-							io_calls.fill_param(&height_in, "H(n=" + int_to_str(en) + ",l=" + int_to_str(el) + ",m=" + int_to_str(em) + ")", tmpstr, h3_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
+							io_calls.fill_param(&height_in, "H(" + int_to_str(en) + "," + int_to_str(el) + "," + int_to_str(em) + ")", tmpstr, h3_inputs[en]*ratios_l[el+em], tmpXd, ind, 0);
 							ind=ind+1;
 							break;
 					}

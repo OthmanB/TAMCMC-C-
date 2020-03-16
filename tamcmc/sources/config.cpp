@@ -1311,49 +1311,54 @@ void Config::read_restore_files(){
     restore_file_session3.open(filein_3.c_str());
 
    if (restore_file_session1.is_open() && restore_file_session2.is_open() && restore_file_session3.is_open()) {
-	std::cout << "Opening Restoring Files..." << std::endl;
+		std::cout << "Opening Restoring Files..." << std::endl;
 	
-	cpt=1;
-	std::cout << "   [" << cpt << "] " << " Processing File " << filein_1 << " (do_restore_variables =1)..." << std::endl;	
-	keyword_found=0;
-	while(!restore_file_session1.eof()){
-		std::getline(restore_file_session1, line0);
-		line0=strtrim(line0);
-		char0=strtrim(line0.substr(0, 1)); 
-		if(char0 == "!" && !restore_file_session1.eof()){ 
+		cpt=1;
+		std::cout << "   [" << cpt << "] " << " Processing File " << filein_1 << " (do_restore_variables =1)..." << std::endl;	
+		keyword_found=0;
+		while(!restore_file_session1.eof()){
+			std::getline(restore_file_session1, line0);
 			line0=strtrim(line0);
-			word=strsplit(line0, "=");
-			if (word[0] == "! Nvars"){ 
-					keyword_found=keyword_found + 1;
-					restored_vals.Nvars=str_to_int(word[1]);
-					std::cout << "      Nvars= " << restored_vals.Nvars << std::endl;
-			}
-			if (word[0] == "! Nchains"){ 
+			char0=strtrim(line0.substr(0, 1)); 
+			if(char0 == "!" && !restore_file_session1.eof()){ 
+				line0=strtrim(line0);
+				word=strsplit(line0, "=");
+				if (word[0] == "! Nvars"){ 
+						keyword_found=keyword_found + 1;
+						restored_vals.Nvars=str_to_int(word[1]);
+						std::cout << "      Nvars= " << restored_vals.Nvars << std::endl;
+				}
+				if (word[0] == "! Nchains"){ 
 					keyword_found=keyword_found + 1;
 					restored_vals.Nchains=str_to_int(word[1]);
 					std::cout << "      Nchains= " << restored_vals.Nchains << std::endl;
-			}
-		      if (outputs.do_restore_last_index ==1){
-			if (word[0] == "! iteration"){ 
-					keyword_found=keyword_found + 1;
-					restored_vals.iteration=str_to_int(word[1]);
-					std::cout << "      iteration= " << restored_vals.iteration << std::endl;
-			}
-		} else {
-			 if (word[0] == "! iteration"){
-				keyword_found=keyword_found + 1;
-				restored_vals.iteration=0;
-			 	std::cout << "      iteration= " << restored_vals.iteration  << "(forced to 0 because do_restore_last_index = 0) " << std::endl;
-			 }
-		      }
-			if (word[0] == "! variable_names"){ 
-					keyword_found=keyword_found + 1;
-					restored_vals.variable_names=strsplit(word[1], " ");
-					std::cout << "      variable_names= " << restored_vals.variable_names[0] << " ";
-					for(i=1; i<restored_vals.Nvars;i++){
-						std::cout << restored_vals.variable_names[i] << " ";
+				}
+			    if (outputs.do_restore_last_index ==1){
+					if (word[0] == "! iteration"){ 
+						keyword_found=keyword_found + 1;
+						restored_vals.iteration=str_to_int(word[1]);
+						std::cout << "      iteration= " << restored_vals.iteration << std::endl;
 					}
-					std::cout << std::endl;
+				} else {
+			 		if (word[0] == "! iteration"){
+						keyword_found=keyword_found + 1;
+						restored_vals.iteration=0;
+			 			std::cout << "      iteration= " << restored_vals.iteration  << " (forced to 0 because do_restore_last_index = 0) " << std::endl;
+			 		}
+		     	}
+			if (word[0] == "! variable_names"){ 
+				//std::cout << line0 << std::endl;			
+		  		//for (int ijk=0; word.size(); ijk++){
+		  		//	std::cout << word[ijk] << std::endl;
+		  		//}
+		  		//exit(EXIT_SUCCESS);
+				keyword_found=keyword_found + 1;
+				restored_vals.variable_names=strsplit(word[1], " ");
+				std::cout << "      variable_names= " << restored_vals.variable_names[0] << " ";
+				for(i=1; i<restored_vals.Nvars;i++){
+					std::cout << restored_vals.variable_names[i] << " ";
+				}
+				std::cout << std::endl;
 			}
 			if (word[0] == "! vars"){ 
 					keyword_found=keyword_found + 1;
