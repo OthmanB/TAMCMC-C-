@@ -1,5 +1,9 @@
 # Version history #
 
+### v1.4.22-dev Bug Fix: 17/03/2020 ###
+        * In the rare eventuallity that the user was giving an inclination input leading to the Sum of H(n,l,m) over m to be 1,
+          A round-off error was making the log_uniform(0, 1, H(n,l,m)) prior (see line 64 of priors_calc.cpp) to be infinity.
+          The fix was to add 1e-10 to the upper boundary. 
 ### v1.4.21-dev Bug Fix: 16/03/2020 ###
 	* Fix name of variables rthat were leading to crash due to forbidden caracters ("=") in the variable names
 

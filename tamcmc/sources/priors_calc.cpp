@@ -61,18 +61,16 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	switch(impose_normHnlm){ 
 		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
 			//l=1: m=0, m=+/-1
-			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
-
+			f=f+logP_uniform(0, 1.+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
 			//l=2: m=0, m=+/-1, m=+/-2
  			// The sum must be positive
-			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
+			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
 								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]+ 
 								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]
 							); // The sum must be positive
-
 			//l=3: m=0, m=+/-1, m=+/-2, m=+/-3
  			// The sum must be positive
-			f=f+logP_uniform(0, 1, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
+			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
 								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]+ 
 								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]+
 								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]
@@ -168,7 +166,6 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-	
 	//exit(EXIT_SUCCESS);
 	
 return f;

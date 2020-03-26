@@ -37,6 +37,7 @@ long double logP_uniform(long double b_min, long double b_max, long double x){
 
 long double logP;
 
+//if ((x <= b_max) && (x >= b_min)){ // Change on 17 March 2020
 if ((x <= b_max) && (x >= b_min)){
 	logP=-log(std::abs(b_max-b_min));
 } else{
@@ -54,6 +55,7 @@ long double logP_uniform_abs(long double b_min, long double b_max, long double x
 
 long double logP;
 
+//if ((std::abs(x) <= b_max) && (std::abs(x) >= b_min)){ // Change on 17 March 2020
 if ((std::abs(x) <= b_max) && (std::abs(x) >= b_min)){
 	logP=-log(std::abs(b_max-b_min));
 } else{
@@ -75,7 +77,8 @@ long double logP;
 long double x_rad;
 
 x_rad=PIl * x / 180.;
-if ((cos(x_rad) <= b_max) && (cos(x_rad) >= b_min)){
+//if ((cos(x_rad) <= b_max) && (cos(x_rad) >= b_min)){ // Change on 17 March 2020
+if ((cos(x_rad) < b_max) && (cos(x_rad) > b_min)){
 	logP=-log(std::abs(b_max-b_min));
 } else{
 	logP=-INFINITY;

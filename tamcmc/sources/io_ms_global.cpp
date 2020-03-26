@@ -1144,7 +1144,11 @@ short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const 
 		(*Noise_in).priors(1,8)=(*Noise_in).priors(0,8)*0.1;
 	}
 	//(*Noise_in).priors(1,9)=(noise_s2(9,1) + noise_s2(9,2))*10./2;
-	(*Noise_in).priors(1,9)=(noise_s2(9,1) + noise_s2(9,2));
+    if((*Noise_in).priors_names[9] == "Uniform"){
+    	(*Noise_in).priors(1,9)=(noise_s2(9,1) + noise_s2(9,2)); // This is valid only if the noise prior is Uniform
+	} else{
+		(*Noise_in).priors(1,9)=(*Noise_in).priors(0,9)*0.1; // This is valid only i the noise prior is Gaussian
+	}
 	if((((*Noise_in).priors(1,6)/(*Noise_in).priors(0,6)) <= 0.05) && (*Noise_in).priors_names[6] != "Fix"){ // If the given relative uncertainty on H3 is smaller than 5%
 		std::cout << "Warning: The relative uncertainty on the Height of the high-frequency Harvey profile" << std::endl;
 		std::cout << "         is smaller than 5% in the .MCMC file. This is too small" << std::endl;
