@@ -922,7 +922,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 		for(int el=1; el<=lmax; el++){
 			ratios_l=amplitude_ratio(el, tmp); 
 			for(int em=0; em<=el; em++){
-				io_calls.fill_param(&Inc_in, "Inc: H" + int_to_str(el) + "," + int_to_str(em), "Uniform", ratios_l[el+em], tmpXd, ind, 0);
+				io_calls.fill_param(&Inc_in, "Inc:H" + int_to_str(el) + "," + int_to_str(em), "Uniform", ratios_l[el+em], tmpXd, ind, 0);
 				ind=ind+1;
 			}
 		}

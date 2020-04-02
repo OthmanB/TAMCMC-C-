@@ -1,5 +1,9 @@
 # Version history #
 
+### v1.4.23-dev Bug Fix: 02/04/2020 ###
+        * The names for the new inclination parameters in io_ms_global.cpp contained a space. This posed a problem when parsing the string with bin2txt. 
+          The change consist in removing the space. e.g.: 'Inc: H1,0' becomes 'Inc:H1,0'
+  
 ### v1.4.22-dev Bug Fix: 17/03/2020 ###
         * In the rare eventuallity that the user was giving an inclination input leading to the Sum of H(n,l,m) over m to be 1,
           A round-off error was making the log_uniform(0, 1, H(n,l,m)) prior (see line 64 of priors_calc.cpp) to be infinity.
