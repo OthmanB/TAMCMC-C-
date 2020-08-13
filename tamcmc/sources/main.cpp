@@ -168,7 +168,6 @@ int main(int argc, char* argv[]){
 					Model_def *model_propose= new Model_def(&config, TAMCMC->Tcoefs, 0); // Verbose=0 ==> No need to Show/test anything: already done by model_current
 					Outputs *out = new Outputs(&config, TAMCMC->Tcoefs);
 					Diagnostics *diags = new Diagnostics(&config);
-
 					long begin_time = ben_clock();
 					TAMCMC->execute(model_current, model_propose, &config.data.data, &config, out, diags);
 					std::cout << " ----------------------------" << std::endl;

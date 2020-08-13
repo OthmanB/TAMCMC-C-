@@ -636,7 +636,6 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 
 			// [1] Propose a new position and test it so that the model_current is updated (if new position accepted) using model_propose
 			//     Note that model_propose must have been initialized in order to work
-			
 			update_position_MH(model_current, model_propose, data_struc, cfg_class, chain);
 			// [2] Test whether we update the variance-covariance parameters
 			logicA[chain]=0; // reset

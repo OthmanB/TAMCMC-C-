@@ -1794,8 +1794,11 @@ VectorXd model_MS_local_basic(VectorXd params, VectorXi params_length, VectorXd 
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
 	}
 	for(long n=0; n<Nfl3; n++){		
+        //std::cout << "BEFORE l=3" << std::endl;
 		fl3=params[Nmax + Nvis + Nfl0 + Nfl1 + Nfl2 + n];
+        //std::cout << "fl3 = " << fl3 << std::endl;
 		Wl3=std::abs(params[Nmax + Nvis + Nf + Nsplit + Nfl0 + Nfl1 + Nfl2 + n ]);
+        //std::cout << "Wl3 = " << Wl3 << std::endl;
 		if(do_amp){
         	Hl3=std::abs(params[Nfl0 + Nfl1 + Nfl2 + n]/(pi*Wl3));
 		} else{
@@ -1803,22 +1806,22 @@ VectorXd model_MS_local_basic(VectorXd params, VectorXi params_length, VectorXd 
 		}		
 		//std::cout << "fl3 = " << fl3 << "      Hl3 = " << Hl3 << "      Wl3 = " << Wl3 << std::endl;
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        //std::cout << "AFTER l=3" << std::endl;
 	}
 
 	/* -------------------------------------------------------
 	   ------- Gathering information about the noise ---------
 	   -------------------------------------------------------
 	*/
+    //std::cout << "Before noise_params" << std::endl;
 	noise_params=params.segment(Nmax+Nvis+Nf+Nsplit+Nwidth, Nnoise);
 	Nharvey=0; //(Nnoise-1)/3;
 	//std::cout << "Nharvey = " << Nharvey << std::endl;
-		
 	/* -------------------------------------------------------
 	   ---------- Computing the mode of the noise ------------
 	   -------------------------------------------------------
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-	
 	//std::cout << "End test" << std::endl;
     //exit(EXIT_SUCCESS);
 

@@ -137,7 +137,9 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 	bool empty_container=0; // Used to know whether we fill MatrixXd/VectorXd for all Nmodels
 	if(empty_container == 0){
 		for(int m=0; m<Nmodels; m++){
+			//std::cout << "Generate model m=" << m ;
 			generate_model(&data_in, m, Tcoefs); // No need of the returned value
+			//std::cout << "... Done" << std::endl;
 		} 
 	}
 
@@ -361,7 +363,6 @@ long double Model_def::generate_model(Data *data_struc, long m, VectorXd Tcoefs)
 	logLikelihood[m]=call_likelihood(data_struc, m, Tcoefs); // logLikelihood saved at element m of the vector
 	logPrior[m]=call_prior(data_struc, m); // logprior saved at element m of the vector
 	logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
-	
 return logPosterior[m];
 }
 
