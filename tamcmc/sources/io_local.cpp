@@ -530,7 +530,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	Nf_el[3]=f3_inputs.size();
 
 	if ((h0_inputs.size() + h1_inputs.size() + h2_inputs.size() + h3_inputs.size()) == 0){
-		std::cout << " -------------------------------------------------------------------" << std::endll;
+		std::cout << " -------------------------------------------------------------------" << std::endl;
 		std::cout << " No parameters found in the specified frequency range!" << std::endl;
 		std::cout << " Cannot perform a fit: The frequency range(s) may not include any frequencies listed during the initial peak bagging" << std::endl;
 		std::cout << " The program must exit now " << std::endl;
