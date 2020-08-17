@@ -528,6 +528,14 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	Nf_el[1]=f1_inputs.size();
 	Nf_el[2]=f2_inputs.size();
 	Nf_el[3]=f3_inputs.size();
+
+	if ((h0_inputs.size() + h1_inputs.size() + h2_inputs.size() + h3_inputs.size()) == 0){
+		std::cout << " -------------------------------------------------------------------" << std::endll;
+		std::cout << " No parameters found in the specified frequency range!" << std::endl;
+		std::cout << " Cannot perform a fit: The frequency range(s) may not include any frequencies listed during the initial peak bagging" << std::endl;
+		std::cout << " The program must exit now " << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
@@ -571,6 +579,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 		p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
 		io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, "Jeffreys", tmpXd, p0, 0, 0);
 	}
+	
 	io_calls.initialise_param(&width_in, Nf_el.sum(), Nmax_prior_params, -1, -1);
 	io_calls.initialise_param(&freq_in, Nf_el.sum(), Nmax_prior_params, -1, -1); 
 
@@ -984,7 +993,6 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
    	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_local.modes_common.row(0) is not used... just dummy   	
    	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
 }
-
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
@@ -995,7 +1003,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	// ------------- Sticking everything together in a Input_Data structure --------------
 	// -------------------------------------------------------------------------------------
 	
-	//std::cout << "Setting plength..." << std::endl;
+	std::cout << "Setting plength..." << std::endl;
 	plength.resize(11);
 	if(all_in.model_fullname == "model_MS_local_Hnlm"){
 		plength[0]=h0_inputs.size()+2*h1_inputs.size()+3*h2_inputs.size()+4*h3_inputs.size(); 
@@ -1010,11 +1018,13 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	plength[9]=Inc_in.inputs.size();
 	plength[10]=2; // This is trunc_c and do_amp;
 	
-	//std::cout << "init all_in..." << std::endl;	
+	std::cout << "init all_in..." << std::endl;	
 	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors);
 	
 	// --- Put the Height or Amplitudes---
-	//std::cout << "Setting heights..." << std::endl;
+	std::cout << "Setting heights..." << std::endl;
+	io_calls.show_param(height_in,1);
+	std::cout << " ----" << std::endl;
 	p0=0;
 	io_calls.add_param(&all_in, &height_in, p0); // height_in may contain either height or amplitudes depending on specified keywords
 	// --- Put the Visibilities --- // NOT USED FOR LOCAL FIT
@@ -1023,32 +1033,32 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	//io_calls.add_param(&all_in, &Vis_in, p0);
 	
 	// --- Put the Frequencies ---
-	//std::cout << "Setting freqs..." << std::endl;
+	std::cout << "Setting freqs..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1];	
 	io_calls.add_param(&all_in, &freq_in, p0);
 
 	// --- Put the Snlm (splittings and asymetry) ---
-	//std::cout << "Setting asym..." << std::endl;
+	std::cout << "Setting asym..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5];
 	io_calls.add_param(&all_in, &Snlm_in, p0);
 	
 	// --- Put the Width ---
-	//std::cout << "Setting widths..." << std::endl;
+	std::cout << "Setting widths..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
 	io_calls.add_param(&all_in, &width_in, p0);
 	
 	// --- Put the Noise ---
-	//std::cout << "Setting noise..." << std::endl;
+	std::cout << "Setting noise..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
 	io_calls.add_param(&all_in, &Noise_in, p0);
 	
 	// --- Put the Inclination ---
-	//std::cout << "Setting inc..." << std::endl;	
+	std::cout << "Setting inc..." << std::endl;	
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8];
 	io_calls.add_param(&all_in, &Inc_in, p0);
 	
 	// --- Add trunc_c that controls the truncation of the Lorentzian ---
-	//std::cout << "Setting trunc..." << std::endl;
+	std::cout << "Setting trunc..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_local.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
@@ -1056,7 +1066,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
 	// -- Add the Amplitude switch --
-	//std::cout << "Setting amp_switch..." << std::endl;
+	std::cout << "Setting amp_switch..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_local.modes_common.row(0), p0,1);
 					
