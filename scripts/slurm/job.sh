@@ -4,4 +4,4 @@
 #SBATCH -a 1-1
 #SBATCH -t 2-00:00:00
 
-./tamcmc.out execute 1 $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_ID
+./cpptamcmc execute 1 $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_ID

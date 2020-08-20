@@ -327,6 +327,7 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
 	VectorXd ratios_l, extra_priors, tmpXd;
+	MatrixXd tmpXd_mat;
 	std::vector<int> pos_relax, pos_OK;
 	std::vector<double> f0_inputs, h0_inputs, w0_inputs, f0_priors_min, f0_priors_max, f_el;
 	std::vector<double> f1_inputs, h1_inputs, w1_inputs, f1_priors_min, f1_priors_max;
@@ -719,30 +720,79 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
 			}
 		}
 */		
-		
+		std::cout << "i=[" << i << "]" << std::endl;
 		// --- Height or Amplitude ---
 		if(inputs_local.common_names[i] == "height" || inputs_local.common_names[i] == "Height" || 
 		   inputs_local.common_names[i] == "amplitude" || inputs_local.common_names[i] == "Amplitude"){
 
 			if(inputs_local.common_names_priors[i] == "Fix_Auto"){
-					fatalerror_msg_io_local(inputs_local.common_names[i], "Fix_Auto", "", "" );
-			}
-			// l=0
-	
-			if(all_in.model_fullname == "model_MS_local_Hnlm"){
-				pos_prior_height=i;
-				io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 0, 0);
-			} else{
-				p0=0;
-				io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-				p0=h0_inputs.size();
-				io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-				p0=h0_inputs.size()+h1_inputs.size();
-				io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-				p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
-				io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
-		}
+				//In auto mode, A Jeffrey's prior is used, with an upper bound given by the input value multiplied by a factor X=inputs_local.modes_common(i,1) given by the user (typically 3 is fine). 
+				//The lower bound is fixed as Y=inputs_local.modes_common(i,0) times lower than the actual input.
+				//The reason is that for RGBs, a single common value of the upper bound for the Jeffrey prior lead to a too large dynamic range for low SNR modes (e.g. low freq or l=3).
+				//In the .model file, the new prior can be set by setting e.g. (here X=3 and Y=10):
 
+					//fatalerror_msg_io_local(inputs_local.common_names[i], "Fix_Auto", "", "" );
+					tmpXd_mat.resize(h0_inputs.size(),4);
+					for(int k=0; k<h0_inputs.size(); k++){
+						if (inputs_local.common_names[i] == "amplitude" || inputs_local.common_names[i] == "Amplitude"){
+							tmpXd_mat.row(k) << pi*inputs_local.Dnu/3.*h0_inputs[k]/ inputs_local.modes_common(i,0), pi*inputs_local.Dnu/3.*h0_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+						} else{
+							tmpXd_mat.row(k) << h0_inputs[k]/ inputs_local.modes_common(i,0), h0_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+						}
+					}
+					if(all_in.model_fullname == "model_MS_local_Hnlm"){
+						pos_prior_height=i;
+						io_calls.fill_param_vect2(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd_mat, p0, 0, 0);
+					} else{
+						p0=0;
+						io_calls.fill_param_vect2(&height_in, h0_inputs, h0_relax, tmpstr_h, "Jeffreys", tmpXd_mat, p0, 0, 0);
+						p0=h0_inputs.size();
+						tmpXd_mat.resize(h1_inputs.size(),4);
+						for(int k=0; k<h1_inputs.size(); k++){
+							if (inputs_local.common_names[i] == "amplitude" || inputs_local.common_names[i] == "Amplitude"){
+								tmpXd_mat.row(k) << pi*inputs_local.Dnu/3.*h1_inputs[k]/ inputs_local.modes_common(i,0), pi*inputs_local.Dnu/3.*h1_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							} else{
+								tmpXd_mat.row(k) << h1_inputs[k]/ inputs_local.modes_common(i,0), h1_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							}
+						}
+						io_calls.fill_param_vect2(&height_in, h1_inputs, h1_relax, tmpstr_h,  "Jeffreys", tmpXd_mat, p0, 0, 0);
+						p0=h0_inputs.size()+h1_inputs.size();
+						tmpXd_mat.resize(h2_inputs.size(),4);
+						for(int k=0; k<h2_inputs.size(); k++){
+							if (inputs_local.common_names[i] == "amplitude" || inputs_local.common_names[i] == "Amplitude"){
+								tmpXd_mat.row(k) << pi*inputs_local.Dnu/3.*h2_inputs[k]/ inputs_local.modes_common(i,0), pi*inputs_local.Dnu/3.*h2_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							} else{
+								tmpXd_mat.row(k) << h2_inputs[k]/ inputs_local.modes_common(i,0), h2_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							}
+						}
+						io_calls.fill_param_vect2(&height_in, h2_inputs, h2_relax, tmpstr_h,  "Jeffreys", tmpXd_mat, p0, 0, 0);
+						p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
+						tmpXd_mat.resize(h3_inputs.size(),4);
+						for(int k=0; k<h3_inputs.size(); k++){
+							if (inputs_local.common_names[i] == "amplitude" || inputs_local.common_names[i] == "Amplitude"){
+								tmpXd_mat.row(k) << pi*inputs_local.Dnu/3.*h3_inputs[k]/ inputs_local.modes_common(i,0), pi*inputs_local.Dnu/3.*h3_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							} else{
+								tmpXd_mat.row(k) << h3_inputs[k]/ inputs_local.modes_common(i,0), h3_inputs[k]* inputs_local.modes_common(i,1) , -9999, -9999;
+							}
+						}						
+						io_calls.fill_param_vect2(&height_in, h3_inputs, h3_relax, tmpstr_h,  "Jeffreys", tmpXd_mat, p0, 0, 0);
+					}
+			} else{
+	
+				if(all_in.model_fullname == "model_MS_local_Hnlm"){
+					pos_prior_height=i;
+					io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 0, 0);
+				} else{
+					p0=0;
+					io_calls.fill_param_vect(&height_in, h0_inputs, h0_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+					p0=h0_inputs.size();
+					io_calls.fill_param_vect(&height_in, h1_inputs, h1_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+					p0=h0_inputs.size()+h1_inputs.size();
+					io_calls.fill_param_vect(&height_in, h2_inputs, h2_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+					p0=h0_inputs.size()+h1_inputs.size()+h2_inputs.size();
+					io_calls.fill_param_vect(&height_in, h3_inputs, h3_relax, tmpstr_h, inputs_local.common_names_priors[i], inputs_local.modes_common.row(i), p0, 1, 1);
+				}
+			}
 		}
 		// -- Mode Width ---
 		if(inputs_local.common_names[i] == "width" || inputs_local.common_names[i] == "Width"){
@@ -1033,32 +1083,32 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	//io_calls.add_param(&all_in, &Vis_in, p0);
 	
 	// --- Put the Frequencies ---
-	std::cout << "Setting freqs..." << std::endl;
+	//std::cout << "Setting freqs..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1];	
 	io_calls.add_param(&all_in, &freq_in, p0);
 
 	// --- Put the Snlm (splittings and asymetry) ---
-	std::cout << "Setting asym..." << std::endl;
+	//std::cout << "Setting asym..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5];
 	io_calls.add_param(&all_in, &Snlm_in, p0);
 	
 	// --- Put the Width ---
-	std::cout << "Setting widths..." << std::endl;
+	//std::cout << "Setting widths..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
 	io_calls.add_param(&all_in, &width_in, p0);
 	
 	// --- Put the Noise ---
-	std::cout << "Setting noise..." << std::endl;
+	//std::cout << "Setting noise..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7];
 	io_calls.add_param(&all_in, &Noise_in, p0);
 	
 	// --- Put the Inclination ---
-	std::cout << "Setting inc..." << std::endl;	
+	//std::cout << "Setting inc..." << std::endl;	
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8];
 	io_calls.add_param(&all_in, &Inc_in, p0);
 	
 	// --- Add trunc_c that controls the truncation of the Lorentzian ---
-	std::cout << "Setting trunc..." << std::endl;
+	//std::cout << "Setting trunc..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_local.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
@@ -1066,7 +1116,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
 	// -- Add the Amplitude switch --
-	std::cout << "Setting amp_switch..." << std::endl;
+	//std::cout << "Setting amp_switch..." << std::endl;
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_local.modes_common.row(0), p0,1);
 					

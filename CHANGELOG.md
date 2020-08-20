@@ -1,5 +1,14 @@
 # Version history #
 
+### v1.4.3-dev improvements: 20/08/2020 [IN TESTING PHASE] ###
+		* For local fitting: Adding the option for an automatic set of the Height prior. In auto mode, A Jeffrey's prior is used, with an upper bound given by the input value multiplied by a factor X given by the user (typically 3 is fine). The lower bound is fixed as Y times lower than the actual input  
+		The reason is that for RGBs, a single common value of the upper bound for the Jeffrey prior lead to a too large dynamic range for low SNR modes (e.g. low freq or l=3).
+		In the .model file, the new prior can be set by setting e.g. (here X=3 and Y=10):
+			               Height            Fix_Auto          10.000000      3.000000
+		Instead of typically:
+		                   Height            Jeffreys          1.000000          1                 10000.00
+		The change is also valid for amplitude fitting (instead of height). In that case, the Fix_Auto option will multiply the max height (input*user_value) by \Delta\nu/3 to get the upper bound. The line must be like this:
+						   Amplitude            Fix_Auto          10.000000    3.0000
 ### v1.4.23-dev Bug Fix: 02/04/2020 ###
         * The names for the new inclination parameters in io_ms_global.cpp contained a space. This posed a problem when parsing the string with bin2txt. 
           The change consist in removing the space. e.g.: 'Inc: H1,0' becomes 'Inc:H1,0'
