@@ -39,6 +39,10 @@ int main(int argc, char* argv[]){
 		std::ofstream fileout_stream;
 		
 		Model_def model_list;
+		Data_Basic listoutputs;
+
+		// Set the current path variables
+		std::string cpath=getcwd(NULL, 0);
 
 		Nmaxlines=5; // Maximum of models that can be provided (and therefore generated)
 
@@ -64,8 +68,12 @@ int main(int argc, char* argv[]){
 		std::cout << "  1. Reading the data file..." << std::endl;
 		verbose=0;
 		data=cfg.read_data_ascii_Ncols(filename_data, " \t", verbose); // the data in a matricial form				
-		data_model=Data_Nd2Data(data);	
-		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname); // look for the case number that is going to be used in call_model
+		data_model=Data_Nd2Data(data);
+
+		// Getting the list of models that are currently implemented
+		std::string file_list=cpath + "models_ctrl.list";
+		listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the main getmodel compiled file
+		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname, listoutputs); // look for the case number that is going to be used in call_model
 
 		std::cout << "  2. Reading the file with the parameters of the model and computing model(s)..." << std::endl;
 		cfg_session.open(filename_params.c_str());

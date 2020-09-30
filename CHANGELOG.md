@@ -1,6 +1,13 @@
 # Version history #
 
-### v1.4.3-dev improvements: 20/08/2020 [IN TESTING PHASE] ###
+### v1.4.31-dev Bug fix: 30/09/2020 ###
+    * getmodel was not properly updated to handle 1.3.3 update on handling the models names using a file (.list file). 
+      The consequence is that no model was recognized and the getmodel tool could not operate. 
+      The fix consist on making an overload fonction Config::convert_model_fct_name_to_switch(const std::string model_name, const Data_Basic models_ctrl)
+      that take for argument the content of a list file. The content of a list file is read by the usual Config::read_listfiles() and the models_ctrl.list file that contain the lists must be in the execution directory of the getmodel program or of the program that run itself getmodel
+      Note that this file can be found in the Config/default/ directory
+
+### v1.4.3-dev improvements: 20/08/2020 ###
 		* For local fitting: Adding the option for an automatic set of the Height prior. In auto mode, A Jeffrey's prior is used, with an upper bound given by the input value multiplied by a factor X given by the user (typically 3 is fine). The lower bound is fixed as Y times lower than the actual input  
 		The reason is that for RGBs, a single common value of the upper bound for the Jeffrey prior lead to a too large dynamic range for low SNR modes (e.g. low freq or l=3).
 		In the .model file, the new prior can be set by setting e.g. (here X=3 and Y=10):

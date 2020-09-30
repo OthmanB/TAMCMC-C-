@@ -424,6 +424,37 @@ int Config::convert_model_fct_name_to_switch(const std::string model_name){
 	return switch_name;
 }
 
+int Config::convert_model_fct_name_to_switch(const std::string model_name, const Data_Basic models_ctrl){
+/* 
+ * This function convert the model_name string into a pre-defined integer value
+ * This is specifically intended to convert model_name into a limited set of cases
+ * that can be handled by the 'switch(x)' and case statement. The switch statement
+ * is faster than the if/else and is prefered when used in loops.
+ * See model_def.cpp for the actual use of the switch statement.
+ * HERE : models_list_ctrl is a list of models usually listed in a text fle and read with Config::read_listfiles()
+*/
+
+	bool passed;
+	int i;
+	const int Nmodels=models_ctrl.vecXi.size();
+	int switch_name=-9999; // The output case index
+
+	passed=0;
+
+	for (i = 0; i< Nmodels; i++){	
+		if (model_name ==  models_ctrl.strarr[i]){
+			switch_name= models_ctrl.vecXi[i];
+			passed=1;
+		}
+	}
+    if (passed == 0){
+		msg_handler("", "model_name", "Config::convert_model_fct_name_to_switch()", model_name, 1);
+	}	
+	//std::cout << model_name << "    ==> " << switch_name << std::endl;
+	//exit(EXIT_SUCCESS);
+	return switch_name;
+}
+
 int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
 /* 
  * This function convert the prior_name string into a pre-defined integer value

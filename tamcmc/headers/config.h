@@ -203,6 +203,7 @@ class Config{
 		struct Data_Basic read_listfiles(const std::string file, const bool verbose);	// NEW
 		VectorXi convert_priors_names_to_switch(const std::vector<std::string> p_names);
 		int convert_model_fct_name_to_switch(const std::string model_name);
+		int convert_model_fct_name_to_switch(const std::string model_name, const Data_Basic models_ctrl); // designed for stand-alone execution (e.g. for the getmodel tool)
 		int convert_prior_fct_name_to_switch(const std::string prior_name);
 		int convert_likelihood_fct_name_to_switch(const std::string likelihood_name);
 
