@@ -1,5 +1,5 @@
 /*
- * io_model.cpp
+ * io_models.cpp
  *
  *  This file contains the core instructions that allows you
  *  to generate the correct input vectors for the models
@@ -37,9 +37,10 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
  *
 */
 	const int Nmax_prior_params=(*data).priors.rows();
+	
 	(*data).inputs_names[pos]=input_name; 
 	(*data).priors_names[pos]=prior_name;
-
+	
 	(*data).inputs[pos]=in_val; // The input value is always in the first element.
 	if(prior_name == "Fix"){
 		(*data).relax[pos]=0;
@@ -47,13 +48,56 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
 			(*data).priors(k,pos)=-9999;//prior_vals(k+1);  // The row becomes a col and this is normal
 		}
 	} else{
+		//std::cout << "taking care of relax...";
 		(*data).relax[pos]=1;
+		//std::cout << "putting priors...";
 		for(int k=0; k<Nmax_prior_params; k++){
-			
+			//std::cout << k << "...";
 			(*data).priors(k,pos)=prior_vals(k+i0_prior);  // The row becomes a col and this is normal
 		}
 	}
+	return 0;
+}
 
+short int IO_models::fill_param_vect(Input_Data *data, const std::vector<double> vec_inputs, 
+				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
+				const VectorXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
+/* 
+	This function takes a vector of inputs and fill an initialized Input_Data structure starting from pos
+	All fields are filled with the same parameter name and the same prior definition
+	            
+*/
+   int i;
+    for(i=0; i<vec_inputs.size(); i++){
+ 		if(vec_relax[i]){
+			fill_param(data, input_name, prior_name, vec_inputs[i],  prior_vals, i+pos, i0_prior_if);
+		} else{
+			fill_param(data, input_name,  "Fix", vec_inputs[i],  prior_vals, i+pos, i0_prior_else);		
+		}
+	}
+	//show_param(*data);
+	return 0;
+}
+
+short int IO_models::fill_param_vect2(Input_Data *data, const std::vector<double> vec_inputs, 
+				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
+				const MatrixXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
+/* 
+	This function takes a vector of inputs and fill an initialized Input_Data structure starting from pos
+	All fields are filled with the same parameter name and the same prior definition
+	            
+*/
+   int i;
+    for(i=0; i<vec_inputs.size(); i++){
+    	std::cout << "      [" << i << "]" << std::endl;
+    	std::cout << "       " << prior_vals.row(i) << std::endl;
+ 		if(vec_relax[i]){
+			fill_param(data, input_name, prior_name, vec_inputs[i],  prior_vals.row(i), i+pos, i0_prior_if);
+		} else{
+			fill_param(data, input_name,  "Fix", vec_inputs[i],  prior_vals.row(i), i+pos, i0_prior_else);		
+		}
+	}
+	//show_param(*data);
 	return 0;
 }
 
@@ -121,6 +165,7 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 	(*data).extra_priors=extra_priors;	
 	return 0;
 }
+
 
 short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi plength, const VectorXd extra_priors){
 /* 

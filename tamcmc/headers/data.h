@@ -46,7 +46,6 @@ struct Input_Data{
 	VectorXd extra_priors; // Contains extra parameters that could be used for priors
 };
 
-
 // A Generic structure that helps to encapsulate a Matrix of information along with some metadata
 struct Data_Nd{
 	MatrixXd data; // 2D array in which each columns are expected to contain the values of a given parameter
@@ -74,6 +73,7 @@ struct Params_hdr{
 struct MCMC_files{
 	std::string ID;
 	double Dnu;
+	double numax;
 	double C_l;
 	VectorXi els;
 	VectorXd freq_range;
@@ -130,4 +130,7 @@ namespace gnuplotio {
     };
 }
 
-
+struct Data_Basic{
+	std::vector<std::string> strarr; // Any comment
+	VectorXi vecXi; // Case number
+};

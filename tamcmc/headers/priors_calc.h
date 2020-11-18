@@ -18,6 +18,7 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
+long double priors_local(VectorXd params, VectorXi param_length, MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors);
 long double priors_MS_Global(VectorXd params, VectorXi param_length, MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors);
 long double priors_Test_Gaussian(VectorXd params, VectorXi param_length, MatrixXd priors_params, const VectorXi priors_names_switch);
 long double apply_generic_priors(const VectorXd params, const MatrixXd priors_params, const VectorXi priors_names_switch);

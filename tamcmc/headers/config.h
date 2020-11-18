@@ -16,6 +16,8 @@
 #include "matrices.h"
 //#include "string_handler.h"
 #include "io_ms_global.h"
+#include "io_local.h"
+
 
 //using namespace std;
 
@@ -32,6 +34,11 @@ class Config{
 	public:
 		std::string cfg_file; // The configuration file for everything
 		std::string errordefault_file; // The configuration file that contains the error values used to initialize the covariance matrix
+		std::string cfg_models_ctrl_file;
+		std::string cfg_priors_ctrl_file;
+		std::string cfg_likelihoods_ctrl_file;
+		std::string cfg_primepriors_ctrl_file;
+		
 		struct MALA_cfg{
 			// ----------- Controls for the initial covariance matrix ---------
 			std::vector< std::string > var_names_errors; //List of variable names that are recognized in order to set the initial covariance matrix
@@ -59,7 +66,14 @@ class Config{
 		};
 		struct Models_cfg{
 			// --------------- Model parameters --------------
-			//bool submodel_from_model_file; // Define whether you should use model_fct_name and prior_fct_name from config.cfg or from .model
+			VectorXi models_case_list_ctrl;
+			VectorXi priors_case_list_ctrl, primepriors_case_list_ctrl;
+			VectorXi likelihoods_case_list_ctrl;
+			
+			std::vector<std::string> models_list_ctrl; // List of available models
+			std::vector<std::string> priors_list_ctrl, primepriors_list_ctrl; // List of available priors
+			std::vector<std::string> likelihoods_list_ctrl; // List of available likelihoods
+			
 			std::string model_fct_name;
 			std::string likelihood_fct_name;
 			std::string prior_fct_name;
@@ -70,6 +84,7 @@ class Config{
 
 			double likelihood_params; // Parameters that could define the likelihood. e.g., in the case of a chi(2,2p) statistics (chi22p function), we need p
 			std::string cfg_model_file; // Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected
+			int slice_ind; // Index of the subset of data that should be analysed (setting e.g. the frequency range when multiple ranges are requested)
 			Input_Data inputs;
 		};
 		struct Data_cfg{ // all the configuration required for the Data
@@ -173,22 +188,26 @@ class Config{
 		Diagnostics_cfg diags;
 		Restored_values restored_vals;
 
-		Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors); // The constructor
+		Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors,
+			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
+			   std::string cfg_primepriors_ctrl_file_in); // The constructor
+
 		Config(); // Empty constructor if one wants to only use the internal functions
 		void init(std::string current_path, std::string cfg_file_in); // An initialization method
-		void setup();
+		void setup(const int slice_ind);
 		void reset(); // reset to 0-sized containers
 
 		void read_defautlerrors(bool verbose); // Function in charge of reading the default error configuration file
 		void read_cfg_file(bool verbose);
 		void write_cfg_file(std::string cfg_file_out);
+		struct Data_Basic read_listfiles(const std::string file, const bool verbose);	// NEW
 		VectorXi convert_priors_names_to_switch(const std::vector<std::string> p_names);
 		int convert_model_fct_name_to_switch(const std::string model_name);
+		int convert_model_fct_name_to_switch(const std::string model_name, const Data_Basic models_ctrl); // designed for stand-alone execution (e.g. for the getmodel tool)
 		int convert_prior_fct_name_to_switch(const std::string prior_name);
 		int convert_likelihood_fct_name_to_switch(const std::string likelihood_name);
 
 		std::string get_model_fct_name_to_switch(const std::string model_name); // same as convert_model_fct_name_to_switch() but return a string. Can list all models as well (used by getmodel tool)
-
 
 		inline bool file_exists(const std::string& name); 
 		Data_Nd read_data_ascii_Ncols(const std::string file_in_name, const std::string delimiter, const bool verbose_data); // The main function to read ASCII files
@@ -196,8 +215,9 @@ class Config{
 		void read_restore_files();
 		void read_inputs_files(); // Function that is in charge of handling the input files. These contain the initial values for the parameters as well as the priors
 		void read_inputs_prior_Simple_Matrix(); // Procedure that reads simple configuration file, organized as a Matrix of information. See Config.cpp for further details
-		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure
-
+		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure of global models
+		void read_inputs_priors_local(); // For reading a MCMC and setting the modeling inputs structure of local models
+		
 		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal);
 };
 

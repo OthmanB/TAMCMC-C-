@@ -1,5 +1,64 @@
 # Version history #
 
+### v1.4.31-dev Bug fix: 30/09/2020 ###
+    * getmodel was not properly updated to handle 1.3.3 update on handling the models names using a file (.list file). 
+      The consequence is that no model was recognized and the getmodel tool could not operate. 
+      The fix consist on making an overload fonction Config::convert_model_fct_name_to_switch(const std::string model_name, const Data_Basic models_ctrl)
+      that take for argument the content of a list file. The content of a list file is read by the usual Config::read_listfiles() and the models_ctrl.list file that contain the lists must be in the execution directory of the getmodel program or of the program that run itself getmodel
+      Note that this file can be found in the Config/default/ directory
+
+### v1.4.3-dev improvements: 20/08/2020 ###
+		* For local fitting: Adding the option for an automatic set of the Height prior. In auto mode, A Jeffrey's prior is used, with an upper bound given by the input value multiplied by a factor X given by the user (typically 3 is fine). The lower bound is fixed as Y times lower than the actual input  
+		The reason is that for RGBs, a single common value of the upper bound for the Jeffrey prior lead to a too large dynamic range for low SNR modes (e.g. low freq or l=3).
+		In the .model file, the new prior can be set by setting e.g. (here X=3 and Y=10):
+			               Height            Fix_Auto          10.000000      3.000000
+		Instead of typically:
+		                   Height            Jeffreys          1.000000          1                 10000.00
+		The change is also valid for amplitude fitting (instead of height). In that case, the Fix_Auto option will multiply the max height (input*user_value) by \Delta\nu/3 to get the upper bound. The line must be like this:
+						   Amplitude            Fix_Auto          10.000000    3.0000
+### v1.4.23-dev Bug Fix: 02/04/2020 ###
+        * The names for the new inclination parameters in io_ms_global.cpp contained a space. This posed a problem when parsing the string with bin2txt. 
+          The change consist in removing the space. e.g.: 'Inc: H1,0' becomes 'Inc:H1,0'
+  
+### v1.4.22-dev Bug Fix: 17/03/2020 ###
+        * In the rare eventuallity that the user was giving an inclination input leading to the Sum of H(n,l,m) over m to be 1,
+          A round-off error was making the log_uniform(0, 1, H(n,l,m)) prior (see line 64 of priors_calc.cpp) to be infinity.
+          The fix was to add 1e-10 to the upper boundary. 
+### v1.4.21-dev Bug Fix: 16/03/2020 ###
+	* Fix name of variables rthat were leading to crash due to forbidden caracters ("=") in the variable names
+
+### v1.4.2-dev improvements: 17/02/2020 ###
+	* Adding the possibility to fit Heights of (l,m) instead of the stellar inclination
+	  For that purpose, the following is going to be implemented:
+		- New models for the io_MS_Global class of models:  model_MS_Global_..._Classic_v2 and model_MS_Global_..._Classic_v3 [Status: 100% developped, 99% tested]
+		- A New model for the io_local class of models: model_MS_local_basic_Hnlm [Status: 100% developped, 99% tested]
+	
+### v1.4.1-dev improvements and fixes ###
+    * Bug fix on local fitting models (io_local.cpp):
+    	- When providing only a single degree for the local fitting case, the code crashes as it assumes that lmin=0. 
+          This limitation has been fixed
+        - Priors are mostly improperly set if Dnu is not provided as an argument on the top of the .model file (with the exclamation mark and followed by the value)
+          Corrected by:
+          		- For Widths: Warning the user that the default is in that case a maximum width of 20 microHz (instead of the dynamically defined max width, based on Dnu/3)
+          		- For Frequencies: The GUG priors was using 0.01*Dnu for the Gaussian edges. Now it uses 0.01*(window_max(n,l) - window_min(n,l)). This is valid only for local models. models relying on io_ms_global.cpp still use 0.01*Dnu.
+        - Remaining bug on the noise background: The white noise detection was done improperly if the user provded -2 values in the last line of the section '# Noise  parameters: A0/B0/p0, A1/B1/p1, A2/B2/p2, N0'. These were not removed in the noise parameter vector.
+          This is fixed.
+    * General bug fix: When reading .model files, the relax parameter for Heights an Widths were reversed. This affect all previous version since the origin of the MCMC code.
+    		This is fixed.
+
+### v1.4.0-dev Local fit implementation ###
+	* Adding a whole new serie of function to handle a local fit. Warning: Changes require slight changes in the .model file. The various fitting ranges have to be defined 
+          using the '*' marker [DONE] [TESTED]
+ 
+### v1.3.3-dev New model and improvements ###
+	  * Add two models with fit of the Width from Appourchaux 2012 instead of individual widths. 
+	    This is made in a transparent way, using the input widths for defining the guesses. Thus, no need to change drastically the structure of .model files
+	  	Priors on the parameter of the model are hard-coded at the moment. See io_ms_global.cpp for their value (typically 10-20% of the expected values) [DONE] [NEED TEST ON DALMA]
+	  * When starting a new process, a 'version.txt' file is writtent in the object directory. This file gives the code version used for the processing [DONE] [TESTED]
+	  * Adding a hard-coded limit on a3/a1 < 0.2. This to avoid very unphysical solutions (that lead to a star rotating in the opposite direction in the pole [DONE] [TESTED]
+	  * Redesigning the way likelihoods, models, priors and prime priors are handled: Instead of having them hard coded, they are now defined along with their switch case into *.list 
+	    files within Config/default. This significantly simplifies the implementation of new models.
+	    
 ### v1.3.2-dev Improvements ###
       * Adding the possibility to fit amplitudes instead of Height by specifying  fit_squareAmplitude_instead_Height   [bool value]   into the .model file [DONE] [TESTED]
       * Add the possibility to change the priors for Height/Amplitudes/Width in the .model file [DONE] [NEED THOROUGH COMPARATIVE TESTING WITH EARLIER STABLE VERSION] 
@@ -9,13 +68,12 @@
       			Frequency     GUG     -1    -1    -1     [sigma1]    [sigma2]       (-1 are replaced by values of the table of frequencies)
       	For Uniform the syntax is
       			Frequency     Uniform  -1  -1   -1      (-1 are replaced by values of the table of frequencies)
-      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() [DONE] 
+      * Reorganising io_ms_global using new functions: initialise_params(), fill_param() and add_params() 
         This reduced the size of this program significantly by removing redoundant commands
         This allows much easier generation of a model. Note that the function could be used to create any kind of vector of parameters
       * Minor esthetic improvements in the text outputs
-      * Few minor typos and fixes into the .md files [DONE] [TESTED]
-      * Starting a basic documentation in tex [DEV]
-      * Adding compatibility with PyCoda (https://github.com/surhudm/py-coda) in the bin2txt tool
+      * Few minor typos and fixes into the .md files [DONE]
+      * Starting a basic documentation in tex [DEV] [POSTPONED: Replace by Wifi on Github]
         
 ### v1.3.1 Minor improvements/Bug fix ###
 	* Correcting a typo in getmodel.cpp that prevented the compilation of getmodel tool

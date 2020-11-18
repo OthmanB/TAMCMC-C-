@@ -2,7 +2,6 @@
  * model_def.cpp
  *
  * Contains the methods associated to the class 'Model'
- * The header file of that class is in encapsulators.h
  * Note that all models should be put in models.cpp
  * 
  *  Created on: 22 Feb 2016
@@ -138,7 +137,9 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 	bool empty_container=0; // Used to know whether we fill MatrixXd/VectorXd for all Nmodels
 	if(empty_container == 0){
 		for(int m=0; m<Nmodels; m++){
+			//std::cout << "Generate model m=" << m ;
 			generate_model(&data_in, m, Tcoefs); // No need of the returned value
+			//std::cout << "... Done" << std::endl;
 		} 
 	}
 
@@ -154,14 +155,16 @@ Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
 			std::cout << "    Your initial vector of parameter must have a FINITE initial likelihood   " << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
+			exit(EXIT_FAILURE);
 		}
 		if(std::abs(logPrior[0]) > warning_thld){
 			std::cout << " --------------------------------- WARNING ----------------------------------" << std::endl;
-			std::cout << "                    The initial logPrior[0] >" << warning_thld << std::endl;
+			std::cout << "               The initial logPrior[0] >" << warning_thld << " or is inf" << std::endl;
 			std::cout << "  The penalisation arising from the priors is exceeding the warning threshold " << std::endl;
 			std::cout << "   Check that your initial vector of parameter is compatible with the priors" << std::endl;
 			std::cout << "                         The program will exit now " << std::endl;
 			std::cout << " ---------------------------------------------------------------------------" << std::endl;
+			exit(EXIT_FAILURE);
 		}
 	
 		std::cout << "   - Variables " << std::endl;
@@ -232,15 +235,34 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  return fail;
 		  //return model_MS_Global_a1acta3_Harvey1985(params.row(m), plength, (*data_struc).x);
 		  break;
-        	case 6:// model_MS_Global with a1(l=1), a1(2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
+        case 6:// model_MS_Global with a1(l=1), a1(2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1l_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
 		  break;
-        	case 7:// model_MS_Global with a1(n, l=1)=a1(n, l=2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
+        case 7:// model_MS_Global with a1(n, l=1)=a1(n, l=2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1n_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
 		  break;
-        	case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
+        case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
           break;
+        case 9:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is selfconsistently calculated), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x);
+          break;
+	    case 10:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
+          break;
+         case 11:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x);
+		   break;
+         case 12:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v2(params.row(m), plength, (*data_struc).x);
+		   break;
+          case 13:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v3(params.row(m), plength, (*data_struc).x);
+		   break;
+          case 14:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+            	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x);
+		   break;
+ 
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -249,16 +271,19 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
+		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
+		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
-
+		  
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
           std::cout << "    - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;
+          
+          std::cout << "    - 'model_MS_local_basic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}
-
 
 	return fail; // This might never be used but avoid warnings from the compiler
 }
@@ -311,14 +336,18 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		case 2: // model_MS_Global
 		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
+		case 3: // model_local
+		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
 		  std::cout << " This value is not associated to any known case statement " << std::endl;
 		  std::cout << " Keywords with valid statements so far:" << std::endl;
-		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
-		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
-		  std::cout << "    - 'MS_Global'" << std::endl;
+		  std::cout << "    - 'priors_Test_Gaussian' (For Debug only)" << std::endl;
+		  std::cout << "    - 'priors_Harvey_Gaussian'" << std::endl;
+		  std::cout << "    - 'io_MS_Global'" << std::endl;
+		  std::cout << "    - 'io_local'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}
@@ -334,7 +363,6 @@ long double Model_def::generate_model(Data *data_struc, long m, VectorXd Tcoefs)
 	logLikelihood[m]=call_likelihood(data_struc, m, Tcoefs); // logLikelihood saved at element m of the vector
 	logPrior[m]=call_prior(data_struc, m); // logprior saved at element m of the vector
 	logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
-	
 return logPosterior[m];
 }
 

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.4.1)
 
 project(cpptamcmc VERSION 1.3.1)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(Boost_USE_MULTITHREADED TRUE)
+
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
 option(BUILD_ON_DALMA "Building for NYU DALMA Supercomputer" OFF)
@@ -45,6 +49,7 @@ set(HEADERS  #_COMMON
     tamcmc/headers/config.h
     tamcmc/headers/diagnostics.h
     tamcmc/headers/io_ms_global.h
+    tamcmc/headers/io_local.h
     tamcmc/headers/models.h
     tamcmc/headers/stats_dictionary.h
     tamcmc/headers/config_presets.h
@@ -69,6 +74,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/config.cpp
     tamcmc/sources/diagnostics.cpp
     tamcmc/sources/io_ms_global.cpp
+    tamcmc/sources/io_local.cpp
     tamcmc/sources/models.cpp
     tamcmc/sources/stats_dictionary.cpp
     tamcmc/sources/config_presets.cpp
@@ -108,6 +114,7 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/interpol.cpp
 	tamcmc/sources/matrices.cpp
 	tamcmc/sources/io_ms_global.cpp
+	tamcmc/sources/io_local.cpp
 	tamcmc/sources/noise_models.cpp
 	tamcmc/sources/priors_calc.cpp
 	tamcmc/sources/stats_dictionary.cpp
@@ -147,6 +154,7 @@ include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(tamcmc/headers)
 
 #Dependencies that are not portable (BOOST)
+set(Boost_USE_MULTITHREADED=OFF)
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
 include_directories(... ${Boost_INCLUDE_DIRS})
 link_directories(... ${Boost_LIBRARY_DIRS})

@@ -29,22 +29,21 @@ Config_presets::Config_presets(std::string cfg_file_presets_in, Config *cfg0){
 
 	current_id_ind=0; // index pointing to the current object id that we have to process
 	current_process_ind=0; // index pointing to the current processing step that we have to execute
-
+	current_slice_ind=0; // The index pointing to the current subdataset range (e.g. frequency range for io_local models)
 	Nt_learn0=cfg0->MALA.Nt_learn; // We need this to be sure that this configuration is static when iterating on id_ind and process_ind
 	dN_mixing0=cfg0->MALA.dN_mixing; // We need this to be sure that this configuration is static when iterating on id_ind and process_ind
 
 }
 
 
-void Config_presets::apply_presets(Config *cfg){
+void Config_presets::apply_presets(Config *cfg, const bool verbose){
 /*
  * Method that is used to superseed parameters of the config_default.cfg
  * by applying the configuration as it is defined into the config_presets.cfg
  * 
 */
-	bool verbose, passed;
-        std::string process_id;
-
+	bool passed;
+    std::string process_id;
 
 	// ---------- Setting the directories ----------
 	cfg->outputs.dir_out=cfg_out_dir + "/" + table_ids[current_id_ind].at(0) + "/outputs/";
@@ -54,13 +53,15 @@ void Config_presets::apply_presets(Config *cfg){
 	// need to perform a check whether the required directories exist: If not, need to create them ---
 	generate_default_dirtree();
 
-	std::cout << "     current_process_ind=" << current_process_ind << std::endl;
-	std::cout << "     current_id_ind =" << current_id_ind << std::endl;
-
+	if(verbose == 1){
+		std::cout << "     current_process_ind=" << current_process_ind << std::endl;
+		std::cout << "     current_id_ind =" << current_id_ind << std::endl;
+		std::cout << "     current_slice_ind =" << current_slice_ind << std::endl;
+	}
+	
 	if(force_manual_config == 1){
-		verbose=1;
 		cfg->cfg_file=manual_config_file; // Override the default configuration and the presets
-		cfg->read_cfg_file(verbose); // read the user-specified configuration file
+		cfg->read_cfg_file(1); // read the user-specified configuration file
 	} else{
 		// We assume that the default configuration is already loaded by the class Config
         passed=0;
@@ -102,8 +103,10 @@ void Config_presets::apply_presets(Config *cfg){
 		if (cfg->outputs.Nbuffer > cfg->outputs.Nsamples){
 			cfg->outputs.Nsamples=cfg->outputs.Nbuffer; // If Nsamples<Nbuffer, no need to initialize a large buffer
 		}
-		std::cout << "  - Used configuration for Nt_learn and periods_Nt_learn:" << std::endl;
-		std::cout << "      ";
+		if(verbose == 1){
+			std::cout << "  - Used configuration for Nt_learn and periods_Nt_learn:" << std::endl;
+			std::cout << "      ";
+		}
 		for(int i=0; i<cfg->MALA.Nt_learn.size();i++){
 			std::cout << cfg->MALA.Nt_learn[i] << "  ";
 		}
@@ -113,9 +116,13 @@ void Config_presets::apply_presets(Config *cfg){
 		process_id=table_ids[current_id_ind].at(0);
 
 		// We define the root_name for all files
-		cfg->outputs.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
-		cfg->diags.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
-
+		if (Nslices == 1){ // If there is only one slice of data to analyse, no need to add the slice index
+			cfg->outputs.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
+			cfg->diags.output_root_name=process_id +"_" + core_out[current_process_ind] + "_";
+		} else{ // If there is more than one slice, we need to add the slice index on output files
+			cfg->outputs.output_root_name=process_id + "_" + int_to_str(current_slice_ind+1) + "_" + core_out[current_process_ind] + "_";
+			cfg->diags.output_root_name=process_id + "_" + int_to_str(current_slice_ind+1) + "_" + core_out[current_process_ind] +  "_";		
+		}
 		// We define the name of the model file
 		cfg->modeling.cfg_model_file=cfg_models_dir +  table_ids[current_id_ind].at(0) + ".model";
 
@@ -127,46 +134,54 @@ void Config_presets::apply_presets(Config *cfg){
 		cfg->MALA.c0=c0[current_process_ind];
 
 		// We define the name for the restoration files
-		cfg->outputs.restore_file_in=process_id +"_restore_" + core_in[current_process_ind] + "_";
-		cfg->outputs.restore_file_out=process_id +"_restore_" + core_out[current_process_ind] + "_";
-
+		if (Nslices ==1){
+			cfg->outputs.restore_file_in=process_id +"_restore_" + core_in[current_process_ind] + "_";
+			cfg->outputs.restore_file_out=process_id +"_restore_" + core_out[current_process_ind] + "_";
+		} else{
+			cfg->outputs.restore_file_in=process_id + "_" + int_to_str(current_slice_ind+1) + "_restore_" + core_in[current_process_ind] +  "_";
+			cfg->outputs.restore_file_out=process_id + "_" + int_to_str(current_slice_ind+1)+ "_restore_" + core_out[current_process_ind] + "_";		
+		}
 		// We deal with restoration conditions
 		if(restore[current_process_ind] <= 3){
 		
 			if(restore[current_process_ind] == 0){
-				std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
-				std::cout << "No restore will be performed" << std::endl;
-	
+				if(verbose == 1){
+					std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
+					std::cout << "No restore will be performed" << std::endl;
+				}	
 				cfg->outputs.do_restore_proposal=0;
 				cfg->outputs.do_restore_variables=0;
 				cfg->outputs.do_restore_last_index=0;
 				cfg->outputs.erase_old_files=1;
 			}
 			if(restore[current_process_ind] == 1){
-				std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
-				std::cout << "Only the last position in the parameter space will be restored using the user-specified file:" << std::endl;
-				std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
-
+				if(verbose == 1){
+					std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
+					std::cout << "Only the last position in the parameter space will be restored using the user-specified file:" << std::endl;
+					std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
+				}
 				cfg->outputs.do_restore_proposal=0;
 				cfg->outputs.do_restore_variables=1;
 				cfg->outputs.do_restore_last_index=0;
 				cfg->outputs.erase_old_files=1;
 			}
 			if(restore[current_process_ind] == 2){
-				std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
-				std::cout << "The last position in the parameter space and the covariance matrix will be restored using the user-specified file:" << std::endl;
-				std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
-
+				if(verbose == 1){
+					std::cout << "The user requested to start a new analysis ===> PREVIOUS OUTPUT FILES OF SAME NAME MIGHT BE OVERWRITTEN!" << std::endl;
+					std::cout << "The last position in the parameter space and the covariance matrix will be restored using the user-specified file:" << std::endl;
+					std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
+				}
 				cfg->outputs.do_restore_proposal=1;
 				cfg->outputs.do_restore_variables=1;
 				cfg->outputs.do_restore_last_index=0;
 				cfg->outputs.erase_old_files=1;
 			}
 			if(restore[current_process_ind] == 3){
-				std::cout << "The user requested to complete an analysis that was previously made ===> PREVIOUS OUTPUT FILES OF SAME NAME WILL BE APPENDED!" << std::endl;
-				std::cout << "The last position in the parameter space and the covariance matrix will be restored using the user-specified file:" << std::endl;
-				std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
-
+				if(verbose == 1){
+					std::cout << "The user requested to complete an analysis that was previously made ===> PREVIOUS OUTPUT FILES OF SAME NAME WILL BE APPENDED!" << std::endl;
+					std::cout << "The last position in the parameter space and the covariance matrix will be restored using the user-specified file:" << std::endl;
+					std::cout << "                     [current_directory]/Data/restore/" << cfg->outputs.output_root_name + cfg->outputs.restore_file_in << std::endl;
+				}
 				cfg->outputs.do_restore_proposal=1;
 				cfg->outputs.do_restore_variables=1;
 				cfg->outputs.do_restore_last_index=1;

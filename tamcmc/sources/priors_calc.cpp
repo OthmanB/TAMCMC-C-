@@ -25,16 +25,12 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 
 	long double f=0;
 
-	//const long double pi = 3.141592653589793238462643383279502884L;
-	//const long double G=6.667e-8;
-	//const long double Teff_sun= 5777; 
-	//const long double Dnu_sun=135.1;
-	//const long double numax_sun=3150.;
-	//const long double R_sun=6.96342e5; //in km
-	//const long double M_sun=1.98855e30; //in kg
-	//const long double rho_sun=M_sun*1e3/(4L*pi*std::pow(R_sun*1e5,3L)/3L); //in g.cm-3
-
 	const int smooth_switch=extra_priors[0];
+	const double scoef=extra_priors[1];
+	const double a3ova1_limit=extra_priors[2];
+	const int impose_normHnlm=extra_priors[3];
+	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
+	
 	const int Nmax=params_length[0]; // Number of Heights
 	const int lmax=params_length[1]; // number of degree - 1
 	const int Nfl0=params_length[2]; // number of l=0 frequencies
@@ -45,13 +41,13 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
 	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
 	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
-	
-	double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
+	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3; // Total number of modes
+
+	double Dnu, d02, a1, alfa, b, fmax, Q11, max_b, el, em;
 	Deriv_out frstder, scdder;
-	
+
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	//std::cout << "After generic priors ==> f=" << f << std::endl;	
 
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
@@ -62,7 +58,31 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
 	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
-	
+	switch(impose_normHnlm){ 
+		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
+			//l=1: m=0, m=+/-1
+			f=f+logP_uniform(0, 1.+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
+			//l=2: m=0, m=+/-1, m=+/-2
+ 			// The sum must be positive
+			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]
+							); // The sum must be positive
+			//l=3: m=0, m=+/-1, m=+/-2, m=+/-3
+ 			// The sum must be positive
+			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]+ 
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]+
+								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]
+								   ); // The sum must be positive
+
+		break;
+		case 2:
+			std::cout << "priors_MS_Global: impose_normHnlm=2 YET TO BE IMPLEMENTED!" << std::endl;
+			exit(EXIT_SUCCESS);
+		break;
+	}
+
 	// Determine the large separation
 	frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	Dnu=frstder.deriv.sum();
@@ -75,12 +95,9 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
-		
-	
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
 			case 1: // Case with smoothness
-				scoef=extra_priors[1];
 				//std::cout << " ------- Frequency derivatives ------" << std::endl;	
 				if(Nfl0 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // The l=0 frequencies
@@ -116,25 +133,18 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				}
 			  	break;
 	}
-
-		
-	// If requested, we impose a user-defined prior on the intensity coeficient for the magnetic effect on rotational splitting
-	// OBSELETE
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3] == 10){
-		a1=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3];
-		alfa=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4];
-		b=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3];
-		fmax=priors_params.block(1, Nmax+lmax, 1, Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3).maxCoeff();
-		el=1.; em=1.;
-		Q11=(el*(el+1) - 3.*pow(em,2))/( (2*el - 1)*(2*el + 3) );
-		max_b=1.1*std::abs( a1/(Q11 * pow(fmax*1e-3,alfa)) ); //Beware, it is an hyperparameter
-		f=f+logP_jeffrey(0.05, max_b, std::abs(b));
-		
-		std::cout << "This part of the code IS OBSELETE" << std::endl;
-		std::cout << "The program will exit now"<< std::endl;
-		exit(EXIT_SUCCESS);	
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
+		f=-INFINITY;
 	}
-		
+
+/*	std::cout << "a3 =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2] << std::endl;
+	std::cout << "a1 ="	<< params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
+	std::cout << "ratio =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
+	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
+	std::cout << "after a3ova1_limit " << f << std::endl;
+	std::cout << "extra_priors = " << extra_priors << std::endl;
+*/
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
 		f=-INFINITY;
@@ -156,11 +166,124 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-		
 	//exit(EXIT_SUCCESS);
 	
 return f;
 } 
+
+
+long double priors_local(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){
+
+	long double f=0;
+
+	//const int smooth_switch=extra_priors[0];
+	const double a3ova1_limit=extra_priors[2];
+	const int impose_normHnlm=extra_priors[3];
+	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
+	
+	const int Nmax=params_length[0]; // Number of Heights
+	const int Nvis=params_length[1]; // number of degree - 1
+	const int Nfl0=params_length[2]; // number of l=0 frequencies
+	const int Nfl1=params_length[3]; // number of l=1 frequencies
+	const int Nfl2=params_length[4]; // number of l=2 frequencies
+	const int Nfl3=params_length[5]; // number of l=3 frequencies
+	const int Nsplit=params_length[6]; // number of splitting parameters. Should be 3 for a global MS model (a1,a2,a3)
+	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+	const int lmax=3; // lmax is hardcoded here
+
+	int pos0;
+	VectorXi Nf_el(4);  
+	Nf_el[0]=Nfl0; Nf_el[1]=Nfl1; Nf_el[2]=Nfl2; Nf_el[3]=Nfl3; 
+
+	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
+	
+ 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	// ----- Add a positivity condition on inclination -------
+	// The prior could return values -90<i<90. We want it to give only 0<i<90
+	//f=f+logP_uniform(0., 90., params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
+
+
+// ALL THIS IS NOT NECESSARY BECAUSE WE DO NOT DEAL WITH VISIBILITIES... NO NORMALISATION TO 1 REQUIRED
+// THEREFORE NO NEED TO EXCLUDE VALUES BEYOND 1.
+/*	switch(impose_normHnlm){ 
+		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
+			//l=1: m=0, m=+/-1
+			std::cout << "priors_MS_local: impose_normHnlm=1 Not required!" << std::endl;
+			std::cout << "                 Likely bug in io_local.cpp ... Exiting now" << std::endl; 
+			exit(EXIT_SUCCESS);	
+			break;
+		case 2:
+			std::cout << "In case 2" << std::endl;
+			std::cout << "lmax=" << lmax << std::endl;
+			for(int el=1; el<=lmax; el++){
+					for(int en=0; en<Nf_el[el]; en++){
+						for(int em=0; em<=el; em++){
+							std::cout << "el=" << el << "   ==> " <<  Nf_el.segment(0,el+1)  << std::endl;
+							pos0=Nf_el.segment(0,el+1).sum() + (el+1)*en;
+							std::cout << pos0 << std::endl;
+							switch(el){
+								case 1: //l=1: m=0, m=+/-1
+									std::cout << "In l=1: m=0, m=+/-1" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0] + 2*params[pos0+1]); // The sum must be positive
+									break;
+								case 2: //l=2: m=0, m=+/-1, m=+/-2
+									std::cout << "In l=2: m=0, m=+/-1, m=+/-2" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0] + 2*params[pos0+1] + 2*params[pos0+2]); // The sum must be positive
+									break;
+								case 3:
+									std::cout << "In l=3: m=0, m=+/-1, m=+/-2, m=+/-3" << std::endl;
+									f=f+logP_uniform(0, 1, params[pos0]+ 2*params[pos0+1]+ 2*params[pos0+2] + 2*params[pos0+3]); // The sum must be positive
+									break;
+							}
+						}
+					}
+				}
+
+			break;
+	}
+*/
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3] !=0){ // If there is a a1 to be fitted
+		if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
+			f=-INFINITY;
+		}
+	} else{
+		if ((params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+3] !=0) &&  (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+4] !=0)){ // If the sqrt(a1).cosi and sqrt(a1).sin(i) are not 0
+			//std::cout << "Case sqrt(a1).cos and sin" << std::endl;
+			if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/(pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+3],2)+ pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+4],2))) >= a3ova1_limit){
+				f=-INFINITY;
+			}
+		}
+	}
+	//std::cout << f << std::endl;
+	
+	// Prior in inclination positivity (if relevant, ie if it is directly fitted)
+	//std::cout << " priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] = " << priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
+	//std::cout << " params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] =" << params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
+	if((priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] != 0) && (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] < 0)){
+		f=-INFINITY;
+	}
+	//std::cout << f << std::endl;
+
+	// BELOW: COMMENTED ON 13 AUG 2020 AS THESE LINES MAKE NO SENSE TO ME AND INDUCE A CRASH IN SOME OCCASION. I SUSPECT THAT THIS WAS POSITIVITY CONDITION ON INC
+	// WAS REPLACE BY THE LINE ABOVE BUT KEPT HERE IN CASE I FINALY UNDERSTAND THOSE LINES
+	//if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
+	//	f=-INFINITY;
+	//}
+
+	//exit(EXIT_SUCCESS);
+	//std::cout << "Priors done" << std::endl;
+return f;
+} 
+
+
+
+
+
+
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
 long double priors_Test_Gaussian(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch){
@@ -202,7 +325,7 @@ long double apply_generic_priors(const VectorXd params, const MatrixXd priors_pa
 		switch(priors_names_switch[i]){
 			case 0: // No Prior Applied --> The parameter is Fixed or for some reason the prior is set to NONE
 			  //std::cout << "CASE 0" << std::endl;
-			  //std::cout << "[" << i << "] FIX OR NONE, pena=" << pena << std::endl;
+			  //std::cout << "[" << i << "] FIX OR NONE, penalizationa=" << pena << std::endl;
 			  break;
 			case 1: // Uniform Prior
 			  pena=pena + logP_uniform(priors_params(0, i), priors_params(1, i), params[i]);

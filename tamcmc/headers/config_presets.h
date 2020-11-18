@@ -42,7 +42,11 @@ class Config_presets{
 
 		int current_id_ind; // index pointing to the current object id that we have to process
 		int current_process_ind; // index pointing to the current processing step that we have to execute
-
+		int current_slice_ind; // The index pointing to the current subdataset range (e.g. frequency range for io_local models)
+		int Nslices; // Total number of subdataset ranges (ie, the max value that current_slice_ind can take)
+		int first_slice_ind;
+		int last_slice_ind;
+		
 		int first_id_ind; // Index of the first object id that we have to process
 		int first_process_ind; // Index of the first processing step that we have to execute
 		int last_id_ind; // Index of the last object id that we have to process
@@ -50,7 +54,7 @@ class Config_presets{
 
 		Config_presets(std::string cfg_file_in, Config *cfg0);
 		void read_cfg_file_presets();
-		void apply_presets(Config *cfg);
+		void apply_presets(Config *cfg, const bool verbose);
 
 		bool isdir(const std::string pathname);
 		std::string shell_exec(const std::string cmd);

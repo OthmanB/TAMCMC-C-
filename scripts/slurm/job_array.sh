@@ -21,4 +21,4 @@ export OMP_NUM_THREADS=10
 
 echo "Processing star position=" $SLURM_ARRAY_TASK_ID
 
-./tamcmc.out execute 1 $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_ID
+./cpptamcmc execute 1 $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_ID

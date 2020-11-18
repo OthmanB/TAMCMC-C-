@@ -20,10 +20,10 @@ void zip_data(const std::string data_file, const std::string output_dir, const s
 std::string shell_exec(const std::string cmd);
 bool isdir(const std::string pathname);
 bool generate_dir_tree(const std::string rootdir, const std::vector<std::string> subdirs);
-void status_logfile( const std::vector< std::vector<std::string> > ids, const int current_proc_ind, const int first_proc_ind, const int last_proc_ind, const std::string logfile);
 void showversion();
 int  options(int argc, char* argv[]);
 void usage(int argc, char* argv[]);
+MatrixXd get_slices_range(const std::string modelfile, const bool verbose);
 
 extern long ben_clock();
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]){
 	bool execute=1; // if argv[1]="execute" then look for argv[2]==execute. 
 			// argv[3]=start_index_ids argv[4]=last_index_ids. 
 			// If execute = 0 ==> Show only the setup
-	int id_index=0, process_index=0,startV=-1,lastV=-1;
+	int id_index=0, process_index=0,startV=-1,lastV=-1, lastslice=-1, startslice=-1;
 	std::string dir_backup;
 	int msg_code;
 	
@@ -49,8 +49,16 @@ int main(int argc, char* argv[]){
 			std::istringstream(argv[2]) >> execute;
 			std::istringstream(argv[3]) >> startV;
 			std::istringstream(argv[4]) >> lastV;
+			if(argc > 5){
+				std::istringstream(argv[5]) >> startslice;
+				if(argc > 6){
+					std::istringstream(argv[6]) >> lastslice;
+				}
+			}
 			startV=startV-1;
-			lastV=lastV-1;	
+			lastV=lastV-1;
+			startslice=startslice-1;
+			lastslice=lastslice-1; 
 		}
 	}
 
@@ -62,13 +70,17 @@ int main(int argc, char* argv[]){
 
     std::string error_file_default=cpath + "/Config/default/errors_default.cfg"; // This is the file that defines the error values used to initialize the covariance matrix
     std::string cfg_file_default=cpath + "/Config/default/config_default.cfg"; // This is all the parameters required to run the TAMCMC
+	
+	std::string cfg_file_modelslist=cpath + "/Config/default/models_ctrl.list";
+	std::string cfg_file_priorslist=cpath + "/Config/default/priors_ctrl.list";
+	std::string cfg_file_likelihoodslist=cpath + "/Config/default/likelihoods_ctrl.list";
+	std::string cfg_file_primepriorslist=cpath + "/Config/default/primepriors_ctrl.list";
+	
 	std::string cfg_file_presets=cpath + "/Config/config_presets.cfg"; // This is a simpler configuration that allow scripting of the TAMCMC... This is the main configuration file
-
-    std::string logfile=cpath + "/processes.log";
     
 	// Load the default configuration
 	std::cout << "- Loading the default configurations..." << std::endl;
-        Config config(cpath, cfg_file_default, error_file_default);
+        Config config(cpath, cfg_file_default, error_file_default, cfg_file_modelslist, cfg_file_priorslist, cfg_file_likelihoodslist, cfg_file_primepriorslist);
 
 	// Load the Preset configuration (Master configurator)
 	std::cout << "- Loading the Preset configuration: config_presets.cfg..." << std::endl;
@@ -79,13 +91,13 @@ int main(int argc, char* argv[]){
 		exit(EXIT_SUCCESS);
 	}
     
-	long begin_time;
+	long begin_time;//, Nslices;
+	MatrixXd franges;
+	std::string modelfile="";
 	if(config_master.force_manual_config == 0){
 		// BENOIT: after config_preset reset first/last start index to command line parameter values
                 config_master.first_id_ind=startV;
                 config_master.last_id_ind=lastV;
-                //config_master.first_process_ind=startV;
-                //config_master.last_process_ind=lastV;
 		// If the user-defined last index is greater than the size of the table, force the last index to match the size of the array
 		if (config_master.last_process_ind > config_master.processing.size()){ 
 			config_master.last_process_ind=config_master.processing.size()-1;
@@ -94,34 +106,45 @@ int main(int argc, char* argv[]){
 		if (config_master.last_id_ind > config_master.table_ids.size()){
 			config_master.last_id_ind=config_master.table_ids.size()-1;
 		}
-        // ---- Initialize the logfile ----
-       // //status_logfile(config_master.table_ids, config_master.first_id_ind, config_master.first_id_ind, config_master.last_id_ind, logfile);
-
+ 
         // ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
-            // Updating the logfile after finishing the given object i
-           // status_logfile(config_master.table_ids, i, config_master.first_id_ind, config_master.last_id_ind, logfile);
-			for(int jj=config_master.first_process_ind; jj<=config_master.last_process_ind; jj++){  // and for each phase
+  
+        	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
+        	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
+        	config_master.Nslices=franges.rows(); 
+			if(startslice<0){
+				config_master.first_slice_ind=0;			
+        	} else{
+        		config_master.first_slice_ind=startslice;
+        	}
+        	if(lastslice<0 || (lastslice < startslice & lastslice > 0)){
+        		config_master.last_slice_ind=config_master.Nslices;
+        	} else{
+        		config_master.last_slice_ind=lastslice;
+        	}
+        	for(int s=config_master.first_slice_ind; s<config_master.last_slice_ind; s++){ // For as many Frequency ranges as given in the model file...
+ 				for(int jj=config_master.first_process_ind; jj<=config_master.last_process_ind; jj++){  // and for each phase
 					std::cout << "---------------------------------------------------------------------------------------\n" << std::endl;
 					begin_time = ben_clock();
-					config_master.current_id_ind=i; // index pointing to the current object id that we have to process
+      				config_master.current_id_ind=i; // index pointing to the current object id that we have to process
+      				config_master.current_slice_ind=s;
 					config_master.current_process_ind=jj;
-
 					std::cout << "                       --------------------------------" << std::endl;
 					std::cout << "                       Processing Object " << i+1 << "/" << config_master.table_ids.size() << ": ";
 					std::cout << config_master.table_ids[i].at(0) << std::endl;
+					std::cout << "                         Frequency Slice " << s+1 << "/" << config_master.Nslices << std::endl;
 					std::cout << "                                   Phase " << jj+1 << "/" << config_master.processing.size() << ": ";
 					std::cout << config_master.processing[jj] << std::endl;
 					std::cout << "                       --------------------------------" << std::endl;
 
 					std::cout << "- Modify the default configuration according to the presets..." << std::endl;
-					config_master.apply_presets(&config);
+					config_master.apply_presets(&config, 1);
 
 					// Setup the configuration according to user-requested options (either presets configuration or manual configuration)
 					std::cout << " Loading the observational constraints (data) and restore setup..." << std::endl;
-					config.setup();
+					config.setup(s);
 
-					//dir_backup=config.outputs.dir_out + "/" + config_master.table_ids[i].at(0) + "/inputs_backup/";
 					if( config.outputs.do_backup_cfg_files == 1){
 						std::cout << "    do_backup_cfg_files = 1 ===> Backup of the files *.cfg and *.model in progress..." << std::endl;
 						std::cout << "    Target directory: " << dir_backup << std::endl;
@@ -141,17 +164,10 @@ int main(int argc, char* argv[]){
 
 					// process the model of the star[i] and for phase[j]... to do so, we need to reinitialize the configuration according to the new presets
 					MALA *TAMCMC= new MALA(&config); // Nsamples, Nchains, Nvars
-					//std::cout << "Before model_current initialisation" << std::endl;
 					Model_def *model_current= new Model_def(&config, TAMCMC->Tcoefs, 1); // Verbose=1 ==> Show variables/constant and consistency test of likelihood/prior 
-					//std::cout << "After model_current initialisation" << std::endl;
 					Model_def *model_propose= new Model_def(&config, TAMCMC->Tcoefs, 0); // Verbose=0 ==> No need to Show/test anything: already done by model_current
-					//std::cout << "After model_propose initialisation" << std::endl;
 					Outputs *out = new Outputs(&config, TAMCMC->Tcoefs);
-					//std::cout << "After Outputs initialisation" << std::endl;
 					Diagnostics *diags = new Diagnostics(&config);
-
-					//std::cout << "Before TAMCMC->execute" << std::endl;
-					//exit(EXIT_SUCCESS);
 					long begin_time = ben_clock();
 					TAMCMC->execute(model_current, model_propose, &config.data.data, &config, out, diags);
 					std::cout << " ----------------------------" << std::endl;
@@ -169,74 +185,11 @@ int main(int argc, char* argv[]){
 					delete model_propose;
 					delete out;
 					delete diags;
+				}
 			}
 		}
-        // ---- Update one last time the log file ----
-       // status_logfile(config_master.table_ids, config_master.last_id_ind+1, config_master.first_id_ind, config_master.last_id_ind, logfile);
-	}
+ 	}
 	
-}
-
-void status_logfile( const std::vector< std::vector<std::string> > ids, const int current_proc_ind, const int first_proc_ind, const int last_proc_ind, const std::string logfile){
-    
-    std::string status, space;
-    std::ostringstream strg;
-    std::string filename_log;
-    std::ofstream outfile_log;
-
-    filename_log=logfile;
-    
-    /////// Write the log file ////////
-    outfile_log.open(logfile.c_str()); // Overwrite any existing file in PLAIN ASCII
-    if (outfile_log.is_open()){
-        outfile_log << "# This is a log-file generated by the main program. \n";
-        outfile_log << "# This file contains the status for each process from the process list\n" ;
-        outfile_log << "# Total number of processes= " << ids.size() << "\n";
-        outfile_log << "# Variables names: \n";
-        outfile_log << "#      col[0] : index of the process \n";
-        outfile_log << "#      col[1] : name of the process \n";
-        //outfile_log << "#      col[2] : phase of the process \n";
-        outfile_log << "#      col[2] : status for the process. Could be 'No processing', 'Pending', 'Ongoing' or 'Finished' \n";
-        
-        strg.str(std::string());
-        for (int i0=0; i0<ids.size(); i0++){
-            status=" ";
-            if (i0 >= first_proc_ind && i0 < current_proc_ind){
-                status="   Finished     ";
-            }
-            if (i0 == current_proc_ind){
-                status="   Ongoing      ";
-            }
-            if (i0 > current_proc_ind && i0 <= last_proc_ind){
-                status="   Pending      ";
-            }
-            if (i0 < first_proc_ind || i0 > last_proc_ind){
-                status="   No processing";
-            }
-            if (i0 < 10){
-                space="    ";
-            }
-            if (i0 >= 10 && i0 < 100){
-                space="   ";
-            }
-            if (i0>=100){
-                space="  ";
-            }
-            strg << i0 << space << ids[i0].at(0) << status << "\n";
-        }
-        outfile_log << strg.str().c_str();
-        outfile_log.flush(); // Explicitly specify to flush the data into the disk
-        strg.str(std::string()); // clear the strg buffer
-        outfile_log.close();
-    }
-    else {
-        std::cout << " Unable to open file " << logfile << std::endl;
-        std::cout << " Check that the full path exists" << std::endl;
-        std::cout << " The program will exit now" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    
 }
 
 void zip_config(const std::string cfg_file_default, const std::string error_file_default, const std::string cfg_file_presets, 
@@ -253,14 +206,6 @@ void zip_config(const std::string cfg_file_default, const std::string error_file
 	generate_dir_tree(rootdir, subdirs);
 
 	output_dir= rootdir + "/" + id + "/inputs_backup/";
-
-/*	checkdir=isdir(output_dir);
-	if(checkdir == 0){ // Need to create the directory before exporting the configuration into the zip file
-		cmd="mkdir " + output_dir;
-		rcmd=shell_exec(cmd);
-		std::cout << rcmd << std::endl;
-	}
-*/
 	cmd="zip -9 -j " + output_dir + "cfg_backup.zip " + cfg_file_default + " " + error_file_default + " " + cfg_file_presets + " " + model_file;
 	shell_exec(cmd);
 	std::cout << rcmd << std::endl;
@@ -280,14 +225,6 @@ void zip_data(const std::string data_file, const std::string rootdir, const std:
 	generate_dir_tree(rootdir, subdirs);
 
 	output_dir= rootdir + "/" + id + "/inputs_backup/";
-
-/*	checkdir=isdir(output_dir);
-	if(checkdir == 0){ // Need to create the directory before exporting the configuration into the zip file
-		cmd="mkdir " + output_dir;
-		rcmd=shell_exec(cmd);
-		std::cout << rcmd << std::endl;
-	}
-*/
 	output_dir = rootdir + subdirs[1];
 	cmd="zip -9 -j " + output_dir + "data_backup.zip " + data_file;
 	shell_exec(cmd);
@@ -301,7 +238,6 @@ std::string shell_exec(const std::string cmd){
 // Returns the result of the execution on the form of a string. DUPLICATED IN CONFIG_PRESETS.CPP
     char buffer[128];
     std::string result = "";
-    //FILE* pipe = popen(cmd, "r");
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) throw std::runtime_error("popen() failed!");
     try {
@@ -411,7 +347,7 @@ int options(int argc, char* argv[]){
 			val=-1;
 		}
 	}
-	if(argc == 5){
+	if(argc >=5 && argc <= 7){
 		val=11;
 	}
 
@@ -432,8 +368,76 @@ int options(int argc, char* argv[]){
 void usage(int argc, char* argv[]){
 
 			std::cout << "Unrecognized argument" << std::endl;
-			std::cout << "     - To execute: " << argv[0] << " execute 1 <start_idx> <last_idx>" << std::endl;
+			std::cout << "     - To execute: " << argv[0] << " execute 1 <start_idx_object> <last_idx_object>  <first_idx_slice> <last_idx_slice>" << std::endl;
+			std::cout << "       <first_idx_slice> and <last_idx_slice> are optional. If none provided, then the program does all slices." << std::endl;
+			std::cout << "       If only <first_idx_slice> is provided, then the program does all slices starting from that specified one. <last_idx_slice> must always be precedented by <start_idx_slice>" << std::endl;
 			std::cout << "     - To stop after reading the configuration: " << argv[0] << " execute 0" << std::endl;
 			std::cout << "     - To show version: " << argv[0] << " version" << std::endl;
 			exit(EXIT_FAILURE);
+}
+
+MatrixXd get_slices_range(const std::string modelfile, const bool verbose){
+/*
+This function read only the lines of a .model file that contains the ranges for each slices
+on which the data analysis must be made. Those lines are identified as they start by a '*' symbol
+Input: 
+  - modelfile: A string that gives the full path of a .model file
+  - verbose: If set to 1, then will show the slice ranges while reading the file.
+Output:
+  - slicesrange: A matrix of Nslices x 2 giving the min and max for each slices on which
+                 The analysis will be made
+*/	
+
+	int Nrows, Ncols;
+	std::string line0, char0;//, char1;//, char2;
+	std::vector<std::string> word;//, tmp;
+	std::vector<double> mins, maxs;
+	std::ifstream cfg_session;
+    MatrixXd slicesranges;
+
+	Ncols=2;    //Ranges have only a min and a max 
+	Nrows=0;    // By default we have only one slice
+	
+	if(verbose == 1){
+		std::cout << "  - Retrieving slices information from the model file..." << std::endl;
+	}
+    cfg_session.open(modelfile.c_str());
+    if (cfg_session.is_open()) {
+		std::getline(cfg_session, line0);
+		line0=strtrim(line0);
+		char0=strtrim(line0.substr(0, 1));
+		// Looking for the first declaration of a range
+		while(char0 != "*"){
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			char0=strtrim(line0.substr(0, 1));			
+		}		
+		// Process ranges until no more ranges are given or until end of file
+		while((char0 == "*") && (!cfg_session.eof())){			
+			word=strsplit(line0, "= \t");
+			mins.push_back(str_to_dbl(word[1]));
+			maxs.push_back(str_to_dbl(word[2]));
+			
+			if(verbose == 1) {std::cout << "           Slice " << Nrows << " : " << strtrim(word[1])  << " - " << strtrim(word[2]) << std::endl;}		
+			
+			Nrows=Nrows+1;
+			
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			char0=strtrim(line0.substr(0, 1));
+		}
+		if(verbose == 1) { std::cout << " -------" << std::endl;}
+	} else{
+  		std::cout << "Unable to open the file: " << modelfile << std::endl;
+   		std::cout << "Check that the file exist and that the path is correct" << std::endl;
+   		std::cout << "Cannot proceed" << std::endl;
+   		std::cout << "The program will exit now" << std::endl;
+   		exit(EXIT_FAILURE);
+ 	}
+ 	slicesranges.resize(Nrows, Ncols);
+ 	for(int i=0; i< Nrows; i++){
+ 		slicesranges(i, 0)=mins[i];
+ 		slicesranges(i, 1)=maxs[i];
+ 	}
+ 	return slicesranges;
 }
