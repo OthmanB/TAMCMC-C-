@@ -134,3 +134,14 @@ struct Data_Basic{
 	std::vector<std::string> strarr; // Any comment
 	VectorXi vecXi; // Case number
 };
+
+// ----------------------------------------
+// ----- For mixed modes calculation ------
+// ----------------------------------------
+struct Data_coresolver{
+	VectorXd nu_m, ysol, nu,pnu, gnu; //
+};
+
+struct Data_eigensols{
+	VectorXd nu_p, nu_g, nu_m;
+};
