@@ -1,14 +1,14 @@
 # Version history #
 
-### v1.5-dev [IN PROGRESS] ###
+### v1.5-dev [100% Implemented... Need testing] ###
 	* Improvments: adding the possibility to fit the spectrum with the asymptotic relation of the mixed modes (l=1 and l=2)
 	  in the case of RGB models (handled by a new file, io_rgb_global.cpp)
-	  	- update models.cpp to include the model
+	  	- update models.cpp to include the model [100%]
 	  	- convert the mixed mode solver functions from python to c++ by starting by the core solver function (that can be tested within python by a wraper) [100%]
-	  	- update of config.cpp
-	  	- update of model_def.cpp
-	  	- create and write io_rgb_global.cpp
-	* Bug fix: removing useless '...' into the linking process of the CMakelist.txt, that were leading to show warnings during the compilation
+	  	- update of config.cpp [100%]
+	  	- update of model_def.cpp [100%]
+	  	- create and write io_rgb_global.cpp [100%]
+	* Bug fix: removing useless '...' into the linking process of the CMakelist.txt, that were leading to show warnings during the compilation [100%]
 
 ### v1.4.31-dev Bug fix: 30/09/2020 ###
     * getmodel was not properly updated to handle 1.3.3 update on handling the models names using a file (.list file). 

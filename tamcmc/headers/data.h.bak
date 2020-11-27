@@ -125,6 +125,7 @@ namespace gnuplotio {
             TextSender<double>::send(stream, v.y2);
             stream << " ";
             TextSender<float>::send(stream, v.y3);
+
         }
     };
 }
@@ -134,38 +135,15 @@ struct Data_Basic{
 	VectorXi vecXi; // Case number
 };
 
-
 // ----------------------------------------
 // ----- For mixed modes calculation ------
 // ----------------------------------------
-struct Data_2vectXd{
-	VectorXd vecXd1;
-	VectorXd vecXd2;		
-};
-
-// For simulations only, we use a template to derive height and widths of modes
-struct template_file{
-	std::string ID_ref;
-	double numax_ref;
-	double Dnu_ref; 
-	double epsilon_ref;
-	MatrixXd data_ref;
-};
-
 struct Data_coresolver{
 	VectorXd nu_m, ysol, nu,pnu, gnu; //
 };
 
 struct Data_eigensols{
-	VectorXd nu_p, nu_g, nu_m, dnup, dPg; // The two last ones are derivatives of nu_p ~ Dnu and 1/nu_g ~ DPl
-};
-
-struct Data_eigensols_all{
-	VectorXd nu_l0;
-};
-
-struct Data_rot2zone{
-	long double rot_core, rot_env;
+	VectorXd nu_p, nu_g, nu_m;
 };
 
 struct Cfg_synthetic_star{
@@ -214,4 +192,10 @@ struct Params_synthetic_star{
 	VectorXd a1_l1;
 	VectorXd a1_l2; 
 	VectorXd a1_l3;
+};
+
+struct Cfg_star
+{
+	Params_synthetic_star params;
+	Cfg_synthetic_Star cfg;
 };

@@ -15,7 +15,7 @@ void writeversion();
 #define APP_COPYRIGHT "Othman Benomar"
 
 #define APP_VER_MAJOR  1
-#define APP_VER_MINOR  4.31
+#define APP_VER_MINOR  5
 //#define APP_VER_BUILD  0
 //#define APP_VER_REV    0
 

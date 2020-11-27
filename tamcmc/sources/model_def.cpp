@@ -253,16 +253,18 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
          case 11:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x);
 		   break;
-         case 12:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+        case 12:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v2(params.row(m), plength, (*data_struc).x);
 		   break;
-          case 13:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+         case 13:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v3(params.row(m), plength, (*data_struc).x);
 		   break;
-          case 14:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
+         case 14:// Model for local fit and flat white noise
             	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x);
 		   break;
- 
+ 		case 15: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
+				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -270,11 +272,15 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << " Keywords with valid statements so far:" << std::endl;
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
+		  
+
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike_Classic'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
+		  
+          std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
@@ -339,6 +345,9 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		case 3: // model_local
 		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
+		case 4: // model_local
+		  return priors_asymptotic(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
@@ -348,6 +357,7 @@ long double Model_def::call_prior(Data *data_struc, int m){
 		  std::cout << "    - 'priors_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'io_MS_Global'" << std::endl;
 		  std::cout << "    - 'io_local'" << std::endl;
+		  std::cout << "    - 'io_asymptotic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}
@@ -365,7 +375,6 @@ long double Model_def::generate_model(Data *data_struc, long m, VectorXd Tcoefs)
 	logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
 return logPosterior[m];
 }
-
 
 void Model_def::update_params_with_vars(long m){
 

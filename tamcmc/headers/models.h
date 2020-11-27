@@ -10,7 +10,6 @@
 using Eigen::VectorXi;
 using Eigen::VectorXd;
 
-//double lin_interpol(VectorXd x, VectorXd y, double x_int);
 VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1n_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_MS_Global_a1l_etaa3_HarveyLike(VectorXd params, VectorXi params_length, VectorXd x);
@@ -30,3 +29,5 @@ VectorXd model_MS_local_Hnlm(VectorXd params, VectorXi params_length, VectorXd x
 
 VectorXd model_Test_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);
 VectorXd model_Harvey_Gaussian(VectorXd params, VectorXi params_length, VectorXd x);
+
+VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorXi params_length, VectorXd x); 
