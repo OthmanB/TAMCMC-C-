@@ -50,6 +50,7 @@ set(HEADERS  #_COMMON
     tamcmc/headers/diagnostics.h
     tamcmc/headers/io_ms_global.h
     tamcmc/headers/io_local.h
+    tamcmc/headers/io_asymptotic.h
     tamcmc/headers/models.h
     tamcmc/headers/stats_dictionary.h
     tamcmc/headers/config_presets.h
@@ -58,6 +59,9 @@ set(HEADERS  #_COMMON
     tamcmc/headers/noise_models.h
     tamcmc/headers/string_handler.h
     tamcmc/headers/io_models.h
+    external/ARMM/solver_mm.h
+    external/ARMM/bump_DP.h
+    external/ARMM/linfit.h
    )
 
 #Bring the core program sources into the project
@@ -75,6 +79,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/diagnostics.cpp
     tamcmc/sources/io_ms_global.cpp
     tamcmc/sources/io_local.cpp
+    tamcmc/sources/io_asymptotic.cpp
     tamcmc/sources/models.cpp
     tamcmc/sources/stats_dictionary.cpp
     tamcmc/sources/config_presets.cpp
@@ -86,6 +91,9 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/multivariate_cholesky.cpp
     tamcmc/sources/random_JB.cpp
     tamcmc/sources/io_models.cpp
+    external/ARMM/solver_mm.cpp
+    external/ARMM/bump_DP.cpp
+    external/ARMM/linfit.cpp
     )
  
 #Define the sources for the bin2txt program
@@ -115,11 +123,15 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/matrices.cpp
 	tamcmc/sources/io_ms_global.cpp
 	tamcmc/sources/io_local.cpp
+	tamcmc/sources/io_asymptotic.cpp
 	tamcmc/sources/noise_models.cpp
 	tamcmc/sources/priors_calc.cpp
 	tamcmc/sources/stats_dictionary.cpp
 	tamcmc/sources/derivatives_handler.cpp
 	tamcmc/sources/io_models.cpp
+    external/ARMM/solver_mm.cpp
+    external/ARMM/bump_DP.cpp
+    external/ARMM/linfit.cpp
 	)
 	
 # Check and Load dependencies

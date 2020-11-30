@@ -337,6 +337,23 @@ void Config::read_inputs_priors_MS_Global(){
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
 }
 
+void Config::read_inputs_priors_asymptotic(){
+
+	bool verbose=1;
+	MCMC_files i_asymptotic;
+	Input_Data in_vals;
+	//std::cout << "Before read_MCMC" << std::endl;
+	std::cout << "  - Reading the MCMC file: " << modeling.cfg_model_file << "..." << std::endl;
+	i_asymptotic=read_MCMC_file_asymptotic(modeling.cfg_model_file, 0); // Read the MCMC file, with verbose=0 here.. 
+	data.data.xrange=i_asymptotic.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
+	std::cout << "   - Preparing input and priors parameters..." << std::endl;
+    in_vals=build_init_asymptotic(i_asymptotic, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
+	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	modeling.inputs=in_vals;
+	modeling.model_fct_name=in_vals.model_fullname;
+	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
+}
+
 
 void Config::read_inputs_priors_local(){
 
@@ -1597,6 +1614,10 @@ void Config::read_inputs_files(){
 	}
 	if((modeling.prior_fct_name == "io_local")){
 		read_inputs_priors_local();
+		passed=1;
+	}
+	if((modeling.prior_fct_name == "io_asymptotic")){
+		read_inputs_priors_asymptotic();
 		passed=1;
 	}
 	if(passed == 0){

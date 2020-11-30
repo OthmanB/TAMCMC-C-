@@ -21,6 +21,11 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
+// Asymptotic models will use the same MCMC file structure than MS_Global models
+MCMC_files read_MCMC_file_asymptotic(const std::string cfg_model_file, const bool verbose){
+	return  read_MCMC_file_MS_Global(cfg_model_file, verbose);
+}
+
 /*
 MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool verbose){
 
@@ -388,6 +393,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
     	exit(EXIT_FAILURE);
     }
  	
+	
  	io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1);
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);
 	
@@ -453,7 +459,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			rh_el.resize(0);
 		//}
 	}	
-
+	
 	// ------------------------------------------------------------------------------------------
 	// ------------------------------- Handling the Common parameters ---------------------------
 	// ------------------------------------------------------------------------------------------
@@ -466,6 +472,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	} else{
 		tmpstr_h="Height_l0";
 	}
+
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
 	//if (do_width_Appourchaux == 0){
@@ -496,17 +503,18 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
-
 	// DEFAULT WIDTH for l=0
+	/*
 	tmpXd.resize(4);
 	tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
 	for(int i=0; i<w_inputs.size(); i++){
 		if(w_relax[i]){
-			io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+			io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
 		} else{
-			io_calls.fill_param(&width_in, "Width_l0", "Fix", h_inputs[i], tmpXd, i, 0);			
+			io_calls.fill_param(&width_in, "Width_l0", "Fix", w_inputs[i], tmpXd, i, 0);			
 		}
 	}
+	*/
 	
 	// --- Default setup for frequencies ---
 	for(int i=0; i<f_inputs.size(); i++){
@@ -516,44 +524,48 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		} else{
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
 		}
-	}
-
+	}	
 	// ----------- Calculate numax -----------
 	// Flated the output vector
-	tmpXd.resize(Nf_el.sum());
+	//tmpXd.resize(Nf_el.sum());
+	//tmpXd.resize(height_in.inputs.size()); // We assume l=0,1,2,3 as p mode to get numax... this may not be true, but this is the best we can do at that stage of the code
 	cpt=0;
 	if(numax <=0){
-		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax..." << std::endl;
+		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax ASSUMING PURE l=0 P MODES ONLY..." << std::endl;
+		std::cout << "         ---- DUE TO MIXED MODES WE RECOMMEND YOU TO PROVIDE NUMAX AS AN ARGUMENT ---" << std::endl;
+		//tmpXd.segment(cpt , Nf_el[0])=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)	
+		tmpXd=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)
+/*
 		for(int el=0; el<=3; el++){
 			if( Nf_el[el] != 0){
 				if(el == 0){
-					//std::cout << "l=0" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs; 
+					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)
 				}
 				if(el == 1){
-					//std::cout << "l=1" << std::endl;
 					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*1.5; ; //using default visibilities as weights 
 				}
 				if(el == 2){
-					//std::cout << "l=2" << std::endl;
 					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.53; //using default visibilities as weights
 				}
 				if(el == 3){
-					//std::cout << "l=3" << std::endl;
 					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.08; //using default visibilities as weights
 				}
 			cpt=cpt+Nf_el[el];
 			//std::cout << "cpt[" << el <<	 "]" << cpt << std::endl;
 			}
 		}
+*/
 		//std::cout << "getting in getnumax..." << std::endl;
-		numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
+		//numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
+		numax=getnumax(freq_in.inputs.segment(0, Nf_el[0]) , height_in.inputs); // We had to flatten the Height vector and put visibilities
 		std::cout << "     numax: " << numax << std::endl;
 	} else {	
 		std::cout << " Using provided numax: " << numax << std::endl;
 	}
 	std::cout << " ------------------" << std::endl;
 
+	std::cout << "4" << std::endl;
+	
 	//exit(EXIT_SUCCESS);
  	// -------------------------------------
 
@@ -587,6 +599,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	extra_priors[2]=0.2; // By default a3/a1<=1
 	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	// ------------------------------------------------
+
+	std::cout << "5" << std::endl;
 	
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
 		// --- Common parameters than can be run during setup ---
@@ -638,7 +652,14 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		// ---- l=1 mixed modes Global parameters ---
 		if(inputs_MS_global.common_names[i] == "delta01"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("delta01", "Fix_Auto", "", "" );
+//				fatalerror_msg_io_MS_Global("delta01", "Fix_Auto", "", "" );
+                tmpstr="Uniform";
+                tmpXd.resize(4);
+                tmpXd << -5.*inputs_MS_global.Dnu/100, -9999., -9999.;
+                std::cout << "Fix_Auto requested for delta01..., the prior will be with this syntax (negative delta01):" << std::endl;
+                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-5*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
+                std::cout << "          Initial guess: -Dnu/100" << -inputs_MS_global.Dnu/100 << std::endl;
+                io_calls.fill_param(&freq_in, "delta01", tmpstr, -inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
 			}
 			p0=Nf_el[0];
 			io_calls.fill_param(&freq_in, "delta01", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
@@ -664,32 +685,25 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			p0=Nf_el[0]+3;
 			io_calls.fill_param(&freq_in, "q", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-		if(inputs_MS_global.common_names[i] == "q"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("q", "Fix_Auto", "", "" );
-			}
-			p0=Nf_el[0]+4;
-			io_calls.fill_param(&freq_in, "q", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-		}
 		if(inputs_MS_global.common_names[i] == "sigma_p"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sigma_p", "Fix_Auto", "", "" );
 			}
-			p0=Nf_el[0]+5;
+			p0=Nf_el[0]+4;
 			io_calls.fill_param(&freq_in, "sigma_p", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_g"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sigma_g", "Fix_Auto", "", "" );
 			}
-			p0=Nf_el[0]+6;
+			p0=Nf_el[0]+5;
 			io_calls.fill_param(&freq_in, "sigma_g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_m"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sigma_m", "Fix_Auto", "", "" );
 			}
-			p0=Nf_el[0]+7;
+			p0=Nf_el[0]+6;
 			io_calls.fill_param(&freq_in, "sigma_m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		// --- Height or Amplitude ---
