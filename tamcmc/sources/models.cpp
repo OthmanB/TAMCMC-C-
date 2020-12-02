@@ -1586,6 +1586,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 	   --------- Computing the models for the modes  ---------
 	   -------------------------------------------------------
 	*/
+   
 	cpt=0;
 	for(long n=0; n<Nmax; n++){
 		fl0=fl0_all[n];
@@ -1670,7 +1671,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, VectorX
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	
 	//std::cout << "End test" << std::endl;
-        //exit(EXIT_SUCCESS);
+    //exit(EXIT_SUCCESS);
 
 	return model_final;
 }
@@ -1983,7 +1984,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
      * This model has therefore 5 parameters for the widths. 
      * NOTE THAT IN THE RGB_asympt model, the v2 version is not implemented
      */
-
     const double step=x[2]-x[1]; // used by the function that optimise the lorentzian calculation
     const long double pi = 3.141592653589793238462643383279502884L;
     const int Nmax=params_length[0]; // Number of Heights
@@ -2000,7 +2000,11 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
     const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
     const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
-    
+ 
+    VectorXd gamma_params(6);
+    gamma_params << std::abs(params[Nmax + lmax + Nf + Nsplit + 0]) , std::abs(params[Nmax+lmax+Nf+Nsplit+1]) , std::abs(params[Nmax + lmax + Nf + Nsplit+2]),
+            std::abs(params[Nmax+lmax+Nf+Nsplit+3]) , std::abs(params[Nmax+lmax+Nf+Nsplit+4]) , std::abs(params[Nmax+lmax+Nf+Nsplit+5]); 
+   
     double inclination;
 
     VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
@@ -2018,12 +2022,9 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
        ------- Gathering information about the modes ---------
        -------------------------------------------------------
     */
+   
     inclination=params[Nmax + lmax + Nf+Nsplit + Nwidth + Nnoise]; 
-    std::cout << "inclination =" << inclination << std::endl;
-    //inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
-    //inclination=inclination*180./pi;
-    //a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
-
+ 
     // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
     ratios_l0.setOnes();
     if(lmax >=1){
@@ -2044,12 +2045,12 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
 
     // --- Preparing profiles for l=0 modes ---
     fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths and mixed modes determination 
- 
+
     for (int n=0; n<Nmax;n++)
     {
-        lnGamma0=params[Nmax + lmax + Nf + Nsplit+2] * log(fl0_all[n]/params[Nmax + lmax + Nf + Nsplit + 0]) + log(params[Nmax+lmax+Nf+Nsplit+3]);
-        e=2.*log(fl0_all[n]/params[Nmax+lmax+Nf+Nsplit+1]) / log(params[Nmax+lmax+Nf+Nsplit+4]/params[Nmax + lmax +Nf + Nsplit + 0]);
-        lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+5])/(1. + pow(e,2));      
+        lnGamma0=gamma_params[2] * log(fl0_all[n]/gamma_params[0]) + log(gamma_params[3]);
+        e=2.*log(fl0_all[n]/gamma_params[1]) / log(gamma_params[4]/gamma_params[0]);
+        lnLorentz=-log(gamma_params[5])/(1. + pow(e,2));     
         Wl0_all[n]=exp(lnGamma0 + lnLorentz);
     }
 
@@ -2070,16 +2071,18 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     std::default_random_engine gen_m(seed); 
   
     const double delta0l=params[Nmax + lmax + Nfl0];
-    const double DPl=params[Nmax + lmax + Nfl0 + 1];
-    const double alpha_g=params[Nmax + lmax + Nfl0 + 2];
-    const double q_star=params[Nmax + lmax + Nfl0 + 3];
-    const double sigma_p_l1=params[Nmax + lmax + Nfl0 + 4];
-    const double sigma_g_l1=params[Nmax + lmax + Nfl0 + 5];
-    const double sigma_m_l1=params[Nmax + lmax + Nfl0 + 6];
-    const double rot_env=params[Nmax + lmax + Nf];
-    const double rot_core=params[Nmax + lmax + Nf+1];
-
+    const double DPl=std::abs(params[Nmax + lmax + Nfl0 + 1]);
+    const double alpha_g=std::abs(params[Nmax + lmax + Nfl0 + 2]);
+    const double q_star=std::abs(params[Nmax + lmax + Nfl0 + 3]);
+    const double sigma_p_l1=std::abs(params[Nmax + lmax + Nfl0 + 4]);
+    const double sigma_g_l1=std::abs(params[Nmax + lmax + Nfl0 + 5]);
+    const double sigma_m_l1=std::abs(params[Nmax + lmax + Nfl0 + 6]);
+    const double rot_env=std::abs(params[Nmax + lmax + Nf]);
+    const double rot_core=std::abs(params[Nmax + lmax + Nf+1]);
+ 
+ 
     // -------- DEBUG OF l=1 mixed modes -----
+    /*
     std::cout << "delta0l =" << delta0l << std::endl;
     std::cout << "DPl =" << DPl << std::endl;
     std::cout << "alpha_g =" << alpha_g << std::endl;
@@ -2089,6 +2092,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     std::cout << "sigma_m =" << sigma_m_l1 << std::endl;
     std::cout << "rot_env =" << rot_env << std::endl;
     std::cout << "rot_core =" << rot_core << std::endl;
+    std::cout << "step =" << step << std::endl;
+    */
     // ---------------------------------------
 
     std::normal_distribution<double> distrib_m(0.,sigma_m_l1);
@@ -2097,26 +2102,27 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     VectorXi posOK;  
     VectorXd ksi_pg, h1_h0_ratio;
     Data_eigensols freqs_l1;
-    
     freqs_l1=solve_mm_asymptotic_O2from_l0(fl0_all, 1, delta0l, DPl, alpha_g, q_star, sigma_p_l1, step, true, false); // note that we use the true data resolution (step) for optimising computation
     // Filter solutions that endup at frequencies higher/lower than the nu_l0 because we will need to extrapolate height/widths otherwise...
     posOK=where_in_range(freqs_l1.nu_m, fl0_all.minCoeff(), fl0_all.maxCoeff(), false);
     fl1_all.resize(posOK.size());
-    
-    for (int i=0; i<posOK.size();i++)
-    {
-        fl1_all[i]=freqs_l1.nu_m[posOK[i]];
-        if (sigma_m_l1 !=0) // If requested, we add a random gaussian qty to the mixed mode solution
+    if (posOK[0] != -1){
+        for (int i=0; i<posOK.size();i++)
         {
-            r = distrib_m(gen_m);
-            fl1_all[i]=fl1_all[i]+r;
+            fl1_all[i]=freqs_l1.nu_m[posOK[i]];
+            if (sigma_m_l1 !=0) // If requested, we add a random gaussian qty to the mixed mode solution
+            {
+                r = distrib_m(gen_m);
+                fl1_all[i]=fl1_all[i]+r;
+            }
         }
-    }
-    
+    } //else{
+   //     std::cout << "posOK[0] is -1" << std::endl;
+  //  }
     // Generating widths profiles for l=1 modes using the ksi function
     ksi_pg=ksi_fct2(fl1_all, freqs_l1.nu_p, freqs_l1.nu_g, freqs_l1.dnup, freqs_l1.dPg, q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
     h1_h0_ratio=h_l_rgb(ksi_pg); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019)
-    
+   
     Hl1p_all.resize(fl1_all.size());
     for (int i=0; i<fl1_all.size();i++)
     {
@@ -2132,7 +2138,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     eta=params[Nmax + lmax + Nf + 2];
     a3=params[Nmax + lmax + Nf + 3];
     asym=params[Nmax+lmax + Nf + 4];
-  
+   
     // --------------
     // --------------
     // --------------
@@ -2142,7 +2148,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     /* -------------------------------------------------------
        --------- Computing the models for the modes  ---------
        -------------------------------------------------------
-    */
+    */ 
     cpt=0;
     for(long n=0; n<Nfl0; n++){
         fl0=fl0_all[n];
@@ -2151,17 +2157,17 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
         //std::cout << "Wl0=" << Wl0 << std::endl;
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
     }
-    for (long n=0; n<freqs_l1.nu_m.size(); n++){
-        fl1=freqs_l1.nu_m[n];
+    for (long n=0; n<fl1_all.size(); n++){
+        fl1=fl1_all[n];
         Wl1=Wl1_all[n];
-        Hl1=Hl1_all[n];              
+        Hl1=Hl1_all[n];  
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1_l1[n], eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
     }
     for(long n=0; n<Nfl2; n++){ 
         fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-        lnGamma0=params[Nmax + lmax + Nf + Nsplit+2] * log(fl2/params[Nmax + lmax + Nf + Nsplit + 0]) + log(params[Nmax+lmax+Nf+Nsplit+3]);
-        e=2.*log(fl2/params[Nmax+lmax+Nf+Nsplit+1]) / log(params[Nmax+lmax+Nf+Nsplit+4]/params[Nmax + lmax +Nf + Nsplit + 0]);
-        lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+5])/(1. + pow(e,2));      
+        lnGamma0=gamma_params[2] * log(fl2/gamma_params[0]) + log(gamma_params[3]);
+        e=2.*log(fl2/gamma_params[1]) / log(gamma_params[4]/gamma_params[0]);
+        lnLorentz=-log(gamma_params[5])/(1. + pow(e,2));     
         Wl2=exp(lnGamma0 + lnLorentz);
         //std::cout << "Wl2=" << Wl2 << std::endl;
         if(do_amp){
@@ -2173,9 +2179,9 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     }
     for(long n=0; n<Nfl3; n++){ 
         fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-        lnGamma0=params[Nmax + lmax + Nf + Nsplit+2] * log(fl3/params[Nmax + lmax + Nf + Nsplit + 0]) + log(params[Nmax+lmax+Nf+Nsplit+3]);
-        e=2.*log(fl3/params[Nmax+lmax+Nf+Nsplit+1]) / log(params[Nmax+lmax+Nf+Nsplit+4]/params[Nmax + lmax +Nf + Nsplit + 0]);
-        lnLorentz=-log(params[Nmax+lmax+Nf+Nsplit+5])/(1. + pow(e,2));      
+        lnGamma0=gamma_params[2] * log(fl3/gamma_params[0]) + log(gamma_params[3]);
+        e=2.*log(fl3/gamma_params[1]) / log(gamma_params[4]/gamma_params[0]);
+        lnLorentz=-log(gamma_params[5])/(1. + pow(e,2));     
         Wl3=exp(lnGamma0 + lnLorentz);
         //std::cout << "Wl3=" << Wl3 << std::endl;
         if(do_amp){
@@ -2184,9 +2190,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
             Hl3=std::abs(params[n]*Vl3);            
         }       
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-    }       
-    //std::cin.ignore();
-
+    }           
+   
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
        -------------------------------------------------------
@@ -2201,7 +2206,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    std::cout << "fl0    / Wl0     / Hl0" << std::endl;
+     /*std::cout << "fl0    / Wl0     / Hl0" << std::endl;
     for (int i =0; i<fl0_all.size(); i++){
         std::cout << fl0_all[i]  << "    "  << Wl0_all[i]  << "    " << Hl0_all[i] << std::endl;
     }
@@ -2215,7 +2220,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
 
     std::cout << "End test" << std::endl;
     exit(EXIT_SUCCESS);
-
+    */
     return model_final;
 }
 

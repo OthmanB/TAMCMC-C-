@@ -256,7 +256,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	VectorXd a;
 	i=0;
 	cpt=0;
-	iMS_global.modes_common.resize(20,5);
+	iMS_global.modes_common.resize(50,5);
 	iMS_global.modes_common.setConstant(-9999); // up to 10 variables and 4 prior parameters
 	while ( (out < 9) && !cfg_session.eof() ){ // the initial values for the common parameters + priors, until we reach the 9th # symbol
 			line0=strtrim(line0);
@@ -1293,6 +1293,7 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
  	out[5]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
  		
  	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
+ 	/*  OLD PRIORS (CHANGED ON 01/12/2020)
  	priors(0,0)=out[0];
  	priors(0,1)=out[0]*0.1; // 10% of numax on numax
  	priors(1,0)=out[1];
@@ -1305,16 +1306,38 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
  	priors(4,1)=out[4]*0.2; // 20% of Wdip
  	priors(5,0)=out[5];
  	priors(5,1)=out[5]*0.4; // 20% of DeltaGammadip
-
+	
 	//io_calls.show_param(width_in, 0);
 	
 	// Filling the structure of width parameters
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:numax", "Gaussian", out[0],priors.row(0), 0, 0);
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:nudip", "Gaussian", out[1],priors.row(1), 1, 0);
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:alpha", "Gaussian", out[2],priors.row(2), 2, 0);
-	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Gaussian", out[3],priors.row(3), 3, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Uniform", out[3],priors.row(3), 3, 0);
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Gaussian", out[4],priors.row(4), 4, 0);
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Gaussian", out[5],priors.row(5), 5, 0);
+	*/
+
+	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
+	// POSITION PARAMETERS WITH GAUSSIAN PRIORS AND INTENSIVE PARAMETERS AS UNIFORM
+ 	priors(0,0)=out[0];
+ 	priors(0,1)=out[0]*0.1; // 10% of numax on numax
+ 	priors(1,0)=out[1];
+ 	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
+ 	priors(2,0)=0;
+ 	priors(2,1)=6; // min/max of the plot in Appourchaux 2016
+ 	priors(3,0)=0; //
+ 	priors(3,1)=10; // min/max of the plot in Appourchaux 2016
+ 	priors(4,0)=out[4];
+ 	priors(4,1)=out[4]*0.25; // 20% of Wdip
+ 	priors(5,0)=0.;
+ 	priors(5,1)=15; // min/max of the plot in Appourchaux 2016
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:numax", "Gaussian", out[0],priors.row(0), 0, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:nudip", "Gaussian", out[1],priors.row(1), 1, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:alpha", "Uniform", out[2],priors.row(2), 2, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Uniform", out[3],priors.row(3), 3, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Gaussian", out[4],priors.row(4), 4, 0);
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Uniform", out[5],priors.row(5), 5, 0);
 	
 	//io_calls.show_param(width_in, 0);
 	return width_in;

@@ -249,18 +249,33 @@ long double asympt_nu_p_from_l0(const VectorXd nu_l0, const long double Dnu_p, c
 
 	const int np_min0=int(floor(nu_l0.minCoeff()/Dnu_p - epsilon));
 	const int np_max0=int(ceil(nu_l0.maxCoeff()/Dnu_p - epsilon));
-
-	if (np >= np_min0 && np <= np_max0){ // If we are inside the nu_l0 range, we make the shifting
+/*	
+	std::cout << " ---- Inside asympt_nu_p_from_l0() ----" << std::endl;
+	std::cout << "np_min0 =" << np_min0 << std::endl;
+	std::cout << "np_max0 =" << np_max0 << std::endl;
+	std::cout << "Dnu_p = " << epsilon << std::endl;
+	std::cout << "epsilon = " << epsilon << std::endl;
+	std::cout << "delta0l = " << delta0l << std::endl;
+	std::cout << "      l = " << l << std::endl;
+	std::cout << "     np = " << np << std::endl;
+*/
+	if (np >= np_min0 && np < np_max0){ // If we are inside the nu_l0 range, we make the shifting
+/*		std::cout << "condition: np >= np_min0 && np <= np_max0" << std::endl;
+		std::cout << "           np - np_min0 =" << np-np_min0 << std::endl;
+		std::cout << "           nu_l0.size() =" << nu_l0.size() << std::endl;
+*/
 		nu_p_l= nu_l0[np-np_min0] + l/2.*Dnu_p + delta0l;
 	} else{
 		nu_p_l=(np + epsilon + l/2.)*Dnu_p + delta0l;
 	}
 	if (nu_p_l < 0.0)
 	{
-		std::cout << " WARNING: NEGATIVE FREQUENCIES DETECTED: IMPOSING POSITIVITY" << std::endl;
+		std::cout << " WARNING: NEGATIVE FREQUENCIES DETECTED: IMPOSING to nu_p_l + r=0" << std::endl;
 		std::cout << " nu_p_l: " << nu_p_l << std::endl;
-		std::cout << " Cannot pursue " << std::endl;
-		exit(EXIT_FAILURE);
+		 nu_p_l=0;
+		 r=0;
+		//std::cout << " Cannot pursue " << std::endl;
+		//exit(EXIT_FAILURE);
 	}
 	return nu_p_l+r;
 }
@@ -776,8 +791,7 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 	fmin=nu_l0_in.minCoeff() - Dnu_p*el/2;
 	fmax=nu_l0_in.maxCoeff() + Dnu_p*el/2;
 
-	std::cout << "Dnu_p =" << Dnu_p << std::endl;
-	std::cout << "epsilon = " << epsilon << std::endl;
+	//std::cout << "       solver 1" << std::endl;
 
 	// Use fmin and fmax to define the number of pure p modes and pure g modes to be considered
 	np_min=int(floor(fmin/Dnu_p - epsilon - el/2 - delta0l));
@@ -798,10 +812,11 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 	{
 		fact=0.005;
 	}
-
 	// Handling the p and g modes, randomized or not
 	nu_p_all.resize(np_max-np_min);
 	nu_g_all.resize(ng_max-ng_min);
+
+	//std::cout << "       solver 1.1" << std::endl;
 	for (int np=np_min; np<np_max; np++)
 	{
 		if (sigma_p == 0)
@@ -813,13 +828,15 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 		}
 		nu_p_all[np-np_min]=nu_p;
 	}
-
+	//std::cout << "       solver 2" << std::endl;
+	
 	for (int ng=ng_min; ng<ng_max;ng++)
 	{
 		nu_g=asympt_nu_g(DPl, ng, alpha);
 		nu_g_all[ng-ng_min]=nu_g;
 	}
-
+	//std::cout << "       solver 3" << std::endl;
+	
 	if (sigma_p != 0)
 	{
 		deriv_p=Frstder_adaptive_reggrid(nu_p_all);
@@ -829,7 +846,8 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 	}
 	deriv_g.deriv.resize(nu_g_all.size());
 	deriv_g.deriv.setConstant(DPl);
-
+	//std::cout << "       solver 4" << std::endl;
+	
 	s0m=0;
 	for (int np=np_min; np<np_max; np++)
 	{
@@ -844,8 +862,11 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 			try
 			{
 				success=true;
+				//std::cout << "       solver 5" << std::endl;
 				//sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3.*Dnu_p/4, nu_p + 3.*Dnu_p/4, resol, returns_axis, verbose, fact);
 				sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3*Dnu_p/4, nu_p + 3*Dnu_p/4, resol, returns_axis, verbose, fact);
+				//std::cout << "       solver 6" << std::endl;
+	
 			}
 			catch (...){
 				success=false;
@@ -853,8 +874,10 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 				try{
 					while (success ==false && attempts < Nmax_attempts){
 						try{
+							//std::cout << "       solver 7.1" << std::endl;
 							fact=fact/2;
 							sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3.*Dnu_p/4, nu_p + 3.*Dnu_p/4, resol, returns_axis, verbose, fact);
+							//std::cout << "       solver 7.2" << std::endl;
 							success=true;
 						}
 						catch(...){
@@ -887,6 +910,7 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 						exit(EXIT_FAILURE);
 				}
 			}
+			//std::cout << "       solver 8" << std::endl;
 			if (verbose == true)
 			{
 				std::cout << "=========================================="  << std::endl;
@@ -900,31 +924,39 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 				test=where_dbl(nu_m_all, sols_iter.nu_m[s], tol);
 				if (test[0] == -1)
 				{
-					std::cout << " adding a solution" << std::endl;
-					std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
-					std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
-					std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
-					std::cout << "    s0m               =" << s0m << std::endl;
-					std::cout << "    s                =" << s << std::endl;
-					std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
-					std::cout << "    nu_p             =" << nu_p << std::endl;
-					std::cout << "    nu_g             =" << nu_g << std::endl;
+					if (verbose == true){
+						std::cout << " ADDING a solution" << std::endl;
+						std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
+						std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
+						std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
+						std::cout << "    s0m               =" << s0m << std::endl;
+						std::cout << "    s                =" << s << std::endl;
+						std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
+						std::cout << "    nu_p             =" << nu_p << std::endl;
+						std::cout << "    nu_g             =" << nu_g << std::endl;
+						std::cout << " ------ " << std::endl;
+					}
 					nu_m_all[s0m]=sols_iter.nu_m[s];
 					s0m=s0m+1;
 				} else{
-					std::cout << " DUPLICATE solution" << std::endl;
-					std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
-					std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
-					std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
-					std::cout << "    s0m               =" << s0m << std::endl;
-					std::cout << "    s                =" << s << std::endl;
-					std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
-					std::cout << "    nu_p             =" << nu_p << std::endl;
-					std::cout << "    nu_g             =" << nu_g << std::endl;
+					if (verbose == true){
+						std::cout << " DUPLICATE solution" << std::endl;
+						std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
+						std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
+						std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
+						std::cout << "    s0m               =" << s0m << std::endl;
+						std::cout << "    s                =" << s << std::endl;
+						std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
+						std::cout << "    nu_p             =" << nu_p << std::endl;
+						std::cout << "    nu_g             =" << nu_g << std::endl;
+						std::cout << " ------ " << std::endl;
+					}
 				}
 			}
 		}
 	}
+	//std::cout << "       solver 9" << std::endl;
+	
 	nu_m_all.conservativeResize(s0m);	
 	//nu_p_all.conservativeResize(s0m);	
 	//nu_g_all.conservativeResize(s0m);	

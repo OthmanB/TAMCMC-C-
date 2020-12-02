@@ -8,6 +8,7 @@
 	  	- update of config.cpp [100%]
 	  	- update of model_def.cpp [100%]
 	  	- create and write io_rgb_global.cpp [100%]
+		- adding default errors for the new parameters
 	* Bug fix: removing useless '...' into the linking process of the CMakelist.txt, that were leading to show warnings during the compilation [100%]
 
 ### v1.4.31-dev Bug fix: 30/09/2020 ###

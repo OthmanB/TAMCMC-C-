@@ -320,9 +320,7 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
 		f=-INFINITY;
 	}
-	std::cout << "In priors_calc:  f=" << f << std::endl;
-	exit(EXIT_SUCCESS);
-	
+	return f;
 }
 
 long double priors_local(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){

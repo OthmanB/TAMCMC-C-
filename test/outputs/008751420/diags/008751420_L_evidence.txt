@@ -1,0 +1,9 @@
+# This is an output file for the evidence. Evidence is calculated after a quadratic interpolation of L_beta. 
+# This file contains values for the L_beta[0:Nchains-1], the evidence calculated at each time the buffer was written 
+# col(1): Number of samples used to compute the evidence 
+# col(2:2+Nchains): averaged probability <P(D|M,I)> over the samples of each chain 
+# col(2+Nchains+1): Evidence P(M|D, I) computed by (1) interpolation and (2) averaging 
+! beta=        1  0.333333  0.111111  0.037037 0.0123457
+! interpolation_factor=1000
+5000                             -149577.0186         -51328.12193         -16674.15332         -5728.650206         -1947.291771         -36397.10899
+10000                             -149477.0169         -51255.11919         -16637.42461         -5722.515087         -1944.514429         -36355.53926

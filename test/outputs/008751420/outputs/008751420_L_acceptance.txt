@@ -1,0 +1,6 @@
+# This is an output file for the acceptance rate. 
+# This file contains values for the acceptance_rate[0:Nchains-1] in function of the average sample position
+# Averaging is done over Nbuffer 
+! Nchains= 5
+2500 0.0022  0.002 0.0018 0.0032 0.0018
+7500      0 0.0002      0      0 0.0002

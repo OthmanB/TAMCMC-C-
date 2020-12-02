@@ -467,11 +467,10 @@ void MALA::update_position_MH(Model_def *model_current, Model_def *model_propose
 	if((*cfg_class).MALA.proposal_type != "Random" && (*cfg_class).MALA.proposal_type != "Exact_On_Grid"){
 		msg_handler("", "ongrid_option", "MALA::update_position_MH", (*cfg_class).MALA.proposal_type, 1);
 	}
-
 	(*model_propose).vars.row(m)=vars_new.transpose();
 	(*model_propose).update_params_with_vars(m); // required as the model depends on params, not on vars...
 	(*model_propose).generate_model(data_struc, m, Tcoefs); // This will calculate (*model_class).logLikelihood (tempered), (*model_class).logPriors and (*model_class).logPosterior
-
+	
 	if (std::isnan((*model_propose).logLikelihood[m]) == 0){
 		if ((*model_propose).logPosterior[m] == -INFINITY){ // Some priors should generate infinities (e.g. Uniform priors), in that case the solution is rejected 100% of the time
 
@@ -628,11 +627,10 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 		}
 
 		gamma=c0/(1. + i);
-		
+
 #pragma omp parallel for default(shared) private(chain)
 		for (chain=0; chain<Nchains; chain++){
 			VectorXd vec_tmp;
-
 
 			// [1] Propose a new position and test it so that the model_current is updated (if new position accepted) using model_propose
 			//     Note that model_propose must have been initialized in order to work
@@ -648,12 +646,9 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 			}
 			if (logicA[chain] == 1 && ( i%periods_learn[whichA[chain]]) == 0){
 				vec_tmp=(*model_current).vars.row(chain);
-				update_proposal(vec_tmp, (*model_current).Pmove[chain], chain);
-			
-				
+				update_proposal(vec_tmp, (*model_current).Pmove[chain], chain);	
 			} //else { std::cout << " NO Learning for chain " << chain << std::endl; }
 		}
-
 		for (int chain=0; chain<Nchains; chain++){
 			if(logicA[chain] > logic_old){ // case of logic=1 and logic_old=0
 				std::cout << "        ["<< i << "] Learning turned ON...Learning periodicity: " << periods_learn[whichA[chain]] << std::endl;
@@ -684,17 +679,14 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 				std::cout << "        ["<< i << "] Average swaping rate for the last " << swap_period << " swaps (in %): " << 100. * swaping_rate/Nswap << std::endl;
 				Nswap=0; // re-initialize the average counter
 				swaping_rate=0; // re-initialize the average swaping rate
-			}
-			
+			}			
 		} else {
 			tempted_mixing=0;
 			chain_A=-1;
 		}
-	
 		// [4] Show / save results
 		// Update the restoration point when counts == Nbuffer (conditon handled within the method)
 		outputs_class->update_buffer_restore(sigma, mu, covarmat, model_current->vars);
-
 		// Generate the outputs... If requested
 		outputs_class->update_buffer_stat_criteria(model_current->logLikelihood, model_current->logPrior, model_current->logPosterior); 	
 		//std::cout << "Before writting params" << std::endl;
@@ -705,7 +697,6 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 		outputs_class->update_buffer_proposals(sigma, mu, model_current->Pmove, 
 			    			model_current->moved, covarmat);
 		outputs_class->update_buffer_models(model_current->model); //IF ACTIVATED IT SLOWS DOWN THE PROCESS AND CREATE HUGE FILES!!! OVERRID THIS FUNCTION WHEN Ndata_Obs > Ndata_Obs_limit
-
 		// Generate diagnostics... If requested... REQUIRES THAT THE APPROPRIATE OUTPUTS EXIST
 		if(diags->get_model_buffer_diags() == 1){
 			mean_params_Nbuf=(mean_params_Nbuf.transpose() + model_current->params.row(0)); // average made only over the coldest chain
