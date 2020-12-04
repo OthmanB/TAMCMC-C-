@@ -1,6 +1,0 @@
-# This is the header of the BINARY output file for the parameters of the parallel tempering.
-# This file contains values for 
-# Correspondance between chain0=[0:Nchains-1] and temperature Tcoefs[chain] 
-! Nsamples_done=10000
-! Tcoefs =  1  3  9 27 81
-! labels= attempt_mixing    chain0    Pswitch    switched 

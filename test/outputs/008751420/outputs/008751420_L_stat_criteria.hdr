@@ -1,5 +1,0 @@
-# This is the header of the BINARY output file for the statistical information.
-# This file contains values for the logLikelihood (columns 0:Nchains-1), logPrior (columns Nchains:2*Nchains-1) and logPosterior (columns 2*Nchains:3*Nchains-1),  
-! Nsamples_done=10000
-! Nchains= 5
-! labels= logLikelihood[0]   logLikelihood[1]   logLikelihood[2]   logLikelihood[3]   logLikelihood[4]   logPrior[0]   logPrior[1]   logPrior[2]   logPrior[3]   logPrior[4]   logPosteriors[0]   logPosteriors[1]   logPosteriors[2]   logPosteriors[3]   logPosteriors[4]   

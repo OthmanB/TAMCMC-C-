@@ -1107,11 +1107,12 @@ short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const 
 	(*Noise_in).priors_names[1]="Fix"; (*Noise_in).priors_names[4]="Fix"; (*Noise_in).priors_names[7]="Gaussian";
 	(*Noise_in).priors_names[2]="Fix"; (*Noise_in).priors_names[5]="Fix"; (*Noise_in).priors_names[8]="Gaussian";
 	(*Noise_in).priors_names[9]="Gaussian";
+	//(*Noise_in).priors_names[9]="Fix";
 
 	(*Noise_in).relax[0]=0; (*Noise_in).relax[3]=0; (*Noise_in).relax[6]=1;
 	(*Noise_in).relax[1]=0; (*Noise_in).relax[4]=0; (*Noise_in).relax[7]=1;
 	(*Noise_in).relax[2]=0; (*Noise_in).relax[5]=0; (*Noise_in).relax[8]=1;
-	(*Noise_in).relax[9]=1;
+	(*Noise_in).relax[9]=1; // 1 WHITE NOISE IS FIXED !
 	(*Noise_in).inputs=noise_params;
 
 	// Handle cases with negative H or tc ==> Harvey is Fix to 0 (no Harvey) <==> case of simulations with white noise

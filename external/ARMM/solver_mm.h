@@ -27,6 +27,8 @@ long double asympt_nu_p(const long double Dnu_p, const int np, const long double
 	const long double delta0l, const long double alpha, const long double nmax, long double r=0);
 long double asympt_nu_p_from_l0(const VectorXd nu_l0, const long double Dnu_p, const int np, const long double epsilon, const int l, 
 	const long double delta0l, long double r=0);
+VectorXd asympt_nu_p_from_l0_Xd(const VectorXd nu_l0, const long double Dnu_p, const int np, const long double epsilon, const int l, 
+	const long double delta0l, long double r=0);
 long double asympt_nu_g(const long double DPl, const int ng, const long double alpha, long double r=0);
 Data_coresolver solver_mm(const long double nu_p, const long double nu_g, const long double Dnu_p, const long double DPl, const long double q, 
 	const long double numin, const long double numax, const long double resol, const bool returns_axis=false, const bool verbose=false, const long double factor=0.05);

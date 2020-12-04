@@ -241,31 +241,41 @@ long double asympt_nu_p(const long double Dnu_p, const int np, const long double
 # and on the asymptotic relation. This effectively allow to account for 2nd order terms of p modes
 # delta0l : small spacing 
 # r: Allows you to add an extra term to Dnu_p
+# WARNING: COULD BE SOME PROBLEMS ON THE EDGES... IF PROBLEM ARE FOUND, WE MIGHT NEED REPLACE THIS ALGO BY 
+#          AN INTERPOLATION AT NP... BUT MORE COSTLY
 */
+
 long double asympt_nu_p_from_l0(const VectorXd nu_l0, const long double Dnu_p, const int np, const long double epsilon, const int l, 
 	const long double delta0l, long double r=0)
 {
 	long double nu_p_l;
 
 	const int np_min0=int(floor(nu_l0.minCoeff()/Dnu_p - epsilon));
-	const int np_max0=int(ceil(nu_l0.maxCoeff()/Dnu_p - epsilon));
-/*	
+	//const int np_max0=int(ceil(nu_l0.maxCoeff()/Dnu_p - epsilon));
+	const int np_max0=int(floor(nu_l0.maxCoeff()/Dnu_p - epsilon));
+/*
 	std::cout << " ---- Inside asympt_nu_p_from_l0() ----" << std::endl;
 	std::cout << "np_min0 =" << np_min0 << std::endl;
 	std::cout << "np_max0 =" << np_max0 << std::endl;
-	std::cout << "Dnu_p = " << epsilon << std::endl;
+	std::cout << "Dnu_p = " << Dnu_p << std::endl;
 	std::cout << "epsilon = " << epsilon << std::endl;
 	std::cout << "delta0l = " << delta0l << std::endl;
 	std::cout << "      l = " << l << std::endl;
 	std::cout << "     np = " << np << std::endl;
 */
 	if (np >= np_min0 && np < np_max0){ // If we are inside the nu_l0 range, we make the shifting
-/*		std::cout << "condition: np >= np_min0 && np <= np_max0" << std::endl;
+/*
+		std::cout << "condition: np >= np_min0 && np < np_max0" << std::endl;
 		std::cout << "           np - np_min0 =" << np-np_min0 << std::endl;
 		std::cout << "           nu_l0.size() =" << nu_l0.size() << std::endl;
 */
-		nu_p_l= nu_l0[np-np_min0] + l/2.*Dnu_p + delta0l;
+		//if ((np-np_min0) < nu_l0.size()){
+			nu_p_l= nu_l0[np-np_min0] + l/2.*Dnu_p + delta0l;
+		//} else{
+		//	nu_p_l=(np + epsilon + l/2.)*Dnu_p + delta0l;
+		//}
 	} else{
+//		std::cout << "condition: ELSE" << std::endl;
 		nu_p_l=(np + epsilon + l/2.)*Dnu_p + delta0l;
 	}
 	if (nu_p_l < 0.0)
@@ -280,6 +290,20 @@ long double asympt_nu_p_from_l0(const VectorXd nu_l0, const long double Dnu_p, c
 	return nu_p_l+r;
 }
 
+VectorXd asympt_nu_p_from_l0_Xd(const VectorXd nu_l0, const long double Dnu_p, const int np, const long double epsilon, const int l, 
+	const long double delta0l, long double r=0)
+{
+	VectorXd nu_p_l(nu_l0.size()), Dnu_vec(nu_l0.size()), d0l_vec(nu_l0.size()), r_vec(nu_l0.size());
+	Dnu_vec.setConstant(Dnu_p*l/2.);
+	d0l_vec.setConstant(delta0l);
+	nu_p_l= nu_l0 + Dnu_vec + d0l_vec;
+	if (r == 0){
+		return nu_p_l;
+	} else{
+		r_vec.setConstant(r);
+		return nu_p_l+r_vec;
+	}
+}
 
 /* 
 	Compute the asymptotic relation for the g modes.
@@ -791,7 +815,10 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 	fmin=nu_l0_in.minCoeff() - Dnu_p*el/2;
 	fmax=nu_l0_in.maxCoeff() + Dnu_p*el/2;
 
-	//std::cout << "       solver 1" << std::endl;
+	//std::cout << "fmin =" << fmin << std::endl;
+	//std::cout << "fmax =" << fmax << std::endl;
+	
+	//std::cout << "       solver 0" << std::endl;
 
 	// Use fmin and fmax to define the number of pure p modes and pure g modes to be considered
 	np_min=int(floor(fmin/Dnu_p - epsilon - el/2 - delta0l));
@@ -812,11 +839,14 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 	{
 		fact=0.005;
 	}
+
 	// Handling the p and g modes, randomized or not
 	nu_p_all.resize(np_max-np_min);
 	nu_g_all.resize(ng_max-ng_min);
 
 	//std::cout << "       solver 1.1" << std::endl;
+	//nu_p_all=asympt_nu_p_from_l0(nu_l0_in, Dnu_p, np, epsilon, el, delta0l);
+	
 	for (int np=np_min; np<np_max; np++)
 	{
 		if (sigma_p == 0)
@@ -828,6 +858,7 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd nu_l0_in, const int 
 		}
 		nu_p_all[np-np_min]=nu_p;
 	}
+	
 	//std::cout << "       solver 2" << std::endl;
 	
 	for (int ng=ng_min; ng<ng_max;ng++)

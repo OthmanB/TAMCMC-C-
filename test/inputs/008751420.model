@@ -115,7 +115,7 @@ p  3  719.93298  1      1       1
        0.0000000       0.0000000       1.0000000
    1.0874654e-14       137.10287       4.0000000
        59.023029       9.0907717       2.0000000
-       0.01
+       0.0
 # Noise Info from output_s2 (use as priors): params / err_m / err_p
        0.0000000       0.0000000       0.0000000
        0.0000000       0.0000000       0.0000000
@@ -126,7 +126,7 @@ p  3  719.93298  1      1       1
        59.023029      0.17649673      0.17702609
        9.0907717     0.014909252     0.014933744
        2.0000000       0.0000000       0.0000000
-       0.1             0.001   3.6074349
+       0.0             0.001   3.6074349
 # Controls and priors for common parameters
            model_fullname              model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2
           freq_smoothness                bool          1.000000          2.000000
@@ -145,8 +145,8 @@ p  3  719.93298  1      1       1
                   alpha_g            Uniform            0.00001          0.000000          1.000000
                         q            Uniform            0.15000          0.000100          1.000000
                   rot_env            Uniform            0.20000          0.000000          2.000000
-                 rot_core            Uniform            0.60000          0.000000          2.000000    
+                 rot_core            Uniform            1.70000          0.000000          2.000000    
                   sigma_p                Fix            0.00000
                   sigma_g                Fix            0.00000
-                  sigma_m            Uniform            0.00001          0.000000          1.000000
+                  sigma_m                Fix            0.00000
                   trunc_c                Fix            100.
