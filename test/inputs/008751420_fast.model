@@ -93,12 +93,12 @@ p  3  613.69897  1      1       1
              Splitting_a3                 Fix          0.000000
                  Asymetry                 Fix          0.000000
               Inclination             Uniform         45.000000          0.000000         90.000000
-            Visibility_l1            Gaussian          1.500000          1.500000          0.200000
+            Visibility_l1             Uniform          1.500000          0.000000          5.000000
             Visibility_l2            Gaussian          0.530000          0.530000          0.050000
             Visibility_l3            Gaussian          0.080000          0.080000          0.020000
                    Height            Jeffreys          1.000000      10000.000000
                     Width            Fix_Auto          1.000000
-                  delta01            Uniform           -0.3             -2.000000          0.000000
+                  delta01            Uniform           -0.3             -2.000000          1.000000
                       DP1            Uniform           134.0000         125.00000          145.0000 
                   alpha_g            Uniform            0.00001          0.000000          1.000000
                         q            Uniform            0.15000          0.000100          1.000000

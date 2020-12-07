@@ -1,7 +1,7 @@
 #KIC =008751420
 ! 34.691500
 !! 14.983100
-* 312.22350 797.90450
+* 350.22350 750.90450
 # type / l / value / relax_f / relax_H / relax_W 
 p  0  363.11200  1      1       1
 p  0  397.88199  1      1       1
@@ -115,7 +115,7 @@ p  3  719.93298  1      1       1
        0.0000000       0.0000000       1.0000000
    1.0874654e-14       137.10287       4.0000000
        59.023029       9.0907717       2.0000000
-       0.0
+       0.01
 # Noise Info from output_s2 (use as priors): params / err_m / err_p
        0.0000000       0.0000000       0.0000000
        0.0000000       0.0000000       0.0000000
@@ -126,15 +126,15 @@ p  3  719.93298  1      1       1
        59.023029      0.17649673      0.17702609
        9.0907717     0.014909252     0.014933744
        2.0000000       0.0000000       0.0000000
-       0.0             0.001   3.6074349
+       0.01             0.001    3.6074349
 # Controls and priors for common parameters
            model_fullname              model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2
           freq_smoothness                bool          1.000000          2.000000
-             Splitting_a1             Uniform          0.400000          0.000000          1.500000
+             Splitting_a1             Uniform          0.200000          0.000000          1.500000
           Asphericity_eta                 Fix          0.000000
              Splitting_a3                 Fix          0.000000
                  Asymetry                 Fix          0.000000
-              Inclination             Uniform         45.000000          0.000000         90.000000
+              Inclination             Uniform         70.000000          0.000000         90.000000
             Visibility_l1            Gaussian          1.500000          1.500000          0.200000
             Visibility_l2            Gaussian          0.530000          0.530000          0.050000
             Visibility_l3            Gaussian          0.080000          0.080000          0.020000
@@ -149,4 +149,4 @@ p  3  719.93298  1      1       1
                   sigma_p                Fix            0.00000
                   sigma_g                Fix            0.00000
                   sigma_m                Fix            0.00000
-                  trunc_c                Fix            100.
+                  trunc_c                Fix            25.

@@ -20,6 +20,7 @@
 #include <Eigen/Dense>
  
  long double logP_gaussian(long double mean, long double sigma, long double x);
+ long double logP_gaussian_truncated(long double mean, long double sigma, long double x, long double bmin, long double bmax);
  long double logP_uniform(long double b_min, long double b_max, long double x);
  long double logP_uniform_abs(long double b_min, long double b_max, long double x);
  long double logP_uniform_cos(long double b_min, long double b_max, long double x);

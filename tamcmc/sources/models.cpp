@@ -2070,7 +2070,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     // ---- Mixed modes handling ----
     // --------------
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine gen_m(seed); 
+    //std::default_random_engine gen_m(seed); 
   
     const double delta0l=params[Nmax + lmax + Nfl0];
     const double DPl=std::abs(params[Nmax + lmax + Nfl0 + 1]);
@@ -2097,7 +2097,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     */
     // ---------------------------------------
 
-    std::normal_distribution<double> distrib_m(0.,sigma_m_l1);
+    //std::normal_distribution<double> distrib_m(0.,sigma_m_l1);
 
     double r, tmp;
     VectorXi posOK;  
@@ -2114,13 +2114,13 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
             fl1_all[i]=freqs_l1.nu_m[posOK[i]];
             if (sigma_m_l1 !=0) // If requested, we add a random gaussian qty to the mixed mode solution
             {
-                r = distrib_m(gen_m);
+                //r = distrib_m(gen_m);
                 i_dbg=0;
                 while (std::abs(r) > sigma_limit){
                     std::cout << "[" << i_dbg << " ]   r > sigma_limit... retry for random value in model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2()" << std::endl;
                     std::cout << "        sigma_limit= " << sigma_limit << std::endl;
                     std::cout << "                  r= " << r << std::endl;
-                    r = distrib_m(gen_m);
+                    //r = distrib_m(gen_m);
                 }
                 fl1_all[i]=fl1_all[i]+r;
             }
@@ -2136,7 +2136,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     Hl1p_all.resize(fl1_all.size());
     for (int i=0; i<fl1_all.size();i++)
     {
-        tmp=lin_interpol(fl0_all, params.segment(0, Nmax), fl1_all[i]); // interpolate Hl0 to fl1 positions
+        tmp=lin_interpol(fl0_all, Hl0_all, fl1_all[i]); // interpolate Hl0 to fl1 positions
         Hl1p_all[i]=tmp;
     }
     Hl1_all=h1_h0_ratio.cwiseProduct(Hl1p_all*Vl1);
@@ -2170,7 +2170,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(VectorXd params, Vector
     for (long n=0; n<fl1_all.size(); n++){
         fl1=fl1_all[n];
         Wl1=Wl1_all[n];
-        Hl1=Hl1_all[n];  
+        Hl1=std::abs(Hl1_all[n]);  
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1_l1[n], eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
     }
     for(long n=0; n<Nfl2; n++){ 

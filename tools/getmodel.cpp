@@ -71,7 +71,7 @@ int main(int argc, char* argv[]){
 		data_model=Data_Nd2Data(data);
 
 		// Getting the list of models that are currently implemented
-		std::string file_list=cpath + "models_ctrl.list";
+		std::string file_list=cpath + "/models_ctrl.list";
 		listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the main getmodel compiled file
 		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname, listoutputs); // look for the case number that is going to be used in call_model
 
@@ -241,7 +241,7 @@ void usage(int argc, char* argv[], int Nmaxlines){
 int check_retrocompatibility(VectorXi plength, std::string modelname){
 
 	int Nplength_expected=-1; // By defaut, consider that plength is not compatible with the current program
-	int status=-1;
+	int status=2; // DEFAULT IS EVERYTHING OK (EXPERIMENTAL... IF FAILS NEED TO BE TO -1)
 	if (modelname == "model_MS_Global_a1etaa3_HarveyLike" || modelname == "model_MS_Global_a1etaa3_Harvey1985" || modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
 	   modelname == "model_MS_Global_a1n_etaa3_HarveyLike" || modelname == "model_MS_Global_a1nl_etaa3_HarveyLike"){
 		Nplength_expected = 11;
@@ -261,6 +261,10 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
         }
 	}
     if (modelname == "model_MS_Global_a1etaa3_HarveyLike_Classic" ){ // This new function appears in version 1.3.2 so it is ok
+        //std::cout << "Status set to 2 (Classic model)" << std::endl;
+        status=2;
+    }
+    if (modelname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" ){ // This new function appears in version 1.5 so it is ok
         //std::cout << "Status set to 2 (Classic model)" << std::endl;
         status=2;
     }

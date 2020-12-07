@@ -46,18 +46,56 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	double Dnu, d02, a1, alfa, b, fmax, Q11, max_b, el, em;
 	Deriv_out frstder, scdder;
 
-	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
 		if(params[i] < 0){
-			f=-INFINITY; 
+			f=-INFINITY;
+			goto end;
 		}
 	}
-	// ----- Add a positivity condition on inclination -------
-	// The prior could return values -90<i<90. We want it to give only 0<i<90
-	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
+
+		// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if(std::abs(params[Nmax+lmax+Nf+2]/params[Nmax+lmax+Nf]) >= a3ova1_limit){
+		f=-INFINITY;
+		goto end;
+	}
+
+/*	std::cout << "a3 =" << params[Nmax+lmax+Nf+2] << std::endl;
+	std::cout << "a1 ="	<< params[Nmax+lmax+Nf] << std::endl;
+	std::cout << "ratio =" << params[Nmax+lmax+Nf+2]/params[Nmax+lmax+Nf] << std::endl;
+	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
+	std::cout << "after a3ova1_limit " << f << std::endl;
+	std::cout << "extra_priors = " << extra_priors << std::endl;
+*/
+	// Implement securities to avoid unphysical quantities that might lead to NaNs
+	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
+		f=-INFINITY;
+		goto end;
+	}
+	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] != 0){
+		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+3] < 0) || // Harvey profile height
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+5] < 0) ){ // Harvey profile p
+				f=-INFINITY;
+				goto end;
+		}
+	}
+	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+6] != 0){
+		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+6] < 0) || // Harvey profile height
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+7] < 0) || // Harvey profile tc
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+8] < 0) ){// Harvey profile p 
+				f=-INFINITY;
+				goto end;
+		}
+	}
+	if((priors_names_switch[Nmax+lmax+Nf+9] != 0) && (params[Nmax+lmax+Nf+Nsplit+Nwidth+9] < 0)){
+		f=-INFINITY;
+		goto end;
+	}
+
+	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+
 	switch(impose_normHnlm){ 
 		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
 			//l=1: m=0, m=+/-1
@@ -133,41 +171,8 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 				}
 			  	break;
 	}
-	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
-	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
-		f=-INFINITY;
-	}
-
-/*	std::cout << "a3 =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2] << std::endl;
-	std::cout << "a1 ="	<< params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
-	std::cout << "ratio =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
-	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
-	std::cout << "after a3ova1_limit " << f << std::endl;
-	std::cout << "extra_priors = " << extra_priors << std::endl;
-*/
-	// Implement securities to avoid unphysical quantities that might lead to NaNs
-	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
-		f=-INFINITY;
-	}
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+3] != 0){
-		if( (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+3] < 0) || // Harvey profile height
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+5] < 0) ){ // Harvey profile p
-				f=-INFINITY;
-		}
-	}
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+6] != 0){
-		if( (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+6] < 0) || // Harvey profile height
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+7] < 0) || // Harvey profile tc
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+8] < 0) ){// Harvey profile p 
-				f=-INFINITY;
-		}
-	}
-	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
-		f=-INFINITY;
-	}
 	//exit(EXIT_SUCCESS);
-	
+	end:	
 return f;
 } 
 
@@ -196,21 +201,67 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
 	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3; // Total number of modes
 
+	int i, i0=params[Nmax+lmax+Nf+Nsplit];
+
 	double Dnu, d02, rot_env, alfa, b, fmax, Q11, max_b, el, em;
 	Deriv_out frstder, scdder;
-
-	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
 
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
 		if(params[i] < 0){
 			f=-INFINITY; 
+			goto end;
 		}
 	}
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if(std::abs(params[Nmax+lmax+Nf+3]/params[Nmax+lmax+Nf]) >= a3ova1_limit){
+		f=-INFINITY;
+		goto end;
+	}
+	// Implement securities to avoid unphysical quantities that might lead to NaNs
+	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
+		f=-INFINITY;
+		goto end;
+	}
+	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] != 0){
+		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+3] < 0) || // Harvey profile height
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+5] < 0) ){ // Harvey profile p
+				f=-INFINITY;
+				goto end;
+		}
+	}
+	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+6] != 0){
+		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+6] < 0) || // Harvey profile height
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+7] < 0) || // Harvey profile tc
+		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+8] < 0) ){// Harvey profile p 
+				f=-INFINITY;
+				goto end;
+		}
+	}
+	if((priors_names_switch[Nmax+lmax+Nf+9] != 0) && (params[Nmax+lmax+Nf+Nsplit+Nwidth+9] < 0)){
+		f=-INFINITY;
+		goto end;
+	}
+
+	// ------ Add a positiviy condition on Width parameters -----
+	for (i=i0; i<i0 + Nwidth; i++){
+		switch(priors_names_switch[i]){
+			case 2:
+				if (params[i] < 0){
+					f=-INFINITY;
+					goto end;
+				}
+			break;
+		}
+	}
+
+	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
-	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
+	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise]);
 	switch(impose_normHnlm){ 
 		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
 			//l=1: m=0, m=+/-1
@@ -249,7 +300,7 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 		}
 	}
 	// Set the smootheness condition handled by derivatives_handler.cpp
-	switch(smooth_switch){
+	switch(priors_names_switch[i]){
 			case 1: // Case with smoothness
 				//std::cout << " ------- Frequency derivatives ------" << std::endl;	
 				if(Nfl0 != 0){
@@ -287,39 +338,16 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 				}
 			  	break;
 	}
-	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
-	if(std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+3]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
-		f=-INFINITY;
-	}
 
-/*	std::cout << "a3 =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2] << std::endl;
-	std::cout << "a1 ="	<< params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
-	std::cout << "ratio =" << params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3] << std::endl;
+/*	std::cout << "a3 =" << params[Nmax+lmax+Nf+2] << std::endl;
+	std::cout << "a1 ="	<< params[Nmax+lmax+Nf] << std::endl;
+	std::cout << "ratio =" << params[Nmax+lmax+Nf+2]/params[Nmax+lmax+Nf] << std::endl;
 	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
 	std::cout << "after a3ova1_limit " << f << std::endl;
 	std::cout << "extra_priors = " << extra_priors << std::endl;
-*/
-	// Implement securities to avoid unphysical quantities that might lead to NaNs
-	if(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
-		f=-INFINITY;
-	}
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+3] != 0){
-		if( (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+3] < 0) || // Harvey profile height
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+5] < 0) ){ // Harvey profile p
-				f=-INFINITY;
-		}
-	}
-	if(priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+6] != 0){
-		if( (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+6] < 0) || // Harvey profile height
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+7] < 0) || // Harvey profile tc
-		    (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+8] < 0) ){// Harvey profile p 
-				f=-INFINITY;
-		}
-	}
-	if((priors_names_switch[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+9] != 0) && (params[Nmax+lmax+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+9] < 0)){
-		f=-INFINITY;
-	}
+*/	
+	end:
+
 	return f;
 }
 
@@ -347,6 +375,31 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 	int pos0;
 	VectorXi Nf_el(4);  
 	Nf_el[0]=Nfl0; Nf_el[1]=Nfl1; Nf_el[2]=Nfl2; Nf_el[3]=Nfl3; 
+
+	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
+	if (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3] !=0){ // If there is a a1 to be fitted
+		if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
+			f=-INFINITY;
+			goto end;
+		}
+	} else{
+		if ((params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+3] !=0) &&  (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+4] !=0)){ // If the sqrt(a1).cosi and sqrt(a1).sin(i) are not 0
+			//std::cout << "Case sqrt(a1).cos and sin" << std::endl;
+			if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/(pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+3],2)+ pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+4],2))) >= a3ova1_limit){
+				f=-INFINITY;
+				goto end;
+			}
+		}
+	}
+	//std::cout << f << std::endl;
+	
+	// Prior in inclination positivity (if relevant, ie if it is directly fitted)
+	//std::cout << " priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] = " << priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
+	//std::cout << " params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] =" << params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
+	if((priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] != 0) && (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] < 0)){
+		f=-INFINITY;
+		goto end;
+	}
 
 	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
 	
@@ -396,27 +449,6 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 			break;
 	}
 */
-	// Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
-	if (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3] !=0){ // If there is a a1 to be fitted
-		if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3]) >= a3ova1_limit){
-			f=-INFINITY;
-		}
-	} else{
-		if ((params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+3] !=0) &&  (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+4] !=0)){ // If the sqrt(a1).cosi and sqrt(a1).sin(i) are not 0
-			//std::cout << "Case sqrt(a1).cos and sin" << std::endl;
-			if(std::abs(params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+2]/(pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+3],2)+ pow(params[Nmax + Nvis + Nfl0+Nfl1+Nfl2+Nfl3+4],2))) >= a3ova1_limit){
-				f=-INFINITY;
-			}
-		}
-	}
-	//std::cout << f << std::endl;
-	
-	// Prior in inclination positivity (if relevant, ie if it is directly fitted)
-	//std::cout << " priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] = " << priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
-	//std::cout << " params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] =" << params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] << std::endl;
-	if((priors_names_switch[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] != 0) && (params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise] < 0)){
-		f=-INFINITY;
-	}
 	//std::cout << f << std::endl;
 
 	// BELOW: COMMENTED ON 13 AUG 2020 AS THESE LINES MAKE NO SENSE TO ME AND INDUCE A CRASH IN SOME OCCASION. I SUSPECT THAT THIS WAS POSITIVITY CONDITION ON INC
@@ -427,6 +459,7 @@ long double priors_local(const VectorXd params, const VectorXi params_length, co
 
 	//exit(EXIT_SUCCESS);
 	//std::cout << "Priors done" << std::endl;
+	end:
 return f;
 } 
 
@@ -460,7 +493,6 @@ long double priors_Harvey_Gaussian(const VectorXd params, const VectorXi params_
 
 return f;
 } 
-
 
 
 long double apply_generic_priors(const VectorXd params, const MatrixXd priors_params, const VectorXi priors_names_switch){

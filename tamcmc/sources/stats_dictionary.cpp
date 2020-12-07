@@ -98,6 +98,7 @@ long double logP_gaussian(long double mean, long double sigma, long double x){
 return -log(sqrt(2*PIl)*sigma)-0.5*pow((x- mean)/sigma, 2.);
 }
 
+
 // -------------
 
 long double logP_multivariate_gaussian( Eigen::VectorXd mean, Eigen::MatrixXd Matrix, Eigen::VectorXd x){
