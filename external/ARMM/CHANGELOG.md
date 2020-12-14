@@ -1,3 +1,18 @@
+### 0.61 ###
+	Bug Fix: 
+		- The vector containing all of the frequencies calculated by the main functions solve_mm_asymptotic_O2from_l0() and solve_mm_asymptotic_O2() were not properly
+		  initialized and handled. This resulted in some compilator (gcc) to randomly show some frequencies due to out of ranges memory pointers.
+	Improvments:
+		- Improvment in the test function 
+	    - New function (handled by do_solve.cpp) that allows to use the solver as a standalone program for getting frequencies and heights of mixed modes
+	    
+### 0.6  ###
+	- Code rewriten using proper headers that include only constants so that there is no clashes. Vectors from Eigen are as well passed now by reference
+	- Added a main.cpp for tests
+	Bug Fix: 
+		- Correction of ksi_fct1() to be sure that in precise mode, you get something smaller than 1
+		- Correction of an error that was imposing too often a constant derivative of nu_l (hence constant Dnu_p). 
+
 ### 0.55 [100%]
 	Including a new function 'solve_mm_asymptotic_O2from_l0()' inside solver_mm.cpp that can be used to generate l>0 p modes
 	using a series of provided l=0 modes. This differs from solve_mm_asymptotic_O2p() from the fact that Dnu_p, epsilon, fmin, fmax
