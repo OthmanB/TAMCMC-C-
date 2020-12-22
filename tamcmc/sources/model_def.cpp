@@ -24,7 +24,7 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 
 
-Model_def::Model_def(Config *config, VectorXd Tcoefs, bool verbose){
+Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose){
 	
 	bool error;
 	double warning_thld;
@@ -196,7 +196,7 @@ Model_def::~Model_def(){ // The destructor
 * To use when model_def class has to be used only for a few model computation.
 * Do not use this on large loop... it will be slow
 */
-VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi plength0, const VectorXd params0, const int model_case){
+VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case){
 
 
 	params.resize(1, params0.size());
@@ -211,7 +211,6 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 
 	VectorXd fail(data_struc->Nx);
 	fail.setZero();
-
 	switch(model_fct_name_switch){
 		case 0: // model_Test_Gaussian
 		  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x);
@@ -265,6 +264,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
  		case 15: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
 				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
 			break;
+		case 16: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
+				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -294,7 +296,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 	return fail; // This might never be used but avoid warnings from the compiler
 }
 
-long double Model_def::call_likelihood(Data *data_struc, int m, VectorXd Tcoefs){
+long double Model_def::call_likelihood(Data *data_struc, const int m, const VectorXd& Tcoefs){
 /* 
  * call the likelihood using its name. Before returning the log(Likelihood), it saves it into 'logLikelihood'
 */
@@ -325,7 +327,7 @@ long double Model_def::call_likelihood(Data *data_struc, int m, VectorXd Tcoefs)
 	return 0; // This might never be used but avoid warnings from the compiler
 }
 
-long double Model_def::call_prior(Data *data_struc, int m){
+long double Model_def::call_prior(Data *data_struc, const int m){
 /* 
  * call the prior using its name. Before returning the log(prior), we save it into 'logPrior'
 */
@@ -365,7 +367,7 @@ long double Model_def::call_prior(Data *data_struc, int m){
 	return 0; // This might never be used but avoid warnings from the compiler
 }
 
-long double Model_def::generate_model(Data *data_struc, long m, VectorXd Tcoefs){
+long double Model_def::generate_model(Data *data_struc, const long m, const VectorXd& Tcoefs){
 /*
  * call successively call_model, call_likelihood and call_prior and then calculates the logPosterior. This is also returned.
 */
@@ -376,7 +378,7 @@ long double Model_def::generate_model(Data *data_struc, long m, VectorXd Tcoefs)
 return logPosterior[m];
 }
 
-void Model_def::update_params_with_vars(long m){
+void Model_def::update_params_with_vars(const long m){
 
 	for( int i=0; i<index_to_relax.size(); i++){
 		//std::cout << "i=" << i << std::endl;

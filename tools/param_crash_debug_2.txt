@@ -1,0 +1,10 @@
+# Debug file for code crashing with fl1 completely non-sense
+# This file can be read by testsolver_mm to generate a full list of outputs from the solver_mm.cpp::solve_mm_asymptotic_O2from_l0() function
+# The parameters a listed in this order: el DP, alpha_g, delta0l, q_star, fl0_all, step
+1
+164.144
+0.144967
+-0.0443384
+0.291525
+602.68      649.916     694.48      739.337     784.217     829.076     874.193     919.711     965.446 
+0.00814215

@@ -1,5 +1,12 @@
 # Version history #
 
+### v1.55-dev New models and improvments ###
+	* Bug Fix:Fix bug when initializing delta0l with fix_auto [DONE]
+	* Adding : sigma_Hl1 (replaces sigma_p) [DONE]
+	* Adding a model that has the fl1p modes as free parameters... priors and initial guesses are automatically set [DONE]
+	* Improvment: taging modes for asymtptotic model as RGB using error_default.cfg standard: Frequency_RGB_l [DONE]
+	* Upgrading Dnu determination in priors_calc.cpp using l=0 mode fitting
+
 
 ### v1.52-dev Improvoment ###
 	* Bug fix: There was multiple NaN that were still not corrected in v1.51. It was comming from the fact the Hl0 interpolation at fl1 frequencies 

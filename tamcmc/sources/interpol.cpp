@@ -6,11 +6,11 @@
 
 using Eigen::VectorXd;
 
-const long double interp1( const long double x,  const VectorXd a);
+const long double interp1( const long double x,  const VectorXd& a);
 long double parabola( const long double x, const long double f_1, const long double f0, const long double f1 );
-long double interp2( const long double x, const VectorXd a);
+long double interp2( const long double x, const VectorXd& a);
 
-double lin_interpol(const VectorXd x, const VectorXd y, const double x_int){
+double lin_interpol(const VectorXd& x, const VectorXd& y, const double x_int){
 	/* Very simple function that linearly interpolate at the position x_int
 	   a curve (x,y). Here we assume that x.size() = y.size()
 	*/
@@ -29,8 +29,8 @@ double lin_interpol(const VectorXd x, const VectorXd y, const double x_int){
 			//std::cout << "x_int < x[i] || x_int > x[i+1]) && i<Nx-1 =" << ((x_int < x[i] || x_int > x[i+1]) && i<Nx-1) << std::endl;
 			i=i+1;
 		}
-		if(i==0 && (x_int < x[i] || x_int > x[i+1])){i=i+1;} // case where we never passed by the loop because x_int < x[0] || x_int > x[1] = True	
-		//a=(y[i] - y[i-1])/(x[i] - x[i-1]); // slope
+		if(i==0 && (x_int < x[i] || x_int > x[i+1])){i=i+1;} // case where we never passed by the loop because x_int < x[0] || x_int > x[1] = True	        
+        //a=(y[i] - y[i-1])/(x[i] - x[i-1]); // slope
 		//b=y[i-1] - a*x[i-1]; // ordinate at origin
 		a=(y[i+1] - y[i])/(x[i+1] - x[i]); // slope
 		b=y[i] - a*x[i]; // ordinate at origin
@@ -49,13 +49,12 @@ double lin_interpol(const VectorXd x, const VectorXd y, const double x_int){
 		xtmp=x.tail(2);
 		a=(ytmp[1] - ytmp[0])/(xtmp[1] - xtmp[0]); // slope
 		b=ytmp[0] - a*xtmp[0]; // ordinate at origin 
-
-	}
+    }
 return a*x_int+b;
 }
 
 
-VectorXd quad_interpol( const VectorXd a, const int m ){
+VectorXd quad_interpol( const VectorXd& a, const int m ){
    /* Function that quadratically interpolate the array a. 
     * The new size of the array is m, such that this 
     * function actually resample the array
@@ -73,7 +72,7 @@ VectorXd quad_interpol( const VectorXd a, const int m ){
 // -------------- Extra routines -------------------
 
   // linear interpolate x in an array
-const long double interp1( const long double x,  const VectorXd a)
+const long double interp1( const long double x,  const VectorXd& a)
 {
     int n=a.size();
 
@@ -84,7 +83,7 @@ const long double interp1( const long double x,  const VectorXd a)
 }
 
     // linear interpolate array a[] -> array b[]
-VectorXd  inter1parray( const VectorXd a, const int m )
+VectorXd  inter1parray( const VectorXd& a, const int m )
 {
     long double step = double( a.size() - 1 ) / (m - 1);
     VectorXd b(m);
@@ -104,7 +103,7 @@ long double parabola( const long double x, const long double f_1, const long dou
 }
 
     // quadratic interpolate x in an array
-long double interp2( const long double x, const VectorXd a){
+long double interp2( const long double x, const VectorXd& a){
     if( x <= .5  ||  x >= a.size() - 1.5 )
         return interp1( x, a);
     int j = int( x + .5 );

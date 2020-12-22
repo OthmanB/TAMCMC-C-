@@ -42,12 +42,12 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 
 
-MatrixXd** initialize_3dMatrix(int Nchains, int Nrows, int Ncols);
-void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position);
+//MatrixXd** initialize_3dMatrix(int Nchains, int Nrows, int Ncols);
+//void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position);
 MatrixXd** copy_3dMatrix(MatrixXd** m3d_in, int depth);
 MatrixXd multivariate_eigen(VectorXd, MatrixXd, int);
-double *r8vec_normal_01 ( int n, int *seed );
-double *uniform_01 ( int n, int *seed );
+double *r8vec_normal_01 (const int n, int *seed );
+double *uniform_01 (const int n, int *seed );
 extern long ben_clock();
 
 MALA::MALA(Config *cfg){ // Constructor
@@ -150,7 +150,7 @@ long double MALA::p1_fct(long double x){
 return scalar_p;
 }
 
-MatrixXd MALA::p2_fct(MatrixXd x){
+MatrixXd MALA::p2_fct(const MatrixXd& x){
 
 	MatrixXd matrix_p;
 
@@ -163,7 +163,7 @@ MatrixXd MALA::p2_fct(MatrixXd x){
 	return matrix_p;
 }
 
-VectorXd MALA::p3_fct(VectorXd x){
+VectorXd MALA::p3_fct(const VectorXd& x){
 	VectorXd vector_p;
 	
 	if(x.norm() <=A1){
@@ -188,7 +188,7 @@ return N0 + rand()%Nmax; // srand(seed) is executed by the constructor of the MA
 }
 
 
-void MALA::restore_proposal(const VectorXd vars, Config *cfg){
+void MALA::restore_proposal(const VectorXd& vars, Config *cfg){
 /* 
  * Used to setup the initial values for the proposal law when it is requested
  * to restore the variables (do_restore=1 in the configuration file)
@@ -289,7 +289,7 @@ void MALA::init_proposal(const VectorXd vars, const std::vector<std::string> var
 }
 
 
-void MALA::update_proposal(VectorXd vars, long double acceptance, int m){
+void MALA::update_proposal(const VectorXd& vars, long double acceptance, int m){
 /*
  * This function update the proposal law parameters
 */
@@ -323,7 +323,7 @@ VectorXd MALA::D_MALA(){
 return drift;
 }
 
-long double MALA::multinormal_logpdf(VectorXd deltavars, VectorXd drift1, MatrixXd covmat1){
+long double MALA::multinormal_logpdf(const VectorXd& deltavars, const VectorXd& drift1, const MatrixXd& covmat1){
 /* The function that ensure proper balance.
  * For the moment, this is not implemented so that only the Metropolis algorithm would work
  * For its implementation, check the function of the same name in stat.py
@@ -332,7 +332,7 @@ long double MALA::multinormal_logpdf(VectorXd deltavars, VectorXd drift1, Matrix
 return 0.;
 }
 
-VectorXd MALA::new_prop_values(VectorXd vars, int m){
+VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 /*
  * This function generate new samples according to the current proposal law
 */

@@ -1,3 +1,4 @@
+#pragma once
 #include <math.h>
 #include <Eigen/Dense>
 #include "function_rot.h"
@@ -8,17 +9,17 @@
 using Eigen::VectorXd;
 
 
-VectorXd build_l_mode_a1l_etaa3(const VectorXd x_l, double H_l, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V);
-VectorXd build_l_mode_a1etaa3(const VectorXd x_l, double H_l, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V);
-VectorXd build_l_mode_a1acta3(const VectorXd x_l, double H_l, double fc_l, double f_s, double eta, double a3, double b, double alpha, double asym, double gamma_l, const int l, VectorXd V);
-VectorXd build_l_mode_a1etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l);
-VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l);
+VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l,  const double fc_l,  const double f_s1,  const double f_s2,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l,  const VectorXd& V);
+VectorXd build_l_mode_a1etaa3(const VectorXd& x_l,  const double H_l,  const double fc_l,  const double f_s,  const double eta, const double a3,  const double asym,  const double gamma_l, const int l, const VectorXd& V);
+VectorXd build_l_mode_a1acta3(const VectorXd& x_l,  const double H_l,  const double fc_l,  const double f_s,  const double eta, const double a3,  const double b,  const double alpha,  const double asym, double gamma_l, const int l,  const VectorXd& V);
+VectorXd build_l_mode_a1etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm,  const double fc_l,  const double f_s,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l);
+VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm,  const double fc_l,  const double f_s1,  const double f_s2,  const double eta,  const double a3,  const double asym, double gamma_l, const int l);
 
-VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V, double step, const double c);
-VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V, double step, const double c);
-VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s, double eta, double a3, 
-		double b, double alpha, double asym, double gamma_l, const int l, VectorXd V, double step, const double c);
+VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd& x, const VectorXd& y, const  double H_l, const  double fc_l,  const double f_s1,  const double f_s2,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c);
+VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double f_s,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c);
+VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double f_s,  const double eta,  const double a3, 
+		 const double b,  const double alpha,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c);
 
-VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd x, VectorXd y, VectorXd H_lm, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, double step, const double c);
-VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd x, VectorXd y, VectorXd H_lm, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, double step, const double c);
+VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd& x,  const VectorXd& y,  const VectorXd& H_lm,  const double fc_l,  const double f_s1,  const double f_s2,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l, double step, const double c);
+VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd& x,  const VectorXd& y,  const VectorXd& H_lm,  const double fc_l,  const double f_s,  const double eta,  const double a3,  const double asym,  const double gamma_l, const int l,  const double step, const double c);
 

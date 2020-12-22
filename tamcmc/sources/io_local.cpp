@@ -1157,7 +1157,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 return all_in;
 }
 
-short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd noise_s2, const VectorXd noise_params, const VectorXd freq_range){
+short int set_noise_params_local(Input_Data *Noise_in, const MatrixXd& noise_s2, const VectorXd& noise_params, const VectorXd& freq_range){
 /*
  *
  * A function that prepares the Noise_in Data structure using 

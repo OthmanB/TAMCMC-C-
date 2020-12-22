@@ -12,7 +12,7 @@
 
 using Eigen::VectorXd;
 
-VectorXd build_l_mode_a1l_etaa3(const VectorXd x_l, double H_l, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V){
+VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
     /*
      * This model IS WITHOUT THE ASSUMPTION S11=S22. It includes:
      *      - Asymetry of Lorentzian asym
@@ -58,7 +58,7 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd x_l, double H_l, double fc_l, dou
     return result;
 }
 
-VectorXd build_l_mode_a1etaa3(const VectorXd x_l, double H_l, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V){
+VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
 /*
  * This model includes:
  *      - Asymetry of Lorentzian asym
@@ -101,7 +101,7 @@ VectorXd build_l_mode_a1etaa3(const VectorXd x_l, double H_l, double fc_l, doubl
 return result;
 }
 
-VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l){
+VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, const double fc_l, const double f_s1, const double f_s2, const double eta, const double a3, const double asym, const double gamma_l, const int l){
     /*
      * This model IS WITHOUT THE ASSUMPTION S11=S22. It includes:
      *      - Asymetry of Lorentzian asym
@@ -151,7 +151,7 @@ VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_
     return result;
 }
 
-VectorXd build_l_mode_a1etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l){
+VectorXd build_l_mode_a1etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l){
 /*
  * This model includes:
  *      - Asymetry of Lorentzian asym
@@ -204,7 +204,7 @@ VectorXd build_l_mode_a1etaa3_v2(const VectorXd x_l, VectorXd H_lm, double fc_l,
 return result;
 }
 
-VectorXd build_l_mode_asym_act(const VectorXd x_l, double H_l, double fc_l, double f_s, double eta, double a3, double b, double alpha, double asym, double gamma_l, const int l, VectorXd V){
+VectorXd build_l_mode_asym_act(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, const double b, const double alpha, const double asym, const double gamma_l, const int l, const VectorXd& V){
 /*
  * ---- OBSELETE FUNCTION ----
  * This model includes:
@@ -255,7 +255,7 @@ VectorXd build_l_mode_asym_act(const VectorXd x_l, double H_l, double fc_l, doub
 return result;
 }
 
-VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V, double step, const double c){
+VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
     /*
      function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
      that contains the lorentzian model.
@@ -264,7 +264,8 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd x, VectorXd y, double 
     //const double c=20.;
     double pmin, pmax, f_s;
     long imin, imax;
-    VectorXd m0, x_l;
+    VectorXd m0, x_l, y_out(y.size());
+    y_out=y;;
     //VectorXd mall(x.size());
     switch(l){
         case 0:
@@ -357,12 +358,12 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd x, VectorXd y, double 
     m0=build_l_mode_a1l_etaa3(x_l, H_l, fc_l, f_s1, f_s2, eta, a3, asym, gamma_l, l, V);
     //mall.setZero();
     //mall.segment(imin, imax-imin)=m0;
-    y.segment(imin, imax-imin)= y.segment(imin, imax-imin) + m0;
-    return y;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+    return y_out;
 }
 
 
-VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, VectorXd V, double step, const double c){
+VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
 /*
 	function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
 	that contains the lorentzian model.
@@ -371,7 +372,8 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd x, VectorXd y, double H_
 	//const double c=20.;
 	double pmin, pmax;
 	long imin, imax;
-	VectorXd m0, x_l;
+	VectorXd m0, x_l, y_out(y.size());
+    y_out=y;
 	//VectorXd mall(x.size());
 
 	if(gamma_l >= 1 && f_s >= 1){
@@ -455,11 +457,11 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd x, VectorXd y, double H_
 	m0=build_l_mode_a1etaa3(x_l, H_l, fc_l, f_s, eta, a3, asym, gamma_l, l, V);
 	//mall.setZero();
 	//mall.segment(imin, imax-imin)=m0;
-    	y.segment(imin, imax-imin)= y.segment(imin, imax-imin) + m0;
-return y;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+return y_out;
 }
 
-VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd x, VectorXd y, VectorXd H_lm, double fc_l, double f_s, double eta, double a3, double asym, double gamma_l, const int l, double step, const double c){
+VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd& x, const VectorXd& y, const VectorXd& H_lm, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l, const double step, const double c){
 /*
 	function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
 	that contains the lorentzian model.
@@ -468,7 +470,8 @@ VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd x, VectorXd y, Vector
 	//const double c=20.;
 	double pmin, pmax;
 	long imin, imax;
-	VectorXd m0, x_l;
+	VectorXd m0, x_l, y_out(y.size());
+    y_out=y;
 	//VectorXd mall(x.size());
 
 	if(gamma_l >= 1 && f_s >= 1){
@@ -552,13 +555,13 @@ VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd x, VectorXd y, Vector
 	m0=build_l_mode_a1etaa3_v2(x_l, H_lm, fc_l, f_s, eta, a3, asym, gamma_l, l);
 	//mall.setZero();
 	//mall.segment(imin, imax-imin)=m0;
-    y.segment(imin, imax-imin)= y.segment(imin, imax-imin) + m0;
-return y;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+return y_out;
 }
 
 
-VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd x, VectorXd y, double H_l, double fc_l, double f_s, double eta, double a3, 
-		double b, double alpha, double asym, double gamma_l, const int l, VectorXd V, double step, const double c){
+VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, 
+		const double b, const double alpha, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
 /*
 	function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
 	that contains the lorentzian model.
@@ -568,7 +571,8 @@ VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd x, VectorXd y, double H_
 	//const double c=20.;
 	double pmin, pmax;
 	long imin, imax;
-	VectorXd m0, x_l;
+	VectorXd m0, x_l, y_out(y.size());
+    y_out=y;;
 	//VectorXd mall(x.size());
 
 	if(gamma_l >= 1 && f_s >= 1){
@@ -655,11 +659,11 @@ VectorXd optimum_lorentzian_calc_a1acta3(const VectorXd x, VectorXd y, double H_
 	m0=build_l_mode_asym_act(x_l, H_l, fc_l, f_s, eta, a3, b, alpha, asym, gamma_l, l, V);
 	//mall.setZero();
 	//mall.segment(imin, imax-imin)=m0;
-        y.segment(imin, imax-imin)= y.segment(imin, imax-imin) + m0;
-return y;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+return y_out;
 }
 
-VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd x, VectorXd y, VectorXd H_lm, double fc_l, double f_s1, double f_s2, double eta, double a3, double asym, double gamma_l, const int l, double step, const double c){
+VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd& x, const VectorXd& y, const VectorXd& H_lm, const double fc_l, const double f_s1, const double f_s2, const double eta, const double a3, const double asym, const double gamma_l, const int l, const double step, const double c){
     /*
      function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
      that contains the lorentzian model.
@@ -671,7 +675,8 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd x, VectorXd y, Vect
     //const double c=20.;
     double pmin, pmax, f_s;
     long imin, imax;
-    VectorXd m0, x_l;
+    VectorXd m0, x_l, y_out(y.size());
+    y_out=y;;
     //VectorXd mall(x.size());
     switch(l){
         case 0:
@@ -764,6 +769,6 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd x, VectorXd y, Vect
     m0=build_l_mode_a1l_etaa3_v2(x_l, H_lm, fc_l, f_s1, f_s2, eta, a3, asym, gamma_l, l);
     //mall.setZero();
     //mall.segment(imin, imax-imin)=m0;
-    y.segment(imin, imax-imin)= y.segment(imin, imax-imin) + m0;
-    return y;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+    return y_out;
 }

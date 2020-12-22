@@ -9,20 +9,32 @@ set(Boost_USE_MULTITHREADED TRUE)
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
 option(BUILD_ON_DALMA "Building for NYU DALMA Supercomputer" OFF)
-
+option(BUILD_ON_ZEN2 " Building on AMD Zen2 generation computers " OFF)
 if(NOT BUILD_ON_DALMA)
 	if(CMAKE_COMPILER_IS_GNUCXX)
-		set(CMAKE_CXX_FLAGS "-O3")
+		if(NOT BUILD_ON_ZEN2)		
+			set(CMAKE_CXX_FLAGS "-O3")
+		else()
+			set(CMAKE_CXX_FLAGS "-O3 -march=znver2")
+		endif()
 	endif()
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		set(CMAKE_CXX_FLAGS "-O3")
+		if(NOT WITH_OPENMP)
+			set(CMAKE_CXX_FLAGS "-O3")
+		else()
+			set(CMAKE_CXX_FLAGS "-O3 -fopenmp=libomp")
+		endif()
 	endif()
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-		set(CMAKE_CXX_FLAGS "-O3")
+		if(NOT WITH_OPENMP)
+			set(CMAKE_CXX_FLAGS "-O3")
+		else()
+			set(CMAKE_CXX_FLAGS "-O3 -fopenmp")
+		endif()
 	endif()
 else()
 	message(STATUS "Building for NYU DALMA Supercomputer...")
-	message(WARNING "   - Remember to load the modules required for DALMA before running cmake")
+	message(WARNING "   - Remember to load the modules req	uired for DALMA before running cmake")
 	message(STATUS  "   - Adding optimisation flags for DALMA...")
 	# SSE / AVX switch
 	option(USE_AVX "Build with AVX support" ON)
@@ -59,6 +71,7 @@ set(HEADERS  #_COMMON
     tamcmc/headers/noise_models.h
     tamcmc/headers/string_handler.h
     tamcmc/headers/io_models.h
+    tamcmc/headers/linspace.h
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
@@ -91,6 +104,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/multivariate_cholesky.cpp
     tamcmc/sources/random_JB.cpp
     tamcmc/sources/io_models.cpp
+    tamcmc/sources/linspace.cpp
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
@@ -129,9 +143,23 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/stats_dictionary.cpp
 	tamcmc/sources/derivatives_handler.cpp
 	tamcmc/sources/io_models.cpp
-    external/ARMM/solver_mm.cpp
-    external/ARMM/bump_DP.cpp
-    external/ARMM/linfit.cpp
+	tamcmc/sources/linfit.cpp
+	tamcmc/sources/linspace.cpp
+	external/ARMM/solver_mm.cpp
+	external/ARMM/bump_DP.cpp
+	)
+
+#Define the sources for the testsolver_mm program
+set(SOURCES_TOOLS_TESTSOLVER
+	tools/test_solver.cpp
+	tamcmc/sources/string_handler.cpp
+    	external/ARMM/solver_mm.cpp
+	external/ARMM/bump_DP.cpp
+    	tamcmc/sources/interpol.cpp
+   	tamcmc/sources/derivatives_handler.cpp
+   	external/ARMM/linfit.cpp
+	external/ARMM/linspace.cpp
+	tamcmc/sources/noise_models.cpp
 	)
 	
 # Check and Load dependencies
@@ -166,7 +194,7 @@ include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(tamcmc/headers)
 
 #Dependencies that are not portable (BOOST)
-set(Boost_USE_MULTITHREADED=OFF)
+#set(Boost_USE_MULTITHREADED=OFF)
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
@@ -183,6 +211,9 @@ target_link_libraries(getstats ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTE
 
 add_executable(getmodel ${HEADERS} ${SOURCES_TOOLS_GETMODEL})
 target_link_libraries(getmodel ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+
+add_executable(testsolver_mm ${HEADERS} ${SOURCES_TOOLS_TESTSOLVER})
+target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
 
 
 

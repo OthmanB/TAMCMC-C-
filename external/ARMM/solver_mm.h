@@ -8,10 +8,12 @@
 #include <chrono>
 
 #include "version_solver.h"
-#include "data.h"
+#include "data_solver.h"
+//#include "data.h"
 #include "string_handler.h"
 #include "interpol.h"
-#include "derivatives_handler.h"
+//#include "derivatives_handler.h" // FOR STANDALONE SOLVER ONLY
+#include "../../tamcmc/headers/derivatives_handler.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXi;
@@ -36,6 +38,9 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	const long double nmax, const long double DPl, const long double alpha, const long double q, const long double sigma_p, 
 	const long double fmin, const long double fmax, const long double resol, bool returns_pg_freqs=true, bool verbose=false);
 Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd& nu_l0_in, const int el, const long double delta0l, 
+    const long double DPl, const long double alpha, const long double q, const long double sigma_p, 
+	const long double resol, bool returns_pg_freqs=true, bool verbose=false, const long double freq_min=0, const long double freq_max=1e6);
+Data_eigensols solve_mm_asymptotic_O2from_nupl(const VectorXd& nu_p_all, const int el, const long double delta0l, 
     const long double DPl, const long double alpha, const long double q, const long double sigma_p, 
 	const long double resol, bool returns_pg_freqs=true, bool verbose=false, const long double freq_min=0, const long double freq_max=1e6);
 void test_rgb_solver_mm();

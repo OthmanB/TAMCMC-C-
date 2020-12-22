@@ -11,12 +11,14 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <string>
-#include "data.h" // contains the structure Data
+//#include "data.h" // contains the structure Data
 //#include "string_handler.h"
 #include "io_asymptotic.h"
 #include "io_models.h"
 #include "function_rot.h"
 #include "io_ms_global.h" // We include this only because io_asymptotic will use several of its functions such as read_MCMC_file_MS_Global() and set_width_App2016_params_v2()
+#include "../../external/ARMM/solver_mm.h" // To be able to use some function that generate fl1 modes for examples
+
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
@@ -39,7 +41,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
 
 	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
-	const int Nmixedmodes_params=7; // Number of global parameters used to describe the l=1 mixed modes
+	const int Nmixedmodes_g_params=7; // Number of global parameters used to describe the l=1 mixed modes
 	const double sigma_limit=inputs_MS_global.Dnu/10.;
 
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
@@ -49,11 +51,11 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-	int lmax, en, ind, Ntot, p0, p0_effective, cpt;
+	int lmax, Nmixedmodes_params, en, ind, Ntot, p0, p0_effective, cpt;
 	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd ratios_l, tmpXd, extra_priors;
+	VectorXd ratios_l, tmpXd, extra_priors, fl1p_all;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
@@ -76,7 +78,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2"){
+            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
@@ -205,7 +207,30 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 
 	}
 
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
+		// Generate initial set of l=1		
+		// The initial values at fl0 + Dnu/2 + delta0l = inputs_MS_global.Dnu/100
+		VectorXd fl0(Nf_el[0]); 
+		for (int i=0; i<Nf_el[0] ; i++){
+			fl0[i]=f_inputs[i];
+		}
+		fl1p_all=asympt_nu_p_from_l0_Xd(fl0, inputs_MS_global.Dnu, 1, inputs_MS_global.Dnu/100, fl0.minCoeff() - inputs_MS_global.Dnu/100, fl0.maxCoeff() + inputs_MS_global.Dnu/100);
+		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list
+	} else{
+		Nmixedmodes_params=Nmixedmodes_g_params;
+	}
+
 	int f_size=Nf_el[0] + Nmixedmodes_params + Nf_el[2] + Nf_el[3];
+	/*else{
+			std::cout << " Error in io_asymptotic.cpp: Unrecognized model name... cannot continue" << std::endl;
+			std::cout << " Currently supported model name for asymptotic models:" << std::endl;
+			std::cout << "     - model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" << std::endl;
+			std::cout << "     - model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" << std::endl;
+			std::cout << " The program will exit now" << std::endl;
+			exit(EXIT_FAILURE);
+	}
+	*/
+
 	//io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
 	io_calls.initialise_param(&freq_in, f_size, Nmax_prior_params, -1, -1); 
 	// DEFAULT HEIGHTS
@@ -225,9 +250,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		if ( (i<Nf_el[0]) || (i>=Nf_el[0] + Nf_el[1]) ){ // We put frequencies of the model file only if those are not l=1
 			if(f_relax[i]) {
 				tmpXd << f_priors_min[i], f_priors_max[i], 0.01*inputs_MS_global.Dnu, 0.01*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
-				io_calls.fill_param(&freq_in, "Frequency_l", "GUG", f_inputs[i], tmpXd, cpt, 0);	
+				io_calls.fill_param(&freq_in, "Frequency_RGB_l", "GUG", f_inputs[i], tmpXd, cpt, 0);	
 			} else{
-				io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, cpt, 0);			
+				io_calls.fill_param(&freq_in, "Frequency_RGB_l", "Fix", f_inputs[i], tmpXd, cpt, 0);			
 			}
 			cpt=cpt+1;
 		} else{
@@ -235,7 +260,17 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				cpt=cpt+Nmixedmodes_params;
 			}
 		}
-	}	
+	}
+
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
+		// Add the fl1p modes into the frequency parameters 
+		cpt=Nf_el[0] + Nmixedmodes_g_params;
+		for(int i=0; i<fl1p_all.size();i++){
+			tmpXd << fl1p_all[i] -5.*inputs_MS_global.Dnu/100 , fl1p_all[i] + 5.*inputs_MS_global.Dnu/100, 0.01*inputs_MS_global.Dnu, 0.01*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
+			io_calls.fill_param(&freq_in, "Frequency_RGB_l1p", "GUG",  fl1p_all[i], tmpXd, cpt, 0);
+			cpt=cpt+1;
+		}
+	}
 	// ----------- Calculate numax -----------
 	// Flated the output vector
 	//tmpXd.resize(Nf_el.sum());
@@ -301,11 +336,15 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
     //}
  
 	// -------------- Set Extra_priors ----------------	
-	extra_priors.resize(4);
+	extra_priors.resize(5); 
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
 	extra_priors[2]=0.2; // By default a3/a1<=1
 	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
+	extra_priors[4]=-1; // By default the model switch is not defined
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
+		extra_priors[4]=1;
+	}
 	// ------------------------------------------------
 
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
@@ -317,7 +356,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				extra_priors[0]=inputs_MS_global.modes_common(i,0);
 				extra_priors[1]=inputs_MS_global.modes_common(i,1);
 			}
-		}
+		}	
 		if(inputs_MS_global.common_names[i] == "trunc_c"){
 			if(inputs_MS_global.common_names_priors[i] != "Fix"){
 				fatalerror_msg_io_MS_Global("trunc_c", "Fix", "[Truncation parameter]", "20" );
@@ -325,7 +364,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				trunc_c=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
 			}
 		}	
-
 		// --- Frequencies ---
 		if(inputs_MS_global.common_names[i] == "Frequency" || inputs_MS_global.common_names[i] == "frequency"){ 
 			if(inputs_MS_global.common_names_priors[i] == "GUG" || inputs_MS_global.common_names_priors[i] == "Uniform"){
@@ -356,20 +394,20 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 		}
 		// ---- l=1 mixed modes Global parameters ---
-		if(inputs_MS_global.common_names[i] == "delta01"){
+		if(inputs_MS_global.common_names[i] == "delta01" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){ // Valid parameter only for a specific model
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 //				fatalerror_msg_io_MS_Global("delta01", "Fix_Auto", "", "" );
                 tmpstr="Uniform";
                 tmpXd.resize(4);
-                tmpXd << -5.*inputs_MS_global.Dnu/100, -9999., -9999.;
+                tmpXd << -5.*inputs_MS_global.Dnu/100, 5.*inputs_MS_global.Dnu/100, -9999., -9999.;
                 std::cout << "Fix_Auto requested for delta01..., the prior will be with this syntax (negative delta01):" << std::endl;
-                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-5*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
-                std::cout << "          Initial guess: -Dnu/100" << -inputs_MS_global.Dnu/100 << std::endl;
-                io_calls.fill_param(&freq_in, "delta01", tmpstr, -inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
+                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-5*Deltanu/100]  [+5*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
+                std::cout << "          Initial guess: Dnu/100" << inputs_MS_global.Dnu/100 << std::endl;
+                io_calls.fill_param(&freq_in, "delta01", tmpstr, inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
 			}
 			p0=Nf_el[0];
 			io_calls.fill_param(&freq_in, "delta01", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-		}
+		} 
 		if(inputs_MS_global.common_names[i] == "DP1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("DP1", "Fix_Auto", "", "" );
@@ -391,26 +429,26 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			p0=Nf_el[0]+3;
 			io_calls.fill_param(&freq_in, "q", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_p"){
+		if(inputs_MS_global.common_names[i] == "sigma_Hl1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("sigma_p", "Fix_Auto", "", "" );
+				fatalerror_msg_io_MS_Global("sigma_Hl1", "Fix_Auto", "", "" );
 			}
 			p0=Nf_el[0]+4;
-			io_calls.fill_param(&freq_in, "sigma_p", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			io_calls.fill_param(&freq_in, "sigma_Hl1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_g"){
+		if(inputs_MS_global.common_names[i] == "sigma_fl1g"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("sigma_g", "Fix_Auto", "", "" );
+				fatalerror_msg_io_MS_Global("sigma_fl1g", "Fix_Auto", "", "" );
 			}
 			p0=Nf_el[0]+5;
-			io_calls.fill_param(&freq_in, "sigma_g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			io_calls.fill_param(&freq_in, "sigma_fl1g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_m"){
+		if(inputs_MS_global.common_names[i] == "sigma_fl1m"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("sigma_m", "Fix_Auto", "", "" );
+				fatalerror_msg_io_MS_Global("sigma_fl1m", "Fix_Auto", "", "" );
 			}
 			p0=Nf_el[0]+6;
-			io_calls.fill_param(&freq_in, "sigma_m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		// --- Height or Amplitude ---
 		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 

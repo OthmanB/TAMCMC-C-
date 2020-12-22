@@ -138,7 +138,7 @@ struct Data_Basic{
 // ----------------------------------------
 // ----- For mixed modes calculation ------
 // ----------------------------------------
-struct Data_2vectXd{
+/*struct Data_2vectXd{
 	VectorXd vecXd1;
 	VectorXd vecXd2;		
 };
@@ -215,3 +215,4 @@ struct Params_synthetic_star{
 	VectorXd a1_l2; 
 	VectorXd a1_l3;
 };
+*/

@@ -16,12 +16,14 @@
 #include "priors_calc.h"
 #include "stats_dictionary.h"
 #include "derivatives_handler.h"
+#include "linfit.h"
+#include "linspace.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
-long double priors_MS_Global(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){
+long double priors_MS_Global(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
 
 	long double f=0;
 
@@ -44,6 +46,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3; // Total number of modes
 
 	double Dnu, d02, a1, alfa, b, fmax, Q11, max_b, el, em;
+	VectorXd tmp, fit;
 	Deriv_out frstder, scdder;
 
 	// ----- Add a positivity condition on visibilities ------
@@ -122,9 +125,12 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 	}
 
 	// Determine the large separation
-	frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
-	Dnu=frstder.deriv.sum();
-	
+	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
+	//Dnu=frstder.deriv.sum();
+	tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
+	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
+	Dnu=fit[0];
+
 	// Apply a prior on the d02
 	//std::cout << "--- d02 --" << std::endl;
 	if(Nfl0 == Nfl2){
@@ -176,7 +182,7 @@ long double priors_MS_Global(const VectorXd params, const VectorXi params_length
 return f;
 } 
 
-long double priors_asymptotic(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){
+long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
 	// The priors_asymptotic() function is basically the same as the prior_ms_global() but:
 	//    (1) Need to exclude l=1 from the smoothing
 	//    (2) Replace a3/a1 ratio by a3/rot_env (A slight change for the a3 index because we have Snlm= [rot_env, rot_core, eta, a3, asym] here instead of [a1, eta, a3, asym]
@@ -187,6 +193,9 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	const double scoef=extra_priors[1];
 	const double a3ova1_limit=extra_priors[2];
 	const int impose_normHnlm=extra_priors[3];
+	const int model_switch=extra_priors[4];  // Switch that specify the model that is used... its definition is made inside io_asymptotic.cpp
+
+
 	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
 	
 	const int Nmax=params_length[0]; // Number of Heights
@@ -200,12 +209,15 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
 	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
 	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3; // Total number of modes
+	const int Nmixedmodes_g_params=7; // THIS IS SOMEWHAT PART OF NFL1. BUT WE COUNT HERE ONLY PARAMETERS FOR G MODES: DP, q, alpha, delta01, sigma_Hl1, sigma_fl1g, sigma_fl1m
 
-	int i, i0=params[Nmax+lmax+Nf+Nsplit];
+	int i, i0=Nmax+lmax+Nf+Nsplit;
 
 	double Dnu, d02, rot_env, alfa, b, fmax, Q11, max_b, el, em;
+	double Dnu_l1;
+	VectorXd tmp, fit;
 	Deriv_out frstder, scdder;
-
+	
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
 		if(params[i] < 0){
@@ -243,7 +255,6 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 		f=-INFINITY;
 		goto end;
 	}
-
 	// ------ Add a positiviy condition on Width parameters -----
 	for (i=i0; i<i0 + Nwidth; i++){
 		switch(priors_names_switch[i]){
@@ -255,7 +266,6 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 			break;
 		}
 	}
-
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
 
@@ -288,15 +298,37 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	}
 
 	// Determine the large separation
-	frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
-	Dnu=frstder.deriv.sum();
+	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
+	//Dnu=frstder.deriv.sum();
+
+	tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
+	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
+	Dnu=fit[0];
+	//epsilon=fit[1]/fit[0];
+	//epsilon=epsilon - floor(epsilon);
 	
+	switch(model_switch){ // SPECIFIC HANDLING FOR SOME MODELS
+		case 1: // Case of model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3
+			//std::cout << "fl1p:" << params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).transpose() << std::endl;
+			tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).size()-1, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).size());
+			fit=linfit(tmp, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
+			Dnu_l1=fit[0];
+			f=f+ logP_gaussian(Dnu, 0.0025*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))
+			if(Nfl1-Nmixedmodes_g_params > 3){ // We need suficient number of g modes to apply a smoothness condition
+				scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // The l=0 frequencies
+				for(int i=0; i<Nfl0; i++){
+					f=f+ logP_gaussian(0, 0.01*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
+				}				
+			}	
+ 		break;
+	}
+
 	// Apply a prior on the d02
 	//std::cout << "--- d02 --" << std::endl;
 	if(Nfl0 == Nfl2){
 		for(int i=0; i<Nfl0; i++){
 			d02=params[Nmax+lmax+i] - params[Nmax+lmax+Nfl0+Nfl1+i];
-			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
+			f=f+logP_gaussian_uniform(0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
 	// Set the smootheness condition handled by derivatives_handler.cpp
@@ -310,7 +342,7 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 				for(int i=0; i<Nfl0; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
 				}
-			
+
 				// -- NOT APPLICABLE DUE TO MIXED MODES --
 				//if(Nfl1 != 0){
 				//	scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0, Nfl1)); // The l=1 frequencies
@@ -351,7 +383,7 @@ long double priors_asymptotic(const VectorXd params, const VectorXi params_lengt
 	return f;
 }
 
-long double priors_local(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch, const VectorXd extra_priors){
+long double priors_local(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
 
 	long double f=0;
 
@@ -470,7 +502,7 @@ return f;
 
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Test_Gaussian(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch){
+long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 
 	long double f=0;
 
@@ -485,7 +517,7 @@ return f;
 } 
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Harvey_Gaussian(const VectorXd params, const VectorXi params_length, const MatrixXd priors_params, const VectorXi priors_names_switch){
+long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 
 	long double f=0;
 
@@ -495,7 +527,7 @@ return f;
 } 
 
 
-long double apply_generic_priors(const VectorXd params, const MatrixXd priors_params, const VectorXi priors_names_switch){
+long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 /*
  * This function apply the generic priors, that are defined in the configuration file and that have been translated into
  * The constant priors_params (the parameters that define the priors) and into priors_names_switch (translation of 

@@ -1090,7 +1090,7 @@ return all_in;
 }
 
 
-short int set_noise_params(Input_Data *Noise_in, const MatrixXd noise_s2, const VectorXd noise_params){
+short int set_noise_params(Input_Data *Noise_in, const MatrixXd& noise_s2, const VectorXd& noise_params){
 /*
  *
  * A function that prepares the Noise_in Data structure using 
@@ -1202,7 +1202,7 @@ short int fatalerror_msg_io_MS_Global(const std::string varname, const std::stri
 	return -1;
 }
 
-double getnumax(VectorXd fl, VectorXd Hl){
+double getnumax(const VectorXd& fl, const VectorXd& Hl){
 /*
 * Function that uses Heights and frequencies of modes in order to calculate numax
 * The vector of inputs must be flat
@@ -1292,7 +1292,10 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
  	out[3]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
  	out[4]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
  	out[5]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
- 		
+
+	if(numax < 800){
+		out[3]=out[3]/5;
+ 	}	
  	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
  	/*  OLD PRIORS (CHANGED ON 01/12/2020)
  	priors(0,0)=out[0];
@@ -1321,7 +1324,8 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 
 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
 	// POSITION PARAMETERS WITH GAUSSIAN PRIORS AND INTENSIVE PARAMETERS AS UNIFORM
- 	priors(0,0)=out[0];
+ 	
+        priors(0,0)=out[0];
  	priors(0,1)=out[0]*0.1; // 10% of numax on numax
  	priors(1,0)=out[1];
  	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
@@ -1340,6 +1344,16 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Gaussian", out[4],priors.row(4), 4, 0);
 	io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Uniform", out[5],priors.row(5), 5, 0);
 	
+
+	// --- TEST BY FIXING ---
+        /*
+	io_calls.fill_param(&width_in, "width:Appourchaux_v2:numax", "Fix", out[0],priors.row(0), 0, 0);
+        io_calls.fill_param(&width_in, "width:Appourchaux_v2:nudip", "Fix", out[1],priors.row(1), 1, 0);
+        io_calls.fill_param(&width_in, "width:Appourchaux_v2:alpha", "Fix", out[2],priors.row(2), 2, 0);
+        io_calls.fill_param(&width_in, "width:Appourchaux_v2:Gamma_alpha", "Fix", out[3]/10,priors.row(3), 3, 0);
+        io_calls.fill_param(&width_in, "width:Appourchaux_v2:Wdip", "Fix", out[4],priors.row(4), 4, 0);
+        io_calls.fill_param(&width_in, "width:Appourchaux_v2:DeltaGammadip", "Fix", out[5],priors.row(5), 5, 0);
+	*/
 	//io_calls.show_param(width_in, 0);
 	return width_in;
 }
