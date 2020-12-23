@@ -266,6 +266,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			break;
 		}
 	}
+
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
 
@@ -314,9 +315,9 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			fit=linfit(tmp, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 			Dnu_l1=fit[0];
 			f=f+ logP_gaussian(Dnu, 0.0025*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))
-			if(Nfl1-Nmixedmodes_g_params > 3){ // We need suficient number of g modes to apply a smoothness condition
+			if(Nfl1-Nmixedmodes_g_params >= 3){ // We need suficient number of g modes to apply a smoothness condition
 				scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // The l=0 frequencies
-				for(int i=0; i<Nfl0; i++){
+				for(int i=0; i<scdder.deriv.size(); i++){
 					f=f+ logP_gaussian(0, 0.01*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
 				}				
 			}	
