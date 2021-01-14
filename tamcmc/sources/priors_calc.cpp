@@ -309,29 +309,30 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	//epsilon=epsilon - floor(epsilon);
 	
 	switch(model_switch){ // SPECIFIC HANDLING FOR SOME MODELS
-		case 1: // Case of model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3
+		case 1: // Case of model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 or model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3
 			//std::cout << "fl1p:" << params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).transpose() << std::endl;
 			tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).size()-1, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params).size());
 			fit=linfit(tmp, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 			Dnu_l1=fit[0];
-			f=f+ logP_gaussian(Dnu, 0.0025*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))
+			f=f+ logP_gaussian(Dnu, 0.003*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))
 			if(Nfl1-Nmixedmodes_g_params >= 3){ // We need suficient number of g modes to apply a smoothness condition
 				scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // The l=0 frequencies
 				for(int i=0; i<scdder.deriv.size(); i++){
-					f=f+ logP_gaussian(0, 0.01*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
+					f=f+ logP_gaussian(0, 0.02*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
 				}				
 			}	
  		break;
 	}
 
-	// Apply a prior on the d02
+	// Apply a prior on the d02 : NOTE CANNOT DUE TO POTENTIAL l=2 MIXED MODES
 	//std::cout << "--- d02 --" << std::endl;
-	if(Nfl0 == Nfl2){
+	/*if(Nfl0 == Nfl2){
 		for(int i=0; i<Nfl0; i++){
 			d02=params[Nmax+lmax+i] - params[Nmax+lmax+Nfl0+Nfl1+i];
 			f=f+logP_gaussian_uniform(0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
+	*/
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(priors_names_switch[i]){
 			case 1: // Case with smoothness
@@ -353,15 +354,17 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 				//	f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
 				//}
 	
-				if(Nfl2 != 0){
+				/* NOTE: CANNOT DUE POTENTIAL l=2 MIXED MODES... MAY NEED A SMARTER SWITCH
+ 				if(Nfl2 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nfl1, Nfl2)); // The l=2 frequencies
 				}
+				
 				//std::cout << "--- Fl2 --" << std::endl;
 				for(int i=0; i<Nfl2; i++){
 					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
 	
 				}
-	
+				*/
 				if(Nfl3 != 0){
 					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nfl1+Nfl2, Nfl3)); // The l=3 frequencies
 				}

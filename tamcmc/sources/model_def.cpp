@@ -264,8 +264,11 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
  		case 15: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
 				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
 			break;
-		case 16: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
+		case 16: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
 				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
+			break;
+		case 17: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
+				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
 			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
@@ -283,6 +286,8 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'model_MS_Global_a1etaa3_Harvey1985'" << std::endl;
 		  
           std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
+		  std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'" << std::endl;
+		  std::cout << "    - 'model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'" << std::endl;
 		  
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;

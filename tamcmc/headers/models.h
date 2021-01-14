@@ -32,7 +32,7 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
 
 VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x); 
 VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x); 
-
+VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x);
 
 bool debug(const VectorXd& model, const long double Hl, const long double fl, const long double a1, const long double eta, const long double a3,
                const long double asym, const long double Wl, const long double el, const long double step, const double inclination, const VectorXd& ratios,

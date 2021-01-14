@@ -1,5 +1,17 @@
 # Version history #
 
+### v1.57-dev New model ###
+  * Adding a model with free widths for asymptotic mixed modes fitting (model model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3)
+  * Adding the parallelised version of ARMM (with 4 threads)
+
+### v1.56-dev Minor improvments ###
+  * Change of the sigma for the gaussian smoothness condition for fl1p modes for asymptotic models
+  * Adjustments of default_errors.cfg for asymtptotic models
+  * Enlargement of the range for the fl1p modes in asymptotic models
+  * Impose abs() when generating initial guesses for the Width using Appourchaux relation in asymptotic models
+  * Removal of the smoothness condition for the l=2 in asymptotic models
+  * Removal of the d02 prior in asymptotic models
+
 ### v1.55-dev New models and improvments ###
 	* Bug Fix:Fix bug when initializing delta0l with fix_auto [DONE]
 	* Adding : sigma_Hl1 (replaces sigma_p) [DONE]

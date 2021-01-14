@@ -1286,12 +1286,12 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
  	priors.setConstant(-9999); // Set the default value for priors
  	
  	// Input values
- 	out[0]=numax; // numax
- 	out[1]=numax; // nudip
- 	out[2]=4./2150.*numax + (1. - 1000.*4./2150.); // alpha
- 	out[3]=0.8/2150.*numax + (4.5 - 1000.*0.8/2150.); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
- 	out[4]=3400./2150.*numax + (1000. - 1000.*3400./2150.); // Wdip
- 	out[5]=2.8/2200.*numax + (1. - 2.8/2200. * 1.); //DeltaGammadip
+ 	out[0]=std::abs(numax); // numax
+ 	out[1]=std::abs(numax); // nudip
+ 	out[2]=std::abs(4./2150.*numax + (1. - 1000.*4./2150.)); // alpha
+ 	out[3]=std::abs(0.8/2150.*numax + (4.5 - 1000.*0.8/2150.)); // Gamma_alpha. Linear for a1.nu + a0... using graphical reading of App2016
+ 	out[4]=std::abs(3400./2150.*numax + (1000. - 1000.*3400./2150.)); // Wdip
+ 	out[5]=std::abs(2.8/2200.*numax + (1. - 2.8/2200. * 1.)); //DeltaGammadip
 
 	if(numax < 800){
 		out[3]=out[3]/5;
@@ -1325,7 +1325,7 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
 	// POSITION PARAMETERS WITH GAUSSIAN PRIORS AND INTENSIVE PARAMETERS AS UNIFORM
  	
-        priors(0,0)=out[0];
+    priors(0,0)=out[0];
  	priors(0,1)=out[0]*0.1; // 10% of numax on numax
  	priors(1,0)=out[1];
  	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
