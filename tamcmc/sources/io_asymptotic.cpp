@@ -281,7 +281,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		// Add the fl1p modes into the frequency parameters 
 		cpt=Nf_el[0] + Nmixedmodes_g_params;
 		for(int i=0; i<fl1p_all.size();i++){
-			tmpXd << fl1p_all[i] -5.*inputs_MS_global.Dnu/100 , fl1p_all[i] + 5.*inputs_MS_global.Dnu/100, 0.005*inputs_MS_global.Dnu, 0.005*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
+			tmpXd << fl1p_all[i] -10.*inputs_MS_global.Dnu/100 , fl1p_all[i] + 10.*inputs_MS_global.Dnu/100, 0.005*inputs_MS_global.Dnu, 0.005*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
 			io_calls.fill_param(&freq_in, "Frequency_RGB_l1p", "GUG",  fl1p_all[i], tmpXd, cpt, 0);
 			cpt=cpt+1;
 		}
