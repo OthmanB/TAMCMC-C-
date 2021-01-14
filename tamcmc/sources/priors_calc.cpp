@@ -318,7 +318,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			if(Nfl1-Nmixedmodes_g_params >= 3){ // We need suficient number of g modes to apply a smoothness condition
 				scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params, Nfl1-Nmixedmodes_g_params)); // The l=0 frequencies
 				for(int i=0; i<scdder.deriv.size(); i++){
-					f=f+ logP_gaussian(0, 0.02*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
+					f=f+ logP_gaussian(0, 0.05*Dnu,scdder.deriv[i]); // Penalize the value to enforce the smoothness
 				}				
 			}	
  		break;
