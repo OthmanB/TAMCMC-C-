@@ -1,5 +1,23 @@
 # Version history #
 
+### v1.6-dev Improvments ###
+  * New models:
+  	* Adding core functions in build_lorentzian.cpp to handle a2 coefficient (see Gizon,2002, https://www2.mps.mpg.de/homes/gizon/PAPERS/an_323_251.pdf) 
+    Need to add a2 as a polynomial of O1 to handle a2=cte or a2=linear(nu) or a2=quadratic(nu) for a1l fit and a1 fits (replaces eta parameter)
+  	* Add model in models.cpp that handle a2 for MS stars in the case of a1 is constant 
+  	* Update io_ms_global.cpp to initialise properly model parameters for the new models
+  	* Update priors_calc.cpp to handle a2 priors
+  	* update models_list.ctrl 
+  	* update model_def.cpp in the switch cases
+  	* update the default_errors.cfg
+
+  * Bug fixes:
+  	- Update of the CMakeList.txt with some (missing) -fopenmp option (guarantees omp is used whenever possible)
+    - Removed the 4 threads hard-coded for the ARMM solver and explicitly impose num_threads = Nchains in MALA.cpp to paralelise the Tempered chains. It worked better like this
+    - a3/a1 and a2/a1 limits where systematically wrongly set: priors_calc.cpp was set such that a1 was extracted from the slot of only classic models. A new extra_priors[5] switch allows to mitigate the issue
+  * Prospect for subversions:
+  	- Extend testing and implementation of the a2 to a1l, a1nl and a1n MS models. Currently models.cpp do have those, but priors_calc, model_def and io_ms_global.cpp are incomplete and force the stop of the program if one tries to use them
+
 ### v1.57-dev New model ###
   * Adding a model with free widths for asymptotic mixed modes fitting (model model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3)
   * Adding the parallelised version of ARMM (with 4 threads)

@@ -270,6 +270,15 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		case 17: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
 				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
 			break;
+		case 18:
+			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			break;
+		case 19:
+			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			break;
+		case 20:
+			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -278,7 +287,6 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
 		  
-
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
@@ -293,6 +301,10 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
           std::cout << "    - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;
           
+		  std::cout << "    - model_MS_Global_a1n_a2a3_HarveyLike" << std::endl;
+		  std::cout << "    - model_MS_Global_a1nl_a2a3_HarveyLike" << std::endl;
+		  std::cout << "    - model_MS_Global_a1a2a3_HarveyLike" << std::endl;
+
           std::cout << "    - 'model_MS_local_basic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);

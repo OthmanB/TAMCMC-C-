@@ -58,6 +58,56 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
     return result;
 }
 
+VectorXd build_l_mode_a1l_a2a3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
+    /*
+     * This model IS WITHOUT THE ASSUMPTION S11=S22. It includes:
+     *      - Asymetry of Lorentzian asym
+     *      - splitting a1(l=1) and a1(l=2). ASSUMES a1(l=3) =  (a1(1) + a1(2))/2.
+     *      - an Asphericity parameter eta
+     *      - latitudinal effect a3(l=2) only. We consider a3(l=3)=0
+     */
+    const long Nxl=x_l.size();
+    VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
+    double Qlm, clm, f_s, a2_terms;
+    
+    result.setZero();
+    for(int m=-l; m<=l; m++){
+        if(l != 0){
+            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            if(l == 1){
+                clm=0; // a3=0 for l=1 BY DEFINITION
+                f_s=f_s1;
+                a2_terms=(3*m*m - 2)*a2;  // From Takashi note and Pnl decomposition: c2(n,l) = [3m*m - l(l+1)] / (2l-1)
+            }
+            if(l == 2){
+                clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
+                f_s=f_s2;
+                a2_terms=(m*m -2)*a2;
+            }
+            if(l == 3){
+                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                f_s=(f_s1 + f_s2)/2.; // APPROXIMATION
+                a2_terms=(3*m*m - 12)*a2/5;
+            }
+            //profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
+            profile=(x_l - tmp.setConstant(fc_l + m*f_s + a2_terms + clm*a3)).array().square(); // a1=f_s , a2 and a3 coefficients
+            profile=4*profile/pow(gamma_l,2);
+        } else{
+            profile=(x_l - tmp.setConstant(fc_l)).array().square();
+            profile=4*profile/pow(gamma_l,2);
+        }
+        if(asym == 0){ //Model with no asymetry
+            result=result+ H_l*V(m+l)* ((tmp.setConstant(1) + profile)).cwiseInverse();
+        } else{
+            tmp.setConstant(1);
+            asymetry=(tmp + asym*(x_l/fc_l - tmp)).array().square() + (tmp2.setConstant(0.5*gamma_l*asym/fc_l)).array().square();
+            result=result+ H_l*V(m+l)*asymetry.cwiseProduct(((tmp.setConstant(1) + profile)).cwiseInverse());
+        }
+    }
+    
+    return result;
+}
+
 VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
 /*
  * This model includes:
@@ -100,6 +150,53 @@ VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const doubl
 
 return result;
 }
+
+VectorXd build_l_mode_a1a2a3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
+/*
+ * This model includes:
+ *      - Asymetry of Lorentzian asym
+ *      - splitting a1
+ *      - an Asphericity parameter eta
+ *      - latitudinal effect a3
+*/
+    const long Nxl=x_l.size();
+    VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
+    double Qlm, clm, a2_terms;
+
+    result.setZero();
+    for(int m=-l; m<=l; m++){
+        if(l != 0){
+            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            if(l == 1){
+                clm=m; // a3 for l=1
+                a2_terms=(3*m*m - 2)*a2;  // From Takashi note and Pnl decomposition: c2(n,l) = [3m*m - l(l+1)] / (2l-1)
+            }
+            if(l == 2){
+                clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
+                a2_terms=(m*m -2)*a2;
+            }
+            if(l == 3){
+                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                a2_terms=(3*m*m - 12)*a2/5;
+            }
+            profile=(x_l - tmp.setConstant(fc_l + m*f_s + a2_terms + clm*a3)).array().square();
+            profile=4*profile/pow(gamma_l,2);
+        } else{
+            profile=(x_l - tmp.setConstant(fc_l)).array().square();
+            profile=4*profile/pow(gamma_l,2);
+        }
+        if(asym == 0){ //Model with no asymetry
+            result=result+ H_l*V(m+l)* ((tmp.setConstant(1) + profile)).cwiseInverse();
+        } else{
+            tmp.setConstant(1);
+            asymetry=(tmp + asym*(x_l/fc_l - tmp)).array().square() + (tmp2.setConstant(0.5*gamma_l*asym/fc_l)).array().square();
+            result=result+ H_l*V(m+l)*asymetry.cwiseProduct(((tmp.setConstant(1) + profile)).cwiseInverse());
+        }
+    }
+
+return result;
+}
+
 
 VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, const double fc_l, const double f_s1, const double f_s2, const double eta, const double a3, const double asym, const double gamma_l, const int l){
     /*
@@ -363,6 +460,114 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd& x, const VectorXd& y,
 }
 
 
+VectorXd optimum_lorentzian_calc_a1l_a2a3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
+    /*
+     function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
+     that contains the lorentzian model.
+    BEWARE: USES build_l_mode_a1a2a3() ==> LINEAR DEPENDENCE OF Asphericity IN NU IS NOT ACCOUNTED FOR... THIS DEPENDENCE MAY BE IMPLEMENTED AT HIGHER LEVEL when calling this function
+     */
+    //const double c=20.;
+    double pmin, pmax, f_s;
+    long imin, imax;
+    VectorXd m0, x_l, y_out(y.size());
+    y_out=y;;
+    //VectorXd mall(x.size());
+    switch(l){
+        case 0:
+            f_s=0.;
+        case 1:
+            f_s=f_s1;
+        case 2:
+            f_s=f_s2;
+        case 3:
+            f_s=(f_s1 + f_s2)/2.;
+    }
+    if(gamma_l >= 1 && f_s >= 1){
+        if(l != 0){
+            pmin=fc_l - c*(l*f_s + gamma_l);
+            pmax=fc_l + c*(l*f_s + gamma_l);
+        } else{
+            pmin=fc_l - c*gamma_l*2.2;
+            pmax=fc_l + c*gamma_l*2.2;
+        }
+    }
+    if(gamma_l <= 1 && f_s >= 1){
+        if(l !=0){
+            pmin=fc_l -c*(l*f_s + 1);
+            pmax=fc_l + c*(l*f_s + 1);
+        } else{
+            pmin=fc_l - c*2.2;
+            pmax=fc_l + c*2.2;
+        }
+    }
+    if(gamma_l >= 1 && f_s <= 1){
+        if(l != 0){
+            pmin=fc_l - c*(l + gamma_l);
+            pmax=fc_l + c*(l + gamma_l);
+        } else{
+            pmin=fc_l - c*2.2*gamma_l;
+            pmax=fc_l + c*2.2*gamma_l;
+        }
+    }
+    if(gamma_l <= 1 && f_s <= 1){
+        if(l !=0){
+            pmin=fc_l - c*(l+1);
+            pmax=fc_l + c*(l+1);
+        } else{
+            pmin=fc_l -c*2.2;
+            pmax=fc_l +c*2.2;
+        }
+    }
+    // ---------- Handling boundaries ----------
+    //     case when the proposed values lead to (pmax - step) < min(x)....
+    if( (pmax - step) < x.head(1)(0)){
+        pmax=x.head(1)(0) +c;  // bundary = first value of x plus c
+    }
+    //     case when the proposed values lead to (pmin + step) >= max(x)...
+    if( (pmin + step) >= x.tail(1)(0)){
+        pmin=x.tail(1)(0) - c; // bundary = last value of x minus c
+    }
+    
+    imin=floor((pmin-x.head(1)(0))/step); // Here it is assumed that there is a regular grid WITHOUT WHOLES (CANNOT USE a .FILT file)
+    imax=ceil((pmax-x.head(1)(0))/step);
+    
+    if(imin < 0){imin=0;} // ensure that we always stay within the vector x
+    if(imax > x.size()){imax=x.size();} // ensure that we always stay within the vector x
+    if(imax-imin <= 0){
+        std::cout << "Warning imax -imin <= 0 : imin=" << imin << "   imax=" << imax << std::endl;
+        std::cout << " - pmin=" << pmin << "   pmax=" << pmax << std::endl;
+        std::cout << " - step=" << step << std::endl;
+        std::cout << " --------" << std::endl;
+        std::cout << " - l=" << l << std::endl;
+        std::cout << " - fc_l=" << fc_l << std::endl;
+        std::cout << " - H_l=" << H_l << std::endl;
+        std::cout << " - gamma_l=" << gamma_l << std::endl;
+        std::cout << " - f_s=" << f_s << std::endl;
+        std::cout << " - a2=" << a2 << std::endl;
+        std::cout << " - a3=" << a3 << std::endl;
+        std::cout << " - asym=" << asym << std::endl;
+        std::cout << " --------" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
+    //std::cout << "xmin=" << x.head(1) << "(microHz)" << std::endl;
+    //std::cout << "xmax=" << x.tail(1) << "(microHz)" << std::endl;
+    
+    //std::cout << "step=" << step << std::endl;
+    //std::cout << "pmin=" << pmin << "(microHz)  pmax=" << pmax << "(microHz)" << std::endl;
+    //std::cout << "imin=" << imin << "  imax=" << imax << std::endl;
+    //std::cin.ignore();
+    
+    x_l=x.segment(imin, imax-imin);
+    
+    m0=build_l_mode_a1l_a2a3(x_l, H_l, fc_l, f_s1, f_s2, a2, a3, asym, gamma_l, l, V);
+    //mall.setZero();
+    //mall.segment(imin, imax-imin)=m0;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+    return y_out;
+}
+
+
 VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
 /*
 	function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
@@ -457,6 +662,105 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, c
 	m0=build_l_mode_a1etaa3(x_l, H_l, fc_l, f_s, eta, a3, asym, gamma_l, l, V);
 	//mall.setZero();
 	//mall.segment(imin, imax-imin)=m0;
+    y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
+return y_out;
+}
+
+
+VectorXd optimum_lorentzian_calc_a1a2a3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
+/*
+    function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
+    that contains the lorentzian model.
+    BEWARE: USES build_l_mode_a1a2a3() ==> LINEAR DEPENDENCE OF Asphericity IN NU IS NOT ACCOUNTED FOR... THIS DEPENDENCE MAY BE IMPLEMENTED AT HIGHER LEVEL when calling this function
+*/
+    //const double c=20.;
+    double pmin, pmax;
+    long imin, imax;
+    VectorXd m0, x_l, y_out(y.size());
+    y_out=y;
+    //VectorXd mall(x.size());
+
+    if(gamma_l >= 1 && f_s >= 1){
+        if(l != 0){
+            pmin=fc_l - c*(l*f_s + gamma_l);
+            pmax=fc_l + c*(l*f_s + gamma_l);
+        } else{
+            pmin=fc_l - c*gamma_l*2.2;
+            pmax=fc_l + c*gamma_l*2.2;
+        }
+    }
+    if(gamma_l <= 1 && f_s >= 1){
+        if(l !=0){
+            pmin=fc_l -c*(l*f_s + 1);
+            pmax=fc_l + c*(l*f_s + 1);
+        } else{
+            pmin=fc_l - c*2.2;
+            pmax=fc_l + c*2.2;
+        }
+    }
+    if(gamma_l >= 1 && f_s <= 1){
+        if(l != 0){
+            pmin=fc_l - c*(l + gamma_l);
+            pmax=fc_l + c*(l + gamma_l);
+        } else{
+            pmin=fc_l - c*2.2*gamma_l;
+            pmax=fc_l + c*2.2*gamma_l;
+        }
+    }
+    if(gamma_l <= 1 && f_s <= 1){
+        if(l !=0){
+            pmin=fc_l - c*(l+1);
+            pmax=fc_l + c*(l+1);
+        } else{
+            pmin=fc_l -c*2.2;
+            pmax=fc_l +c*2.2;
+        }
+    }
+    // ---------- Handling boundaries ----------
+    //     case when the proposed values lead to (pmax - step) < min(x)....
+    if( (pmax - step) < x.head(1)(0)){ 
+        pmax=x.head(1)(0) +c;  // bundary = first value of x plus c
+    }
+    //     case when the proposed values lead to (pmin + step) >= max(x)...
+    if( (pmin + step) >= x.tail(1)(0)){
+        pmin=x.tail(1)(0) - c; // bundary = last value of x minus c
+    }
+
+    imin=floor((pmin-x.head(1)(0))/step); // Here it is assumed that there is a regular grid WITHOUT WHOLES (CANNOT USE a .FILT file)
+    imax=ceil((pmax-x.head(1)(0))/step);
+
+    if(imin < 0){imin=0;} // ensure that we always stay within the vector x
+    if(imax > x.size()){imax=x.size();} // ensure that we always stay within the vector x
+    if(imax-imin <= 0){
+        std::cout << "Warning imax -imin <= 0 : imin=" << imin << "   imax=" << imax << std::endl;
+        std::cout << " - pmin=" << pmin << "   pmax=" << pmax << std::endl;
+        std::cout << " - step=" << step << std::endl;
+        std::cout << " --------" << std::endl;
+        std::cout << " - l=" << l << std::endl;
+        std::cout << " - fc_l=" << fc_l << std::endl;
+        std::cout << " - H_l=" << H_l << std::endl;
+        std::cout << " - gamma_l=" << gamma_l << std::endl;
+        std::cout << " - f_s=" << f_s << std::endl;
+        std::cout << " - a2=" << a2 << std::endl;
+        std::cout << " - a3=" << a3 << std::endl;
+        std::cout << " - asym=" << asym << std::endl;
+        std::cout << " --------" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
+    //std::cout << "xmin=" << x.head(1) << "(microHz)" << std::endl;
+    //std::cout << "xmax=" << x.tail(1) << "(microHz)" << std::endl;
+    
+    //std::cout << "step=" << step << std::endl;
+    //std::cout << "pmin=" << pmin << "(microHz)  pmax=" << pmax << "(microHz)" << std::endl;
+    //std::cout << "imin=" << imin << "  imax=" << imax << std::endl;
+    //std::cin.ignore();
+
+    x_l=x.segment(imin, imax-imin);
+ 
+    m0=build_l_mode_a1a2a3(x_l, H_l, fc_l, f_s, a2, a3, asym, gamma_l, l, V);
+    //mall.setZero();
+    //mall.segment(imin, imax-imin)=m0;
     y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
 return y_out;
 }

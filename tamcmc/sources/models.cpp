@@ -325,8 +325,173 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
     return model_final;
 }
 
+VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+    /* Model of the power spectrum of a Main sequence solar-like star
+     * param is a vector of parameters
+     * param_length defines the structure of the parameters
+     * x is the frequency assumed to be in microHz
+     * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax.
+     *          Size MUST be 0 otherwise (this check is not made in this function)
+     */
+    
+    const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
+    const long double pi = 3.141592653589793238462643383279502884L;
+        
+    const int Nmax=params_length[0]; // Number of Heights
+    const int lmax=params_length[1]; // number of degree - 1
+    const int Nfl0=params_length[2]; // number of l=0 frequencies
+    const int Nfl1=params_length[3]; // number of l=1 frequencies
+    const int Nfl2=params_length[4]; // number of l=2 frequencies
+    const int Nfl3=params_length[5]; // number of l=3 frequencies
+    const int Nsplit=params_length[6]; // number of splitting parameters. Should be Nmax+6 for a ALL global MS model (<a1>0=0,eta,a3, magb, magalfa, asym, a1(n))
+    const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+    const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+    const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
 
-VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+    const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
+    
+    const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
+
+    double inclination, trunc_c;
+    
+    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
+    VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
+    
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a11, a12, a2_terms(3); //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a2, a3, asym, a1_l1, a1_l2;
+    
+    int Nharvey;
+    long cpt;
+    
+    //std::ofstream file_out;
+    
+    /*
+     -------------------------------------------------------
+     ------- Gathering information about the modes ---------
+     -------------------------------------------------------
+     */
+    trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
+    inclination=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise];
+
+   
+    // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
+    ratios_l0.setOnes();
+    if(lmax >=1){
+        Vl1=std::abs(params[Nmax]);
+        ratios_l1=amplitude_ratio(1, inclination);
+        //std::cout << "Vl1 " << Vl1 << std::endl;
+    }
+    if(lmax >=2){
+        Vl2=std::abs(params[Nmax+1]);
+        ratios_l2=amplitude_ratio(2, inclination);
+        //std::cout << "Vl2 " << Vl2 << std::endl;
+        
+    }
+    if(lmax >=3){
+        Vl3=std::abs(params[Nmax+2]);
+        ratios_l3=amplitude_ratio(3, inclination);
+    }
+    
+    fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
+    Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+    
+    a11=params.segment(Nmax + lmax + Nf + 6, Nmax);
+    a12=a11;
+    a2_terms=params.segment(Nmax + lmax + Nf + 6 + Nmax, Nmax); 
+    a3=params[Nmax + lmax + Nf + 2];
+    asym=params[Nmax+lmax + Nf + 5];
+    
+    model_final.setZero();
+    
+    //std::cout << "model_MS_Global_a1n_etaa3_HarveyLike" << std::endl;
+    //std::cout << "a11=" << a11.transpose() << std::endl;
+    //std::cout << "a12=" << a12.transpose() << std::endl;
+    /* -------------------------------------------------------
+     --------- Computing the models for the modes  ---------
+     -------------------------------------------------------
+     */
+    cpt=0;
+    for(long n=0; n<Nmax; n++){
+        
+        fl0=fl0_all[n];
+        Wl0=std::abs(Wl0_all[n]);
+        if(do_amp){
+            Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
+            //std::cout << "[0] do conversion" << std::endl;
+        } else{
+            Hl0=std::abs(params[n]);
+        }       
+        a1_l1=std::abs(a11[n]);
+        a1_l2=std::abs(a12[n]);
+        a2=0;
+        model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl0, fl0, a1_l1, a1_l2, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+
+        if(lmax >=1){
+            fl1=params[Nmax+lmax+Nfl0+n];
+            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+            if(do_amp){
+                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+                //std::cout << "[1] do conversion" << std::endl;
+            } else{
+                Hl1=std::abs(params[n]*Vl1);
+            }
+            //a2=a2_terms[0] + a2_terms[1]*fl1;
+            model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl1, fl1, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        }
+        if(lmax >=2){
+            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+            if(do_amp){
+                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
+                //std::cout << "[2] do conversion" << std::endl;
+            } else{
+                Hl2=std::abs(params[n]*Vl2);
+            }  
+            //a2=a2_terms[0] + a2_terms[1]*fl2;
+            model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl2, fl2, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        }
+        //std::cout << "lmax=" << lmax << std::endl;
+        if(lmax >=3){
+            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+            if(do_amp){
+                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+            } else{
+                Hl3=std::abs(params[n]*Vl3);            
+            }      
+            //a2=a2_terms[0] + a2_terms[1]*fl3; 
+            model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl3, fl3, a1_l1, a1_l2, a2_terms[n], a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        }
+    }
+    //std::cin.ignore();
+    
+    /* -------------------------------------------------------
+     ------- Gathering information about the noise ---------
+     -------------------------------------------------------
+     */
+    //std::cout << "Before computing noise model" << std::endl;
+    noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
+    Nharvey=(Nnoise-1)/3;
+    //std::cout << "Nharvey = " << Nharvey << std::endl;
+    
+    /* -------------------------------------------------------
+     ---------- Computing the mode of the noise ------------
+     -------------------------------------------------------
+     */
+    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+
+    std::cout << "    model_MS_Global_a1n_a2a3_HarveyLike() not tested yet" << std::endl;
+    std::cout << "    Note also that the fact the we use a2_terms[n] for all l could be problematic because we approximate the nu ~ n  while it is nu ~ (n,l)" << std::endl;
+    std::cout << "    An alternative is that the parameters are a2 at nu(l=0) (or any other reference frequency set of length Nmax" << std::endl;
+    std::cout << "    The program will exit now" << std::endl;
+    exit(EXIT_SUCCESS);
+     
+    return model_final;
+}
+
+
+VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -352,6 +517,327 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
     
     const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
 	const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
+    
+    double inclination, trunc_c;
+    
+    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
+    VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
+    
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a2_terms(lmax*3); //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3,a2,a3, asym, a11, a12;
+    
+    int Nharvey;
+    long cpt;
+    
+    //std::ofstream file_out;
+ 
+    /*
+     -------------------------------------------------------
+     ------- Gathering information about the modes ---------
+     -------------------------------------------------------
+     */
+    trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
+    inclination=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise];
+  
+  
+    // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
+    ratios_l0.setOnes();
+    if(lmax >=1){
+        Vl1=std::abs(params[Nmax]);
+        ratios_l1=amplitude_ratio(1, inclination);
+        //std::cout << "Vl1 " << Vl1 << std::endl;
+    }
+    if(lmax >=2){
+        Vl2=std::abs(params[Nmax+1]);
+        ratios_l2=amplitude_ratio(2, inclination);
+        //std::cout << "Vl2 " << Vl2 << std::endl;
+        
+    }
+    if(lmax >=3){
+        Vl3=std::abs(params[Nmax+2]);
+        ratios_l3=amplitude_ratio(3, inclination);
+    }
+    
+    fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
+    Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+    
+    a11=std::abs(params[Nmax + lmax + Nf]);
+    a12=std::abs(params[Nmax + lmax + Nf+6]);
+    a2_terms=params.segment(Nmax + lmax + Nf + 7, lmax*3 ); // 3 parameters for each l... one constant term, one linear and one quadratic
+    a3=params[Nmax + lmax + Nf + 2];
+    
+    asym=params[Nmax+lmax + Nf + 5];
+ 
+    model_final.setZero();
+    
+    //std::cout << "model_MS_Global_a1nl_etaa3_HarveyLike" << std::endl;
+    //std::cout << "a11=" << a11.transpose() << std::endl;
+    //std::cout << "a12=" << a12.transpose() << std::endl;
+    /* -------------------------------------------------------
+     --------- Computing the models for the modes  ---------
+     -------------------------------------------------------
+     */
+    cpt=0;
+    for(long n=0; n<Nmax; n++){
+        
+		fl0=fl0_all[n];
+		Wl0=std::abs(Wl0_all[n]);
+		if(do_amp){
+			Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
+			//std::cout << "[0] do conversion" << std::endl;
+		} else{
+			Hl0=std::abs(params[n]);
+		}				
+        model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        
+        if(lmax >=1){
+			fl1=params[Nmax+lmax+Nfl0+n];
+			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+			if(do_amp){
+				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+				//std::cout << "[1] do conversion" << std::endl;
+			} else{
+				Hl1=std::abs(params[n]*Vl1);
+			}	
+            a2=a2_terms[0] + a2_terms[1]*fl1 + a2_terms[2]*fl1*fl1;			
+            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a11, a12, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        }
+        if(lmax >=2){
+			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+			if(do_amp){
+				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
+				//std::cout << "[2] do conversion" << std::endl;
+			} else{
+				Hl2=std::abs(params[n]*Vl2);
+			}
+            a2=a2_terms[0] + a2_terms[1]*fl2 + a2_terms[2]*fl2*fl2; 	
+            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a11, a12, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        }
+        if(lmax >=3){
+ 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+			if(do_amp){
+				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+			} else{
+				Hl3=std::abs(params[n]*Vl3);			
+			}		
+           a2=a2_terms[0] + a2_terms[1]*fl3 + a2_terms[2]*fl3*fl3;  
+           model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a11, a12, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        }
+    }
+    //std::cin.ignore();
+    
+    /* -------------------------------------------------------
+     ------- Gathering information about the noise ---------
+     -------------------------------------------------------
+     */
+    //std::cout << "Before computing noise model" << std::endl;
+    noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
+    Nharvey=(Nnoise-1)/3;
+    //std::cout << "Nharvey = " << Nharvey << std::endl;
+    
+    /* -------------------------------------------------------
+     ---------- Computing the mode of the noise ------------
+     -------------------------------------------------------
+     */
+    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+ 
+    std::cout << "    model_MS_Global_a1l_a2a3_HarveyLike() not tested yet" << std::endl;
+    std::cout << "    The program will exit now" << std::endl;
+    exit(EXIT_SUCCESS);
+   
+    return model_final;
+}
+
+VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+    /* Model of the power spectrum of a Main sequence solar-like star
+     * param is a vector of parameters
+     * param_length defines the structure of the parameters
+     * x is the frequency assumed to be in microHz
+     * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax.
+     *          Size MUST be 0 otherwise (this check is not made in this function)
+     */
+    
+    const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
+    const long double pi = 3.141592653589793238462643383279502884L;
+        
+    const int Nmax=params_length[0]; // Number of Heights
+    const int lmax=params_length[1]; // number of degree - 1
+    const int Nfl0=params_length[2]; // number of l=0 frequencies
+    const int Nfl1=params_length[3]; // number of l=1 frequencies
+    const int Nfl2=params_length[4]; // number of l=2 frequencies
+    const int Nfl3=params_length[5]; // number of l=3 frequencies
+    const int Nsplit=params_length[6]; // number of splitting parameters. Should be 2*Nmax+6 for a ALL global MS model (<a1>0=0,eta,a3, magb, magalfa, asym, a1(n,l))
+    const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+    const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+    const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
+    
+    const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
+    const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
+    
+    double inclination, trunc_c;
+    
+    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
+    VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
+    
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a11, a12, a2_terms; //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3,a2,a3, asym, a1_l1, a1_l2;
+    
+    int Nharvey;
+    long cpt;
+    
+    //std::ofstream file_out;
+    
+    /*
+     -------------------------------------------------------
+     ------- Gathering information about the modes ---------
+     -------------------------------------------------------
+     */
+    trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
+    inclination=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise];
+  
+  
+    // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
+    ratios_l0.setOnes();
+    if(lmax >=1){
+        Vl1=std::abs(params[Nmax]);
+        ratios_l1=amplitude_ratio(1, inclination);
+        //std::cout << "Vl1 " << Vl1 << std::endl;
+    }
+    if(lmax >=2){
+        Vl2=std::abs(params[Nmax+1]);
+        ratios_l2=amplitude_ratio(2, inclination);
+        //std::cout << "Vl2 " << Vl2 << std::endl;
+        
+    }
+    if(lmax >=3){
+        Vl3=std::abs(params[Nmax+2]);
+        ratios_l3=amplitude_ratio(3, inclination);
+    }
+    
+    fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
+    Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+    
+    a11=params.segment(Nmax + lmax + Nf + 6, Nmax);
+    a12=params.segment(Nmax + lmax + Nf + 6 + Nmax, Nmax);
+    a2_terms=params.segment(Nmax + lmax + Nf + 6 + Nmax + Nmax , Nmax); // after a11 and a12
+    a3=params[Nmax + lmax + Nf + 2];
+    
+    asym=params[Nmax+lmax + Nf + 5];
+ 
+    model_final.setZero();
+    
+    //std::cout << "model_MS_Global_a1nl_etaa3_HarveyLike" << std::endl;
+    //std::cout << "a11=" << a11.transpose() << std::endl;
+    //std::cout << "a12=" << a12.transpose() << std::endl;
+    /* -------------------------------------------------------
+     --------- Computing the models for the modes  ---------
+     -------------------------------------------------------
+     */
+    cpt=0;
+    for(long n=0; n<Nmax; n++){
+        
+        fl0=fl0_all[n];
+        Wl0=std::abs(Wl0_all[n]);
+        if(do_amp){
+            Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
+            //std::cout << "[0] do conversion" << std::endl;
+        } else{
+            Hl0=std::abs(params[n]);
+        }       
+        a1_l1=std::abs(a11[n]);
+        a1_l2=std::abs(a12[n]);
+        
+        model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        
+        if(lmax >=1){
+            fl1=params[Nmax+lmax+Nfl0+n];
+            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+            if(do_amp){
+                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+                //std::cout << "[1] do conversion" << std::endl;
+            } else{
+                Hl1=std::abs(params[n]*Vl1);
+            }               
+            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        }
+        if(lmax >=2){
+            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+            if(do_amp){
+                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
+                //std::cout << "[2] do conversion" << std::endl;
+            } else{
+                Hl2=std::abs(params[n]*Vl2);
+            }   
+            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        }
+        if(lmax >=3){
+            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+            if(do_amp){
+                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+            } else{
+                Hl3=std::abs(params[n]*Vl3);            
+            }       
+           model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a1_l1, a1_l2, a2_terms[n], a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        }
+    }
+    //std::cin.ignore();
+    
+    /* -------------------------------------------------------
+     ------- Gathering information about the noise ---------
+     -------------------------------------------------------
+     */
+    //std::cout << "Before computing noise model" << std::endl;
+    noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
+    Nharvey=(Nnoise-1)/3;
+    //std::cout << "Nharvey = " << Nharvey << std::endl;
+    
+    /* -------------------------------------------------------
+     ---------- Computing the mode of the noise ------------
+     -------------------------------------------------------
+     */
+    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+   
+    std::cout << "    model_MS_Global_a1nl_a2a3_HarveyLike() not tested yet" << std::endl;
+    std::cout << "    Note also that the fact the we use a2_terms[n] for all l could be problematic because we approximate the nu ~ n  while it is nu ~ (n,l)" << std::endl;
+    std::cout << "    An alternative is that the parameters are a2 at nu(l=0) (or any other reference frequency set of length Nmax" << std::endl;
+    std::cout << "    The program will exit now" << std::endl;
+    exit(EXIT_SUCCESS);
+
+    return model_final;
+}
+
+
+VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+    /* Model of the power spectrum of a Main sequence solar-like star
+     * param is a vector of parameters
+     * param_length defines the structure of the parameters
+     * x is the frequency assumed to be in microHz
+     * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax.
+     *          Size MUST be 0 otherwise (this check is not made in this function)
+     */
+    
+    const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
+    const long double pi = 3.141592653589793238462643383279502884L;
+        
+    const int Nmax=params_length[0]; // Number of Heights
+    const int lmax=params_length[1]; // number of degree - 1
+    const int Nfl0=params_length[2]; // number of l=0 frequencies
+    const int Nfl1=params_length[3]; // number of l=1 frequencies
+    const int Nfl2=params_length[4]; // number of l=2 frequencies
+    const int Nfl3=params_length[5]; // number of l=3 frequencies
+    const int Nsplit=params_length[6]; // number of splitting parameters. Should be 2*Nmax+6 for a ALL global MS model (<a1>0=0,eta,a3, magb, magalfa, asym, a1(n,l))
+    const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+    const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+    const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
+    
+    const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
+    const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
     
     double inclination, trunc_c;
     
@@ -415,49 +901,49 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
     cpt=0;
     for(long n=0; n<Nmax; n++){
         
-		fl0=fl0_all[n];
-		Wl0=std::abs(Wl0_all[n]);
-		if(do_amp){
-			Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
-			//std::cout << "[0] do conversion" << std::endl;
-		} else{
-			Hl0=std::abs(params[n]);
-		}		
-		a1_l1=std::abs(a11[n]);
-		a1_l2=std::abs(a12[n]);
-		
+        fl0=fl0_all[n];
+        Wl0=std::abs(Wl0_all[n]);
+        if(do_amp){
+            Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
+            //std::cout << "[0] do conversion" << std::endl;
+        } else{
+            Hl0=std::abs(params[n]);
+        }       
+        a1_l1=std::abs(a11[n]);
+        a1_l2=std::abs(a12[n]);
+        
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, a1_l1, a1_l2, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
         
         if(lmax >=1){
-			fl1=params[Nmax+lmax+Nfl0+n];
-			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
-			if(do_amp){
-				Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
-				//std::cout << "[1] do conversion" << std::endl;
-			} else{
-				Hl1=std::abs(params[n]*Vl1);
-			}				
+            fl1=params[Nmax+lmax+Nfl0+n];
+            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+            if(do_amp){
+                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+                //std::cout << "[1] do conversion" << std::endl;
+            } else{
+                Hl1=std::abs(params[n]*Vl1);
+            }               
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a1_l1, a1_l2, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
         }
         if(lmax >=2){
-			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
-			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
-				//std::cout << "[2] do conversion" << std::endl;
-			} else{
-				Hl2=std::abs(params[n]*Vl2);
-			}	
+            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+            if(do_amp){
+                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
+                //std::cout << "[2] do conversion" << std::endl;
+            } else{
+                Hl2=std::abs(params[n]*Vl2);
+            }   
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a1_l1, a1_l2, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
         }
         if(lmax >=3){
- 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
-			if(do_amp){
-				Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
-			} else{
-				Hl3=std::abs(params[n]*Vl3);			
-			}		
+            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+            if(do_amp){
+                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+            } else{
+                Hl3=std::abs(params[n]*Vl3);            
+            }       
            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a1_l1, a1_l2, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
         }
     }
@@ -480,6 +966,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
     
     return model_final;
 }
+
 
 VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
 	/* Model of the power spectrum of a Main sequence solar-like star
@@ -640,6 +1127,198 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 	return model_final;
 }
 
+VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+    /* Model of the power spectrum of a Main sequence solar-like star
+     * param is a vector of parameters
+     * param_length defines the structure of the parameters
+     * x is the frequency assumed to be in microHz
+     * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
+     *          Size MUST be 0 otherwise (this check is not made in this function)
+     */
+
+    const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
+    const long double pi = 3.141592653589793238462643383279502884L;
+    
+    const int Nmax=params_length[0]; // Number of Heights
+    const int lmax=params_length[1]; // number of degree - 1
+    const int Nfl0=params_length[2]; // number of l=0 frequencies
+    const int Nfl1=params_length[3]; // number of l=1 frequencies
+    const int Nfl2=params_length[4]; // number of l=2 frequencies
+    const int Nfl3=params_length[5]; // number of l=3 frequencies
+    const int Nsplit=params_length[6]; // number of splitting parameters. Should be 6 for a ALL global MS model (a1,eta,a3, magb, magalfa, asym)
+    const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
+    const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
+    const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
+    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
+
+    const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
+    const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
+    const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
+
+    double inclination;
+    
+
+    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
+    VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
+
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a2_terms(3); //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, asym;
+
+    int Nharvey;
+    long cpt;
+
+    //std::ofstream file_out;
+
+    /*
+       -------------------------------------------------------
+       ------- Gathering information about the modes ---------
+       -------------------------------------------------------
+    */
+    
+    a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
+    
+    inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
+    inclination=inclination*180./pi;
+
+    //std::cout << "a1 = " << a1 << std::endl;
+    //std::cout << "inclination = " << inclination << std::endl;
+
+    // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
+    ratios_l0.setOnes();
+    if(lmax >=1){
+        Vl1=std::abs(params[Nmax]);
+        ratios_l1=amplitude_ratio(1, inclination);
+        //std::cout << "Vl1 " << Vl1 << std::endl;
+    }
+    if(lmax >=2){
+        Vl2=std::abs(params[Nmax+1]);
+        ratios_l2=amplitude_ratio(2, inclination);
+        //std::cout << "Vl2 " << Vl2 << std::endl;
+
+    }
+    if(lmax >=3){
+        Vl3=std::abs(params[Nmax+2]);
+        ratios_l3=amplitude_ratio(3, inclination);
+    }
+
+    fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
+    Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+
+    //a1=std::abs(params[Nmax + lmax + Nf]);
+    a2_terms=params.segment(Nmax + lmax + Nf + 6,3); // a2 terms are after the a3 and asym terms  //two terms: one constant term + one linear in nu + one quadratic in nu
+    a3=params[Nmax + lmax + Nf + 2];
+    asym=params[Nmax+lmax + Nf + 5];
+    
+    model_final.setZero();
+    //std::cout << "[" << Nmax + lmax + Nf + 6 << "]  a2_terms = " << a2_terms.transpose() << std::endl;
+    /*
+    std::cout << "inclination = " << inclination << std::endl;
+    std::cout << "a2_terms = " << a2_terms << std::endl;
+    std::cout << "a3 = " << a3 << std::endl;
+    std::cout << "asym = " << asym << std::endl;
+    */
+    /* -------------------------------------------------------
+       --------- Computing the models for the modes  ---------
+       -------------------------------------------------------
+    */
+    cpt=0;
+    for(long n=0; n<Nmax; n++){
+        
+        fl0=fl0_all[n];
+        Wl0=std::abs(Wl0_all[n]);
+            
+        if(do_amp){
+            Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
+        } else{
+            Hl0=std::abs(params[n]);
+        }       
+        /*
+        stc::cout << "Hl0 = " << Hl0 << std::endl;
+        std::cout << "fl0 = " << fl0 << std::endl;
+        std::cout << "Wl0 = " << Wl0 << std::endl;
+        */
+        model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+
+        if(lmax >=1){
+            fl1=params[Nmax+lmax+Nfl0+n];
+            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+            if(do_amp){
+                //Hl1=std::abs(params[n]/(pi*Wl1));
+                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+            } else{
+                Hl1=std::abs(params[n]*Vl1);
+            }   
+            a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3) + a2_terms[2]*(fl1*fl1*1e-6); //two terms: one constant term + one linear in nu, after a11, set in mHz            
+            /*
+            std::cout << "Hl1 = " << Hl1 << std::endl;
+            std::cout << "fl1 = " << fl1 << std::endl;
+            std::cout << "Wl1 = " << Wl1 << std::endl;
+            std::cout << " a1 = " << a1 << std::endl;
+            std::cout << " a2 = " << a2 << std::endl;
+            */
+            model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        }
+        if(lmax >=2){
+            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+            if(do_amp){
+                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
+                //Hl2=std::abs(params[n]/(pi*Wl2));
+            } else{
+                Hl2=std::abs(params[n]*Vl2);
+            }   
+            a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3) + a2_terms[2]*(fl2*fl2*1e-6); //two terms: one constant term + one linear in nu, after a11 
+            /*
+            std::cout << "Hl2 = " << Hl2 << std::endl;
+            std::cout << "fl2 = " << fl2 << std::endl;
+            std::cout << "Wl2 = " << Wl2 << std::endl;
+            std::cout << " a1 = " << a1 << std::endl;
+            std::cout << " a2 = " << a2 << std::endl;
+            */
+            model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        }
+        if(lmax >=3){
+            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+            if(do_amp){
+                //Hl3=std::abs(params[n]/(pi*Wl3));
+                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+            } else{
+                Hl3=std::abs(params[n]*Vl3);            
+            }       
+            a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3) + a2_terms[2]*(fl3*fl3*1e-6); //two terms: one constant term + one linear in nu, after a11  
+            /*std::cout << "Hl3 = " << Hl3 << std::endl;
+            std::cout << "fl3 = " << fl3 << std::endl;
+            std::cout << "Wl3 = " << Wl3 << std::endl;
+            std::cout << " a1 = " << a1 << std::endl;
+            std::cout << " a2 = " << a2 << std::endl;
+            */
+            model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        }       
+    }
+    //std::cin.ignore();
+
+    /* -------------------------------------------------------
+       ------- Gathering information about the noise ---------
+       -------------------------------------------------------
+    */
+    //std::cout << "Before computing noise model" << std::endl;
+    noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
+    Nharvey=(Nnoise-1)/3;
+    //std::cout << "Nharvey = " << Nharvey << std::endl;
+    //std::cout << "noise_params = " << noise_params.transpose() << std::endl;
+    /* -------------------------------------------------------
+       ---------- Computing the mode of the noise ------------
+       -------------------------------------------------------
+    */
+    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+    
+    //std::cout << "------" << std::endl;
+    //std::cout << "End test" << std::endl;
+    //exit(EXIT_SUCCESS);
+
+    return model_final;
+}
 
 
 VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
