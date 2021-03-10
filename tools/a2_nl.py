@@ -1,9 +1,4 @@
-#  -------
-# Program to be used with models that implement a2 as a function of the frequency
-# Using a second order polynomial function
-# This code allows to convert the second order polynomial into the a2(nu) function
-# at each fitted pulsation frequencies and propagating the uncertainty using the 
-# MCMC samples
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from  scipy.io import readsav
@@ -98,6 +93,14 @@ def get_files_list(rootdir):
 	files = [f.path for f in os.scandir(rootdir) if f.is_file()]
 	return files
 
+def get_dirs_list(rootdir):
+	'''
+		A tiny function that scans a directory in order to find all of
+		its subdirectories
+	'''
+	dirs= [d.path for d in os.scandir(rootdir) if d.is_dir()]
+	return dirs
+	
 def get_files(rootdir, extension):
 
 	f=get_files_list(rootdir)
@@ -181,10 +184,10 @@ def make_error_from_stats(stats):
 	err[1,:]=stats[:, 3] - stats[:, 2]
 	return err
 
-def main():
+def dostar(rootdir, fileout='Results.png'):
 
 	#rootdir='/Users/obenomar/tmp/TRASH/a2-fits/products/1111/kplr003427720_kasoc-psd_slc_v1_1111/'
-	rootdir='/Users/obenomar/tmp/TRASH/a2-fits/products/1111/kplr008379927_kasoc-psd_slc_v2_1111/'
+	#rootdir='/Users/obenomar/tmp/TRASH/a2-fits/products/1111/kplr008379927_kasoc-psd_slc_v2_1111/'
 	
 	# Getting all of the indexes required for the process
 	print("1.  Preparing data..")
@@ -264,8 +267,24 @@ def main():
 	f_ax4.set_xlabel('a3 (nHz)')
 	f_ax4.set_ylabel('PDF')
 	f_ax4.hist(a3_samples, bins=50)
-	plt.savefig('Results.png')
+	plt.savefig(fileout)
 	#plt.show()
 
 
-main()
+def doallstars(rootdir):
+
+	failed=[]
+	dirs=get_dirs_list(rootdir)
+	for d in dirs:
+		try:
+			dostar(d+'/', fileout=d+'/a1a2a3inc_sum.png')	
+		except:
+			failed.append(d)
+	if len(failed) !=0:
+		print("Directories that could not be processed due to a failure:")
+		print(failed)
+		
+if __name__ == "__main__":
+	print("Please use doallstars([dir]) to get a1,a2,a3 and inc summary for a group of stars")
+	print("Or use dostar([dir]) for a single star analysis")
+	
