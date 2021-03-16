@@ -1,5 +1,12 @@
 # Version history #
 
+### v1.61-dev Improvments ###
+	* Improvments
+		- Adding an optional boolean switch in the list of models to allow outputs of the mode parameters in the form of an ascii table (used in getmodel)
+		- Adding optional boolean switch in model_def.cpp for call_model() and call_model_explicit : This to ensure usability by getmodel 
+		- Adding a writing function for ascii table outputs
+		- Update of getmodel: It will output an ascii table of all the best fit parameters
+
 ### v1.6-dev Improvments ###
   * New models:
   	* Adding core functions in build_lorentzian.cpp to handle a2 coefficient (see Gizon,2002, https://www2.mps.mpg.de/homes/gizon/PAPERS/an_323_251.pdf) 

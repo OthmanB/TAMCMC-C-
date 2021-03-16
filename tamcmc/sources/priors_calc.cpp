@@ -477,7 +477,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 				}
 			  	break;
 	}
-
+	/*
 	std::cout << "a3 =" << a3 << std::endl;
 	std::cout << "rot_env ="	<< params[Nmax+lmax+Nf] << std::endl;
 	std::cout << "ratio =" << a3/rot_env<< std::endl;
@@ -486,7 +486,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	std::cout << "extra_priors = " << extra_priors << std::endl;
 	std::cout << " MODIFICATION MADE ON 21 JAN 2021 (rot_env ~ a1 to get a3/a1... Need checks. Exiting" << std::endl;
 	exit(EXIT_SUCCESS);
-
+	*/
 	end:
 
 	return f;

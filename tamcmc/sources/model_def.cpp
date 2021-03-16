@@ -195,37 +195,38 @@ Model_def::~Model_def(){ // The destructor
 * Allows explicit call of call_model function without the need of setting internal class variables
 * To use when model_def class has to be used only for a few model computation.
 * Do not use this on large loop... it will be slow
+* Added on 16 Mar 2021: It will call call_model with the optional outparams=true
 */
-VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case){
+VectorXd Model_def::call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case, bool outparams){
 
 
 	params.resize(1, params0.size());
 	params.row(0)=params0;
 	model_fct_name_switch=model_case;
 	plength=plength0;
-	return call_model(data_struc, 0);
+	return call_model(data_struc, 0, outparams);
 
 }
 
-VectorXd Model_def::call_model(Data *data_struc, int m){
+VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 
 	VectorXd fail(data_struc->Nx);
 	fail.setZero();
 	switch(model_fct_name_switch){
 		case 0: // model_Test_Gaussian
-		  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x);
+		  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 1: // model_Harvey_Gaussian
-		  return model_Harvey_Gaussian(params.row(m), plength, (*data_struc).x);
+		  return model_Harvey_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 2: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. 
-		  return model_MS_Global_a1etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+		  return model_MS_Global_a1etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 3: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. Inclination and splitting are not fitted directly. sqrt(a1).cos(i) and sqrt(a1).sin(i) instead
-		  return model_MS_Global_a1etaa3_HarveyLike_Classic(params.row(m), plength, (*data_struc).x);
+		  return model_MS_Global_a1etaa3_HarveyLike_Classic(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 4: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Original Harvey function 
-		  return model_MS_Global_a1etaa3_Harvey1985(params.row(m), plength, (*data_struc).x);
+		  return model_MS_Global_a1etaa3_Harvey1985(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 5: // model_MS_Global with a1, magb and magalfa (asphericity), a3, asymetry, Original Harvey function 
 		  std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1acta3_HarveyLike" << std::endl;
@@ -235,49 +236,49 @@ VectorXd Model_def::call_model(Data *data_struc, int m){
 		  //return model_MS_Global_a1acta3_Harvey1985(params.row(m), plength, (*data_struc).x);
 		  break;
         case 6:// model_MS_Global with a1(l=1), a1(2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1l_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1l_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
         case 7:// model_MS_Global with a1(n, l=1)=a1(n, l=2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1n_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1n_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
         case 8:// model_MS_Global with a1(n, l), a1(3)=(a1(n,1)+a1(n,2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
           break;
         case 9:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is selfconsistently calculated), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x, outparams);
           break;
 	    case 10:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
           break;
          case 11:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x, outparams);
 		   break;
         case 12:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v2(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v2(params.row(m), plength, (*data_struc).x, outparams);
 		   break;
          case 13:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v3(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_Global_a1etaa3_HarveyLike_Classic_v3(params.row(m), plength, (*data_struc).x, outparams);
 		   break;
          case 14:// Model for local fit and flat white noise
-            	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x);
+            	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x, outparams);
 		   break;
  		case 15: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
-				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x);
+				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 16: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
-				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
+				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 17: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
-				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x);
+				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 18:
-			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
 			break;
 		case 19:
-			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
 			break;
 		case 20:
-			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
 			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;

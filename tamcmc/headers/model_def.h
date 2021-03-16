@@ -74,8 +74,8 @@ class Model_def{
 		Model_def(); // Empty constructor (to use only to call functions that do not use internal public/private variables
 		~Model_def(); // The destructor		
 
-		VectorXd call_model(Data *data_struc, const int m); // call a model using its name. 
-		VectorXd call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case); // same as call_model(Data *data_struc, int m) but can be called explicitly
+		VectorXd call_model(Data *data_struc, const int m, bool outparams=false); // call a model using its name. 
+		VectorXd call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case, bool outparams=true); // same as call_model(Data *data_struc, int m) but can be called explicitly
 		void update_params_with_vars(const long m); // simple loop that refresh values of params(m, *) with vars(m,*)
 		inline long double call_likelihood(Data *data_struc, const int m, const VectorXd& Tcoefs); // call the likelihood using its name. Before returning the log(Likelihood), it saves it into 'logLikelihood[m]'
 		inline long double call_prior(Data *data_struc, const int m); // call the prior using its name. Before returning the log(prior), we save it into 'logPrior[m]'

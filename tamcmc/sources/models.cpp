@@ -15,7 +15,7 @@ using Eigen::VectorXi;
 //double lin_interpol(VectorXd x, VectorXd y, double x_int);
 VectorXd amplitude_ratio(int l, double beta);
 
-VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -55,8 +55,9 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
-    
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     /*
      -------------------------------------------------------
      ------- Gathering information about the modes ---------
@@ -113,7 +114,11 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
 			//std::cout << "[0] do conversion" << std::endl;
 		} else{
 			Hl0=std::abs(params[n]);
-		}		
+		}
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }	
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, a11, a12, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
         
         if(lmax >=1){
@@ -126,6 +131,10 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
 			}				
+            if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a11, a12, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a11, a12, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
         }
         if(lmax >=2){
@@ -137,6 +146,10 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
 			}	
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a11, a12, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a11, a12, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
         }
         if(lmax >=3){
@@ -147,6 +160,10 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a11, a12, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a11, a12, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
         }
     }
@@ -167,10 +184,28 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
     
+  if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a11 / a12 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
     return model_final;
 }
 
-VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -209,7 +244,9 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     
     /*
      -------------------------------------------------------
@@ -270,6 +307,10 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
 		a1_l1=std::abs(a11[n]);
 		a1_l2=std::abs(a12[n]);
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, a1_l1, a1_l2, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
 
         if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
@@ -281,6 +322,10 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
 				Hl1=std::abs(params[n]*Vl1);
 			}				
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a1_l1, a1_l2, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
         }
         if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -292,6 +337,10 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
 				Hl2=std::abs(params[n]*Vl2);
 			}	
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a1_l1, a1_l2, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         //std::cout << "lmax=" << lmax << std::endl;
         if(lmax >=3){
@@ -303,6 +352,10 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a1_l1, a1_l2, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
     }
     //std::cin.ignore();
@@ -321,11 +374,29 @@ VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const Vect
      -------------------------------------------------------
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    
+
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1_l1 / a1_l2 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }    
     return model_final;
 }
 
-VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -364,7 +435,9 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     
     /*
      -------------------------------------------------------
@@ -426,7 +499,10 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
         a1_l2=std::abs(a12[n]);
         a2=0;
         model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl0, fl0, a1_l1, a1_l2, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -438,6 +514,10 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
             }
             //a2=a2_terms[0] + a2_terms[1]*fl1;
             model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl1, fl1, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1, a1_l2, a2_terms[n], a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -450,8 +530,11 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
             }  
             //a2=a2_terms[0] + a2_terms[1]*fl2;
             model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl2, fl2, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l1, a1_l2, a2_terms[n], a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
-        //std::cout << "lmax=" << lmax << std::endl;
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
             Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
@@ -462,6 +545,10 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
             }      
             //a2=a2_terms[0] + a2_terms[1]*fl3; 
             model_final=optimum_lorentzian_calc_a1l_a2a3(x, model_final, Hl3, fl3, a1_l1, a1_l2, a2_terms[n], a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l1, a1_l2, a2_terms[n], a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
     }
     //std::cin.ignore();
@@ -481,6 +568,24 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 
+  if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1_l1 / a1_l2 / a2 / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
     std::cout << "    model_MS_Global_a1n_a2a3_HarveyLike() not tested yet" << std::endl;
     std::cout << "    Note also that the fact the we use a2_terms[n] for all l could be problematic because we approximate the nu ~ n  while it is nu ~ (n,l)" << std::endl;
     std::cout << "    An alternative is that the parameters are a2 at nu(l=0) (or any other reference frequency set of length Nmax" << std::endl;
@@ -491,7 +596,7 @@ VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const Vecto
 }
 
 
-VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -529,7 +634,9 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
  
     /*
      -------------------------------------------------------
@@ -589,7 +696,10 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
 			Hl0=std::abs(params[n]);
 		}				
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }           
         if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -601,6 +711,10 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
 			}	
             a2=a2_terms[0] + a2_terms[1]*fl1 + a2_terms[2]*fl1*fl1;			
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a11, a12, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a11, a12, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -613,6 +727,10 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
 			}
             a2=a2_terms[0] + a2_terms[1]*fl2 + a2_terms[2]*fl2*fl2; 	
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a11, a12, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a11, a12, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=3){
  			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -624,6 +742,11 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
 			}		
            a2=a2_terms[0] + a2_terms[1]*fl3 + a2_terms[2]*fl3*fl3;  
            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a11, a12, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a11, a12, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
+
         }
     }
     //std::cin.ignore();
@@ -642,6 +765,25 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
      -------------------------------------------------------
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+
+  if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a11 / a12 / a2 / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
  
     std::cout << "    model_MS_Global_a1l_a2a3_HarveyLike() not tested yet" << std::endl;
     std::cout << "    The program will exit now" << std::endl;
@@ -650,7 +792,7 @@ VectorXd model_MS_Global_a1l_a2a3_HarveyLike(const VectorXd& params, const Vecto
     return model_final;
 }
 
-VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -688,7 +830,9 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     
     /*
      -------------------------------------------------------
@@ -751,7 +895,10 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
         a1_l2=std::abs(a12[n]);
         
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }           
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -762,6 +909,10 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
                 Hl1=std::abs(params[n]*Vl1);
             }               
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1, a1_l2, a2_terms[n], a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -773,6 +924,10 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
                 Hl2=std::abs(params[n]*Vl2);
             }   
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a1_l1, a1_l2, a2_terms[n], a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l1, a1_l2, a2_terms[n], a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -783,6 +938,10 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
                 Hl3=std::abs(params[n]*Vl3);            
             }       
            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a1_l1, a1_l2, a2_terms[n], a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l1, a1_l2, a2_terms[n],  a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
     }
     //std::cin.ignore();
@@ -801,6 +960,25 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
      -------------------------------------------------------
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1_l1 / a1_l2 / a2 / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
    
     std::cout << "    model_MS_Global_a1nl_a2a3_HarveyLike() not tested yet" << std::endl;
     std::cout << "    Note also that the fact the we use a2_terms[n] for all l could be problematic because we approximate the nu ~ n  while it is nu ~ (n,l)" << std::endl;
@@ -812,7 +990,7 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
 }
 
 
-VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -850,7 +1028,9 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
     int Nharvey;
     long cpt;
     
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     
     /*
      -------------------------------------------------------
@@ -913,7 +1093,10 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
         a1_l2=std::abs(a12[n]);
         
         model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl0, fl0, a1_l1, a1_l2, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }           
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -924,6 +1107,10 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
                 Hl1=std::abs(params[n]*Vl1);
             }               
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl1, fl1, a1_l1, a1_l2, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -935,6 +1122,10 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
                 Hl2=std::abs(params[n]*Vl2);
             }   
             model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl2, fl2, a1_l1, a1_l2, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -945,6 +1136,10 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
                 Hl3=std::abs(params[n]*Vl3);            
             }       
            model_final=optimum_lorentzian_calc_a1l_etaa3(x, model_final, Hl3, fl3, a1_l1, a1_l2, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l1, a1_l2, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
     }
     //std::cin.ignore();
@@ -963,12 +1158,29 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
      -------------------------------------------------------
      */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1_l1 / a1_l2 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }    
     return model_final;
 }
 
 
-VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 	/* Model of the power spectrum of a Main sequence solar-like star
 	 * param is a vector of parameters
 	 * param_length defines the structure of the parameters
@@ -1008,7 +1220,9 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 	int Nharvey;
 	long cpt;
 
-	//std::ofstream file_out;
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 
 	/*
 	   -------------------------------------------------------
@@ -1067,7 +1281,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 		} else{
 			Hl0=std::abs(params[n]);
 		}		
-
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
 
 		if(lmax >=1){
@@ -1079,6 +1296,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 			} else{
 				Hl1=std::abs(params[n]*Vl1);
 			}				
+            if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
 		}
 		if(lmax >=2){
@@ -1090,6 +1311,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 			} else{
 				Hl2=std::abs(params[n]*Vl2);
 			}	
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
 		}
         if(lmax >=3){
@@ -1100,7 +1325,11 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
                 Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
 			} else{
 				Hl3=std::abs(params[n]*Vl3);			
-			}		
+			}	
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   	
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
 		}		
 	}
@@ -1120,14 +1349,30 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const Vector
 	   -------------------------------------------------------
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-	
-	//std::cout << "End test" << std::endl;
-    //exit(EXIT_SUCCESS);
+
+  if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 
 	return model_final;
 }
 
-VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -1137,7 +1382,7 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
      */
 
     const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
-    const long double pi = 3.141592653589793238462643383279502884L;
+    const long double pi = 3.141592653589793238462643383279502884L;    
     
     const int Nmax=params_length[0]; // Number of Heights
     const int lmax=params_length[1]; // number of degree - 1
@@ -1167,7 +1412,9 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
     int Nharvey;
     long cpt;
 
-    //std::ofstream file_out;
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 
     /*
        -------------------------------------------------------
@@ -1238,7 +1485,10 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
         std::cout << "Wl0 = " << Wl0 << std::endl;
         */
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -1257,6 +1507,10 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
             std::cout << " a2 = " << a2 << std::endl;
             */
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            } 
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -1276,6 +1530,10 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
             std::cout << " a2 = " << a2 << std::endl;
             */
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }      
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -1294,6 +1552,10 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
             std::cout << " a2 = " << a2 << std::endl;
             */
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            } 
         }       
     }
     //std::cin.ignore();
@@ -1313,15 +1575,30 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
     
-    //std::cout << "------" << std::endl;
-    //std::cout << "End test" << std::endl;
-    //exit(EXIT_SUCCESS);
+  if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / a2 / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 
     return model_final;
 }
 
 
-VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 	/* Model of the power spectrum of a Main sequence solar-like star
 	 * param is a vector of parameters
 	 * param_length defines the structure of the parameters
@@ -1359,8 +1636,9 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 	int Nharvey;
 	long cpt;
 
-	//std::ofstream file_out;
-
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 	/*
 	   -------------------------------------------------------
 	   ------- Gathering information about the modes ---------
@@ -1371,9 +1649,6 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 	inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
 	inclination=inclination*180./pi;
 	a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
-
-	std::cout << "a1 = " << a1 << std::endl;
-	std::cout << "inclination = " << inclination << std::endl;
 
 	// Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
 	ratios_l0.setOnes();
@@ -1426,7 +1701,10 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 			Hl0=std::abs(params[n]);
 		}		
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
 		if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -1437,6 +1715,10 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 				Hl1=std::abs(params[n]*Vl1);
 			}				
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }     
 		}
 		if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -1448,7 +1730,11 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 				Hl2=std::abs(params[n]*Vl2);
 			}	
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
-		}
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
+    	}
         if(lmax >=3){
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
@@ -1458,6 +1744,10 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
 		}		
 	}
     //std::cin.ignore();
@@ -1476,14 +1766,31 @@ VectorXd model_MS_Global_a1etaa3_Harvey1985(const VectorXd& params, const Vector
 	   -------------------------------------------------------
 	*/
 	model_final=harvey1985(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1/ eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 	return model_final;
 }
 
 // Last modifcation: on 05/02/2020: Handling the possibility that the user asked for Heights Hlm to be fitted instead of inclination
 // This might be a temporary fix for testing. If successfull, a full derivation into a specific model might be better
 // Added on 05/02/2020: Handling the possibility that the user asked for Heights Hlm to be fitted instead of inclination
-VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 	/* Model of the power spectrum of a Main sequence solar-like star
 	 * param is a vector of parameters
 	 * param_length defines the structure of the parameters
@@ -1521,6 +1828,9 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 	int Nharvey;
 	long cpt;
 
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 	/*
 	   -------------------------------------------------------
 	   ------- Gathering information about the modes ---------
@@ -1573,7 +1883,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 			Hl0=std::abs(params[n]);
 		}		
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-		
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    		
 		if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
 			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -1584,7 +1897,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 				Hl1=std::abs(params[n]*Vl1);
 			}				
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-			//model_final=model_final + model_l1;
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
  		}
 		if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -1596,7 +1912,11 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 				Hl2=std::abs(params[n]*Vl2);
 			}	
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
-		}
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    		
+        }
         if(lmax >=3){
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
 			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
@@ -1606,6 +1926,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
 		}		
 	}
 
@@ -1623,7 +1947,24 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 	   -------------------------------------------------------
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-	
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }	
 
 	return model_final;
 }
@@ -1632,7 +1973,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic(const VectorXd& params, cons
 // Added on 10 Feb 2020
 // Alternative version  of the legacy function that is not dealing with the inclination
 // but instead fit the mode heights, given a visibility
-VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -1669,6 +2010,17 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
 
     int Nharvey;
     long cpt;
+
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+    double inclination = -1;  // Dummy value here
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
 
     /*
        -------------------------------------------------------
@@ -1738,7 +2090,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
             Hl0=std::abs(params[n]);
         }       
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }      
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -1749,7 +2104,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
                 Hl1=std::abs(params[n]*Vl1);
             }               
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-            //model_final=model_final + model_l1;
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }           
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -1761,6 +2119,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
                 Hl2=std::abs(params[n]*Vl2);
             }   
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -1771,6 +2133,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
                 Hl3=std::abs(params[n]*Vl3);            
             }       
             model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            } 
         }     
     }
 
@@ -1788,9 +2154,24 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise backgound
-    
-
-    //exit(EXIT_SUCCESS);
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 
     return model_final;
 }
@@ -1801,7 +2182,7 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v2(const VectorXd& params, c
 // but instead fit the mode heights directly. Visibilities are not considered here.
 // WARNING: This model is not really suitable for a global fit due to the large set of parameters that might
 //          Arise from letting all heights free for all m E ([l*(l+1)-1]/2 + 1) * Ntotal ~ 100 free parameters for a global fit with l=3
-VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -1838,6 +2219,17 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
     int Nharvey;
     long cpt, pos0;
 
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+    double inclination=-1;
+
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -1871,7 +2263,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
             Hl0[0]=std::abs(params[n]);
         }       
         model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, step, trunc_c);
- 
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }       
         if(lmax >=1){
             fl1=params[Nmax+lmax+Nfl0+n];
             Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
@@ -1885,6 +2280,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
             } 
             Hl1=Hl1.cwiseAbs();
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
         }
         if(lmax >=2){
             fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -1901,6 +2300,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
            }
             Hl2=Hl2.cwiseAbs();
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
         }
         if(lmax >=3){
             fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -1919,6 +2322,10 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
             }
             Hl3=Hl3.cwiseAbs();
             model_final=optimum_lorentzian_calc_a1etaa3_v2(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            } 
         }  
  /*       std::cout << "[" << n << "]" << std::endl;
         std::cout << "fl0[" << n << "] = " << fl0 << std::endl;
@@ -1966,16 +2373,32 @@ VectorXd model_MS_Global_a1etaa3_HarveyLike_Classic_v3(const VectorXd& params, c
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    
-    //exit(EXIT_SUCCESS);
 
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
     return model_final;
 }
 // ------------------------------
 // ------------------------------
 // ------------------------------
 
-VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 	/* Model of the power spectrum of a Main sequence solar-like star
 	 * param is a vector of parameters
 	 * param_length defines the structure of the parameters
@@ -2018,7 +2441,11 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 	
 	int Nharvey;
 	long cpt;
-	
+
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+
 	/*
 	   -------------------------------------------------------
 	   ------- Gathering information about the modes ---------
@@ -2102,7 +2529,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 		}		
 
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-		
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   	
 		if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
 			lnGamma0=params[Nmax + lmax + Nf + Nsplit+1] * log(fl1/numax) + log(params[Nmax+lmax+Nf+Nsplit+2]);
@@ -2118,6 +2548,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 				Hl1=std::abs(params[n]*Vl1);
 			}				
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+           if (outparams){
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }       
 		}
 		if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -2134,6 +2568,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 				Hl2=std::abs(params[n]*Vl2);
 			}	
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }    
 		}
         if(lmax >=3){
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -2150,6 +2588,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 				Hl3=std::abs(params[n]*Vl3);			
 			}		
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            if (outparams){
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                Line=Line+1;
+            }   
 		}		
 	}
     //std::cin.ignore();
@@ -2169,14 +2611,29 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(const VectorXd& params, 
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	
-	//std::cout << "End test" << std::endl;
-       //exit(EXIT_SUCCESS);
-
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 	return model_final;
 }
 
 
-VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 	/* Model of the power spectrum of a Main sequence solar-like star
 	 * param is a vector of parameters
 	 * param_length defines the structure of the parameters
@@ -2221,8 +2678,9 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 	long cpt;
 	
 
-	//std::ofstream file_out;
-
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 	/*
 	   -------------------------------------------------------
 	   ------- Gathering information about the modes ---------
@@ -2284,8 +2742,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 		}		
 
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
- 		//std::cout << "Wl0=" << Wl0 << std::endl;
-		
+        if (outparams){
+               mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+               Line=Line+1;
+        } 		
 		if(lmax >=1){
 			fl1=params[Nmax+lmax+Nfl0+n];
 			lnGamma0=params[Nmax + lmax + Nf + Nsplit+2] * log(fl1/params[Nmax + lmax + Nf + Nsplit + 0]) + log(params[Nmax+lmax+Nf+Nsplit+3]);
@@ -2302,7 +2762,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 			}				
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
 		    //debug(model_final, Hl1, fl1, a1, eta, a3, asym, Wl1, 1, step, inclination, ratios_l1, trunc_c, true);
-        
+            if (outparams){
+               mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+               Line=Line+1;
+            }         
         }
 		if(lmax >=2){
 			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
@@ -2320,7 +2783,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 			}	
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
             //debug(model_final, Hl2, fl2, a1, eta, a3, asym, Wl2, 2, step, inclination, ratios_l2, trunc_c, true);
-        
+            if (outparams){
+                   mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+                   Line=Line+1;
+            }             
 		}
         if(lmax >=3){
 			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
@@ -2336,7 +2802,10 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 			}		
 			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
             //debug(model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, step, inclination, ratios_l3, trunc_c, true);
-        
+            if (outparams){
+                   mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+                   Line=Line+1;
+            }        
 		}		
 	}
     //std::cin.ignore();
@@ -2356,8 +2825,24 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 	*/
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	
-	//std::cout << "End test" << std::endl;
-    //exit(EXIT_SUCCESS);
+     if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 
 	return model_final;
 }
@@ -2368,7 +2853,7 @@ VectorXd model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, 
 // ----------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------
 
-VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 
 	/* Model for a local fit of the power spectrum of a solar-like star
 	 * Assumptions of constant splitting over the fit window make it more suitable for a fit of a MS star
@@ -2406,6 +2891,10 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 	double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,eta,a3, asym;
 
 	int Nharvey;
+
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
 	/*
 	   -------------------------------------------------------
 	   ------- Gathering information about the modes ---------
@@ -2457,6 +2946,10 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 		}		
 		//std::cout << "fl0 = " << fl0 << "      Hl0 = " << Hl0 << "      Wl0 = " << Wl0 << std::endl;
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
 	}
 	for(long n=0; n<Nfl1; n++){		
 		fl1=params[Nmax + Nvis + Nfl0 + n];
@@ -2468,6 +2961,10 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 		}				
 		//std::cout << "fl1 = " << fl1 << "      Hl1 = " << Hl1 << "      Wl1 = " << Wl1 << std::endl;
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
 	}
 	
 	for(long n=0; n<Nfl2; n++){		
@@ -2480,6 +2977,10 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 		}	
 		//std::cout << "fl2 = " << fl2 << "      Hl2 = " << Hl2 << "      Wl2 = " << Wl2 << std::endl;
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
 	}
 	for(long n=0; n<Nfl3; n++){		
         //std::cout << "BEFORE l=3" << std::endl;
@@ -2494,7 +2995,10 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 		}		
 		//std::cout << "fl3 = " << fl3 << "      Hl3 = " << Hl3 << "      Wl3 = " << Wl3 << std::endl;
 		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-        //std::cout << "AFTER l=3" << std::endl;
+        if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }  
 	}
 
 	/* -------------------------------------------------------
@@ -2512,12 +3016,29 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 	//std::cout << "End test" << std::endl;
     //exit(EXIT_SUCCESS);
-
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 	return model_final;
 }
 
 
-VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 
     /* Model for a local fit of the power spectrum of a solar-like star
      * Assumptions of constant splitting over the fit window make it more suitable for a fit of a MS star
@@ -2568,7 +3089,13 @@ VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_leng
     asym=params[Nmax+Nvis + Nf + 5];
     
     model_final.setZero();
-    
+
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
     /* -------------------------------------------------------
        --------- Computing the models for the modes  ---------
        -------------------------------------------------------
@@ -2655,7 +3182,7 @@ VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_leng
 // Models for asymptotic fitting ///
 ////////////////////////////////////
 
-VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -2705,6 +3232,11 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
     
     int Nharvey;
     long cpt;
+
+    outparams=true;
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -2855,18 +3387,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
     eta=params[Nmax + lmax + Nf + 2];
     a3=params[Nmax + lmax + Nf + 3];
     asym=params[Nmax+lmax + Nf + 4];
-   
-    //bool error, crash;
-    //error=debug_solver(x, fl1_all, fl0_all, 1, delta0l, DPl, alpha_g, q_star, sigma_p_l1);
-    //if (error == true){
-    //    std::cout << " Full parameter list: " << params.transpose() << std::endl;
-    //    std::cout << " Full parameters_length: " << params_length.transpose() << std::endl;
-    //    crash=debug(model_final, Hl1, fl1, -1, eta, a3, asym, Wl1, 1, step, inclination, ratios_l1, trunc_c, true);
-    //}
-
-    // --------------
-    // --------------
-    // --------------
+ 
     // --------------
     model_final.setZero();
     
@@ -2882,6 +3403,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
         //std::cout << "Wl0=" << Wl0 << std::endl;
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
         //crash=debug(model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, step, inclination, ratios_l0, trunc_c, true);
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
     }
     for (long n=0; n<fl1_all.size(); n++){
         fl1=fl1_all[n];
@@ -2894,6 +3419,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
         //    std::cout << " Full parameters_length: " << params_length.transpose() << std::endl;
         //    exit(EXIT_FAILURE);
         //}
+       if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
     }
     for(long n=0; n<Nfl2; n++){ 
         fl2=std::abs(params[Nmax+lmax+Nfl0+Nfl1+n]);
@@ -2911,10 +3440,11 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
         }   
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1_l2[n], eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
         //crash=debug(model_final, Hl2, fl2, a1_l2[n], eta, a3, asym, Wl2, 2, step, inclination, ratios_l2, trunc_c, true);
- 
+       if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l2[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
     }
-
-//    std::cout << "--------------- " << std::endl;
     for(long n=0; n<Nfl3; n++){ 
         fl3=std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n]);
         lnGamma0=gamma_params[2] * log(fl3/gamma_params[0]) + log(gamma_params[3]);
@@ -2930,6 +3460,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
         }       
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
         //crash=debug(model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, step, inclination, ratios_l3, trunc_c, true);
+       if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l3[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
     }           
 //    std::cout << "--------------- " << std::endl;
     /* -------------------------------------------------------
@@ -2990,11 +3524,29 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params,
     */
     // -------
    
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
     return model_final;
 }
 
 
-VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -3044,6 +3596,11 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
     
     int Nharvey;
     long cpt;
+    
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+    
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -3222,12 +3779,20 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
         //std::cout << "Wl0=" << Wl0 << std::endl;
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
         //crash=debug(model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, step, inclination, ratios_l0, trunc_c, true);
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
     }
     for (long n=0; n<fl1_all.size(); n++){
         fl1=fl1_all[n];
         Wl1=Wl1_all[n];
         Hl1=std::abs(Hl1_all[n]);  
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1_l1[n], eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
         //crash=debug(model_final, Hl1, fl1, a1_l1[n], eta, a3, asym, Wl1, 1, step, inclination, ratios_l1, trunc_c, false);
         //if (crash == true){
         //    std::cout << " Full parameter list: " << params.transpose() << std::endl;
@@ -3251,7 +3816,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
         }   
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1_l2[n], eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
         //crash=debug(model_final, Hl2, fl2, a1_l2[n], eta, a3, asym, Wl2, 2, step, inclination, ratios_l2, trunc_c, true);
- 
+        if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l2[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }     
     }
 
 //    std::cout << "--------------- " << std::endl;
@@ -3269,6 +3837,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
             Hl3=std::abs(Hl3*Vl3);            
         }       
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l3[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }  
         //crash=debug(model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, step, inclination, ratios_l3, trunc_c, true);
     }           
 //    std::cout << "--------------- " << std::endl;
@@ -3330,12 +3902,30 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
     */
     // -------
     //exit(EXIT_SUCCESS);
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
     return model_final;
 }
 
 
 
-VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
      * param_length defines the structure of the parameters
@@ -3381,6 +3971,11 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
     
     int Nharvey;
     long cpt;
+
+    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -3552,6 +4147,10 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
         Hl0=Hl0_all[n];
         //std::cout << "Wl0=" << Wl0 << std::endl;
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }   
         //crash=debug(model_final, Hl0, fl0, 0, eta, a3, asym, Wl0, 0, step, inclination, ratios_l0, trunc_c, true);
     }
     for (long n=0; n<fl1_all.size(); n++){
@@ -3559,12 +4158,10 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
         Wl1=Wl1_all[n];
         Hl1=std::abs(Hl1_all[n]);  
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1_l1[n], eta, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-        //crash=debug(model_final, Hl1, fl1, a1_l1[n], eta, a3, asym, Wl1, 1, step, inclination, ratios_l1, trunc_c, false);
-        //if (crash == true){
-        //    std::cout << " Full parameter list: " << params.transpose() << std::endl;
-        //    std::cout << " Full parameters_length: " << params_length.transpose() << std::endl;
-        //    exit(EXIT_FAILURE);
-        //}
+        if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1_l1[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
     }
     for(long n=0; n<Nfl2; n++){ 
         fl2=std::abs(params[Nmax+lmax+Nfl0+Nfl1+n]);         
@@ -3579,7 +4176,10 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
         }   
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1_l2[n], eta, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
         //crash=debug(model_final, Hl2, fl2, a1_l2[n], eta, a3, asym, Wl2, 2, step, inclination, ratios_l2, trunc_c, true);
- 
+        if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1_l2[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }    
     }
 
 //    std::cout << "--------------- " << std::endl;
@@ -3596,6 +4196,10 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
         }       
         model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
         //crash=debug(model_final, Hl3, fl3, a1_l3[n], eta, a3, asym, Wl3, 3, step, inclination, ratios_l3, trunc_c, true);
+        if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1_l3[n], eta, a3, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }  
     }           
 //    std::cout << "--------------- " << std::endl;
     /* -------------------------------------------------------
@@ -3614,58 +4218,42 @@ VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
     //debug(model_final, -1, -1, -1, -1, -1, -1, -1, 0, step, -1, ratios_l0, trunc_c, true);
  
-     /*std::cout << "fl0    / Wl0     / Hl0" << std::endl;
-    for (int i =0; i<fl0_all.size(); i++){
-        std::cout << fl0_all[i]  << "    "  << Wl0_all[i]  << "    " << Hl0_all[i] << std::endl;
+    if(outparams){
+        int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta / a3 / asymetry / inclination";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
-    std::cout << "fl1    / Wl1     / Hl1    / a1_l1" << std::endl;
-    for (int i =0; i<fl1_all.size(); i++){
-        std::cout << fl1_all[i]  << "    "  << Wl1_all[i]  << "    " << Hl1_all[i]  << "    " << a1_l1[i]  << std::endl;
-    }
-    std::cout << "a1_l2 = " << a1_l2.transpose() << std::endl;
-    
-    std::cout << "a1_l3 = " << a1_l3.transpose() << std::endl;
-
-    std::cout << "End test" << std::endl;
-    exit(EXIT_SUCCESS);
-    */
-    //  ---- DEBUG ----
-    /*    std::cout << " DEBUG: Writing Results on-screen... " << std::endl;
-        std::cout << "     - Pure p modes:" << std::endl;
-        std::cout << freqs_l1.nu_p.transpose() << std::endl;
-        std::cout << "     - Derivative of pure p modes dnup/dn:" << std::endl;
-        std::cout << freqs_l1.dnup.transpose() << std::endl;
-        std::cout << "     - Pure g modes:" << std::endl;
-        std::cout << freqs_l1.nu_g.transpose() << std::endl;
-        std::cout << "     - Derivative of pure g modes dPg/dn:" << std::endl;
-        std::cout << freqs_l1.dPg.transpose() << std::endl;
-        std::cout << "     - Mixed modes:" << std::endl;
-        std::cout << freqs_l1.nu_m.transpose() << std::endl;
-        std::cout << "     - Mixed modes (filtered):" << std::endl;
-        std::cout << fl1_all.transpose() << std::endl;
-        std::cout << "     - ksi_pg_filtered with original values After Filtering by max(fl0_all) and max(fl0_all):" << std::endl;
-        std::cout << ksi_pg.transpose() << std::endl;
-        std::cout << "     - h1_h0 with original values After Filtering by max(fl0_all) and max(fl0_all):" << std::endl;
-        std::cout << h1_h0_ratio.transpose() << std::endl;
-        std::cout << "     - Hl1p_all:" << std::endl;
-        std::cout << Hl1p_all.transpose() << std::endl;
-        std::cout << "     - Hl1_all:" << std::endl;
-        std::cout << Hl1_all.transpose() << std::endl;
-        std::cout << "     - Wl1_all:" << std::endl;
-        std::cout << Wl1_all.transpose() << std::endl;
-    */
-    // -------
     return model_final;
 }
 
 
-VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 /*
  * A model in which we fit a Gaussian + Harvey-Like profile.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
 */
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
 	int Nharvey;
+
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
 
 	// ------ Setting the Gaussian -------
 	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(std::abs(params[1]),2);
@@ -3685,13 +4273,20 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
 	return model_final;
 }
 
-VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 /*
  * A model in which we fit a Gaussian + Harvey-Like profile.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
 */
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
 	int Nharvey;
+
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
 
 	// ------ Setting the Gaussian -------
 	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(std::abs(params[1]),2);
@@ -3712,7 +4307,7 @@ VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& param
 }
 
 
-VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x){
+VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 /*
  * A model in which we fit a Gaussian + White noise.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
@@ -3721,10 +4316,88 @@ VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_leng
 
 	tmp.setConstant(params[3]);
 
+    if (outparams){
+        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
+        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
+        std::cout << "       The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
+
 	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(params[1],2);
 	model_final= params[0]*model_final.array().exp();
 	model_final= model_final + tmp;
 	return model_final;
+}
+
+
+
+
+///// ----------- FOR ASCII OUTPUTS  ------------ //////
+void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
+    const std::string file_out, const std::string modelname, const std::string name_params){
+
+    VectorXi Nchars_spec(3), Nchars_params(15), Nchars_noise(3), precision_spec(3), precision_params(15), precision_noise(3);
+
+    std::ofstream outfile;
+    outfile.open(file_out.c_str());
+
+    if(outfile.is_open()){
+        // ---------------------
+        Nchars_spec << 20, 20 , 20;
+        precision_spec << 10, 10, 10;
+
+        //outfile << "ID= " << identifier << std::endl;
+        outfile << "Model = " << modelname << std::endl;
+        outfile << "plength = ";
+        for(int i=0;i<plength.size(); i++){
+            outfile << std::setw(8) << std::setprecision(0) << plength(i);
+        }
+        outfile << std::endl;
+        outfile << "raw_params = ";
+        for(int i=0;i<raw_params.size(); i++){
+            outfile << std::setw(20) << std::setprecision(8) << raw_params(i);
+        }
+        outfile << std::endl;
+        outfile << "# Spectrum parameters. Frequency range min/max (microHz) / Resolution (microHz)" << std::endl;
+        outfile << std::setw(Nchars_spec[0]) << std::setprecision(precision_spec[0]) << spec_params[0];
+        outfile << std::setw(Nchars_spec[1]) << std::setprecision(precision_spec[1]) << spec_params[1];
+        outfile << std::setw(Nchars_spec[2]) << std::setprecision(precision_spec[2]) << spec_params[2] << std::endl;
+
+
+        // ---------------------
+        outfile << "# Configuration of mode parameters. This file was generated by models.cpp (TAMCMC code version >1.61)" << std::endl;
+        Nchars_params    << 5, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
+        precision_params << 1, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8;
+        outfile << name_params << std::endl; //"# Input mode parameters. degree / freq / H / W / splitting a1 / a2_0  / a2_1  / a2_2 / a3 / asymetry / inclination" << std::endl;   
+        
+        for(int i=0; i<mode_params.rows(); i++){
+            for(int j=0;j<mode_params.cols(); j++){
+                outfile << std::setw(Nchars_params[j]) << std::setprecision(precision_params[j]) << mode_params(i,j);
+            }
+            outfile << std::endl;
+        }
+
+        // ---------------------
+        Nchars_noise << 16, 16, 16;
+        precision_noise << 6, 6, 6;
+
+        outfile << "# Configuration of noise parameters. This file was generated by write_star_mode_params (write_star_params.cpp)" << std::endl;
+        outfile << "# Input mode parameters. H0 , tau_0 , p0 / H1, tau_1, p1 / N0. Set at -1 if not used. -2 means that the parameter is not even written on the file (because irrelevant)." << std::endl;
+
+        for(int i=0; i<noise_params.rows(); i++){
+            for(int j=0;j<noise_params.cols(); j++){
+                outfile << std::setw(Nchars_noise[j]) << std::setprecision(precision_noise[j]) << noise_params(i,j);
+            }
+            outfile << std::endl;
+        }
+        outfile.close();
+    }  
+    else {
+        std::cout << " Unable to open file " << file_out << std::endl;  
+        std::cout << " Check that the full path exists" << std::endl;
+        std::cout << " The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 
@@ -3740,7 +4413,7 @@ bool debug(const VectorXd& model, const long double Hl, const long double fl, co
     const long double mini=1e10;
     const long double maxi=0;
 
-    bool leadtoNaN=false;
+    bool leadtoNaN;
     VectorXi posNotOK;
 
     for (int i=0; i<model.size();i++){
@@ -3791,7 +4464,7 @@ bool debug(const VectorXd& model, const long double Hl, const long double fl, co
 bool debug_solver(const VectorXd& x, const VectorXd& fl1_all, const VectorXd& fl0_all, const int el, const long double delta0l, 
                   const long double DPl, const long double alpha_g, const long double q_star, const long double sigma_p_l1){
 
-    bool error=false;
+    bool error;
 
     if ( fl1_all.minCoeff() < fl0_all.minCoeff() || fl1_all.minCoeff() < x.minCoeff() ||
          fl1_all.maxCoeff() > fl0_all.maxCoeff() || fl1_all.maxCoeff() > x.maxCoeff()){
