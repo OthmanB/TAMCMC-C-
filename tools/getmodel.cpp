@@ -7,6 +7,11 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+//#include <filesystem> // ONLY FOR C++17
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+
 #include "models.h"
 #include "model_def.h"
 #include "data.h"
@@ -19,6 +24,7 @@ int options(int argc, char* argv[], int Nmaxlines);
 void usage(int argc, char* argv[], int Nmaxlines);
 int check_retrocompatibility(VectorXi plength, std::string modelname);
 VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const double c0);
+void mvfile(std::string file_in, std::string file_out);
 
 Data Data_Nd2Data(Data_Nd dat);
 
@@ -115,6 +121,10 @@ int main(int argc, char* argv[]){
 				} 
 				models.row(i) = model0; //call_model_solo(&data, arr0, plength, modelname);
 				std::getline(cfg_session, line0);
+				// Taking care of the params.model file that is created since version 1.61
+				//std::string file_out;
+				//file_out="params_" + int_to_str(i) + ".model";
+				mvfile("params.model", "params_" + int_to_str(i) + ".model");
 				i=i+1;
 			}	
 			Nmodels=i;	
@@ -307,3 +317,21 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
 
 	return newparams;
 }
+
+/*
+   ONLY FOR C++17
+*/
+/*void mvfile(std::string file_in, std::string file_out) {
+  try {
+    std::filesystem::rename(file_in, file_out);
+  } catch (std::filesystem::filesystem_error& e) {
+    std::cout << e.what() << '\n';
+  }
+}
+*/
+void mvfile(std::string file_in, std::string file_out) {
+  if(std::rename(file_in.c_str(), file_out.c_str()) < 0) {
+    std::cout << strerror(errno) << '\n' << std::endl;
+  }
+}
+
